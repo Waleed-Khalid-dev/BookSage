@@ -426,3 +426,56 @@ main   ← Tagged releases
 ---
 
 *This is a living document. Update after each phase merge to `dev`.*
+
+---
+
+## 📱 Future Work — Mobile Platform
+
+> **Planned after Windows desktop app reaches v1.0 (Phase 9 complete).**
+
+BookSage will be rebuilt as a native mobile app for iOS and Android. The core AI pipeline (Python sidecar → JSON schema) is already platform-agnostic, so the primary work is a mobile-first UI layer.
+
+### Target Platforms
+- **iOS** — iPhone + iPad
+- **Android** — phones + tablets
+
+### Mobile Tech Stack (Planned)
+
+| Layer | Choice | Notes |
+|-------|--------|-------|
+| Framework | React Native + Expo | Maximum code-sharing with existing React components |
+| Navigation | React Navigation v7 | Stack + Tab navigator |
+| PDF rendering | `react-native-pdf` | Native PDF rendering |
+| Markdown | `react-native-markdown-display` | Obsidian-style rendering on mobile |
+| AI backend | Hosted Python API (FastAPI) | Sidecar won't work on mobile — requires a cloud endpoint |
+| Local storage | SQLite via `expo-sqlite` | Local-first, syncs to cloud optionally |
+| Auth | Sign in with Google / Apple ID | Required only for cloud sync |
+| Cloud sync | Supabase (Postgres + Auth + Storage) | Optional; users can stay fully offline |
+
+### Mobile-Specific Features
+- Touch reader: swipe left/right to turn pages, pinch-to-zoom
+- Floating Copilot: tap-and-hold any text → Copilot overlay (replaces desktop right-click)
+- Offline-first: all downloaded books and processed notes available without internet
+- iCloud / Google Drive sync for notes and library across devices
+- Share extension: "Share PDF to BookSage" from the iOS Files app
+- Haptic feedback on chapter completion and AI response received
+
+### Mobile Development Phases
+
+| Phase | Goal |
+|-------|------|
+| M0 | React Native + Expo scaffold, CSS token port to StyleSheet |
+| M1 | PDF viewer + swipe-based book reader |
+| M2 | Notes viewer (Markdown + Obsidian styling on mobile) |
+| M3 | AI pipeline via hosted FastAPI (same logic as Python sidecar) |
+| M4 | Copilot tap-to-select overlay + quick actions |
+| M5 | Library screen + optional cloud sync |
+| M6 | App Store + Google Play submission |
+
+### Architecture Note for Mobile
+Mobile requires a **hosted AI backend** — not a bundled sidecar:
+- FastAPI server wrapping `ai_extractor.py` + `ai_chat.py` (reuse the same Python logic)
+- User accounts (auth) to associate books and notes with a user ID
+- Supabase recommended for DB + Auth + file storage in one service
+
+> 📌 **This milestone begins only after Windows Phase 9 is complete and the desktop app is stable.**
