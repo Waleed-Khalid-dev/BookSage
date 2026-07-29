@@ -1,477 +1,381 @@
-# 📘 BookSage — Development Roadmap & System Blueprint
-> **Version:** 2.0 · **Status:** Active Development · **Last Updated:** 2026-07-29
+# BookSage — AI-Powered Book Studio
+
+> **Version:** 3.0 · **Status:** Active Development · **Last Updated:** 2026-07-29
 
 ---
 
 ## 🎯 Mission Statement
 
-> *Drop a PDF book in, press a button, get chapter-by-chapter Markdown files — each containing a rich summary, the author's teachings, the core lesson, and a practical implementation guide — all saved directly into your Obsidian vault.*
+> *BookSage is a self-contained desktop reading and learning studio. Drop in any PDF book, let AI extract structured lesson notes chapter by chapter, then read the book, study the notes, and chat with an AI copilot — all without leaving the app.*
 
-**Target User:** A Windows power-user who reads dense non-fiction (Robert Greene, Naval Ravikant, etc.) and wants to extract "lesson DNA" from each chapter without spending hours manually note-taking. Everything is local-first, private, and fully controlled.
+**Target User:** A Windows power-user who reads dense non-fiction (Robert Greene, Naval Ravikant, etc.) and wants to extract maximum insight without wasting hours on manual note-taking. Everything is local-first, private, zero cloud dependency.
 
----
-
-## ✅ Feasibility Assessment
-
-| Concern | Verdict | Notes |
-|---------|---------|-------|
-| PDF text extraction | ✅ Fully achievable | PyMuPDF (fitz) is battle-tested, handles 99% of books |
-| TOC/chapter splitting | ✅ Fully achievable | PDF bookmarks + regex fallback covers all cases |
-| AI lesson extraction | ✅ Fully achievable | Structured output (JSON mode) via Gemini/OpenAI |
-| Obsidian vault sync | ✅ Trivial | Simple file copy to a user-chosen directory |
-| Token limits | ✅ Not a problem | Even the longest Greene chapter is < 8,000 tokens |
-| Desktop GUI | ✅ Achievable | Tauri + React is the recommended stack (see §4) |
-| Packaging as `.exe` | ✅ Achievable | Tauri produces a native Windows installer natively |
-| Offline/local AI | ✅ Achievable | Ollama REST API (localhost:11434) as fallback |
-
-**Verdict: The entire vision is buildable. No blockers exist. All dependencies are stable, well-documented, and free.**
+**The pivot from v2.0:** The original design exported Markdown files to Obsidian. BookSage v3 is the destination — a complete reading studio with a built-in book reader, an Obsidian-style notes viewer, and an AI copilot that activates on selected text. Users never need Obsidian installed.
 
 ---
 
-## 🗺️ High-Level Architecture
+## ✅ Feasibility Assessment (v3 additions)
+
+| New Feature | Verdict | Notes |
+|-------------|---------|-------|
+| In-app Markdown rendering | ✅ Achievable | `react-markdown` + `remark-gfm` + custom CSS matching Obsidian's visual grammar |
+| PDF page-by-page reader | ✅ Achievable | `pdfjs-dist` renders PDF pages as canvas elements inside React |
+| Text selection → Copilot popup | ✅ Achievable | `window.getSelection()` + `mouseup` event → floating panel positioned near cursor |
+| Context menu Copilot actions | ✅ Achievable | Custom React context menu on right-click replaces native menu |
+| AI sidebar chat | ✅ Achievable | Persistent panel; shares the same AI client layer from Phase 2 |
+| Model switcher dropdown | ✅ Achievable | React select showing all configured providers with availability status dots |
+| Split-view (book + notes) | ✅ Achievable | CSS flexbox with a draggable divider between panels |
+| Icon-based navigation sidebar | ✅ Achievable | Standard VS Code-style icon rail with view switching |
+
+---
+
+## 🏛️ App Architecture v3
+
+```
+BookSage Studio — Five Views, One App
+
+┌────────────────────────────────────────────────────────────────────┐
+│  Title Bar                                              [─][□][✕]  │
+├──┬─────────────────────────────────────────────────────────────────┤
+│  │                                                                  │
+│🏠│  VIEW 1: Library / Home                                          │
+│  │  Grid of processed books with cover art, progress, last opened  │
+│  │                                                                  │
+│📖│  VIEW 2: Book Reader                                             │
+│  │  Page-by-page PDF renderer · word nav · text-select → Copilot   │
+│  │                                                                  │
+│📝│  VIEW 3: Notes Viewer                                            │
+│  │  Obsidian-style rendered Markdown · chapter list · Copilot       │
+│  │                                                                  │
+│🔄│  VIEW 4: Process Pipeline (original MainWindow)                  │
+│  │  Chapter splitting · AI extraction · progress tracking           │
+│  │                                                                  │
+│🤖│  VIEW 5: AI Chat (full session)                                  │
+│  │  Full-screen copilot chat with book context loaded               │
+│  │                                                                  │
+│⚙️│  Settings Dialog (modal overlay)                                 │
+├──┴─────────────────────────────────────────────────────────────────┤
+│  Status Bar                                                         │
+└────────────────────────────────────────────────────────────────────┘
+
+Floating Layer (renders on top of any view):
+  └── Copilot Popup — appears on text selection, dismisses on click-away
+```
+
+---
+
+## 🗺️ System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  BookSage Desktop App  (Tauri shell)                            │
+│  BookSage Desktop App  (Tauri v2 shell)                         │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Frontend: React + TypeScript + CSS                     │   │
-│  │  (MainWindow · SettingsDialog · PreviewPanel)           │   │
+│  │  Frontend: React 18 + TypeScript                        │   │
+│  │                                                         │   │
+│  │  Navigation: Icon sidebar (VS Code-style)               │   │
+│  │  Views: Library · BookReader · NotesViewer ·            │   │
+│  │          Pipeline · AIChat                              │   │
+│  │  Floating: CopilotPopup (over any view)                 │   │
+│  │  Modal: SettingsDialog                                  │   │
+│  │                                                         │   │
+│  │  State: Zustand (bookStore · settingsStore · uiStore)   │   │
 │  └──────────────────────┬──────────────────────────────────┘   │
 │                         │ Tauri Commands (IPC)                  │
 │  ┌──────────────────────▼──────────────────────────────────┐   │
-│  │  Backend: Python sidecar (called via Tauri invoke)      │   │
+│  │  Python Sidecar (bundled, no user install needed)       │   │
 │  │                                                         │   │
-│  │  pdf_handler.py      ← PyMuPDF                          │   │
-│  │  chapter_splitter.py ← TOC + Regex                      │   │
-│  │  ai_extractor.py     ← Gemini / OpenAI / Ollama         │   │
+│  │  pdf_handler.py      ← PyMuPDF (text + TOC)             │   │
+│  │  chapter_splitter.py ← TOC + regex                      │   │
+│  │  ai_extractor.py     ← Gemini / OpenAI / Claude / Ollama│   │
+│  │  ai_chat.py          ← Session-based chat with context  │   │
 │  │  markdown_gen.py     ← Jinja2 templates                 │   │
-│  │  file_manager.py     ← I/O, vault copy                  │   │
-│  │  config_manager.py   ← Settings, encrypted API keys     │   │
+│  │  file_manager.py     ← I/O, optional Obsidian export    │   │
+│  │  config_manager.py   ← keyring for API keys             │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Local Storage                                          │   │
-│  │  BookSage_Projects/<book-slug>/                         │   │
-│  │    raw_text/  ·  chapters/  ·  lessons/  ·  config.json │   │
-│  └─────────────────────────────────────────────────────────┘   │
+│  pdfjs-dist (JS)       ← PDF page rendering in BookReader      │
+│  react-markdown (JS)   ← Markdown rendering in NotesViewer     │
 └─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-              ┌───────────────────────────┐
-              │   Obsidian Vault Folder   │
-              │  Vault/BookNotes/<book>/  │
-              │   law-01-outshine.md  ...  │
-              └───────────────────────────┘
 ```
 
 ---
 
-## 🔩 Tech Stack Decision
+## 🔩 Tech Stack
 
-| Layer | Choice | Why |
-|-------|--------|-----|
-| **Desktop Shell** | **Tauri v2** | Tiny bundle (~5MB vs Electron's 150MB), native Windows feel, Rust backend, ships as a real `.msi` installer |
-| **Frontend** | **React 18 + TypeScript** | The GUI mockup is already in React/TSX. Direct reuse of `MainWindow.tsx` + `SettingsDialog.tsx` |
-| **Styling** | **Vanilla CSS with CSS variables** | Already defined in `_group.css`. The entire design system is token-based (`--bs-accent`, `--bs-panel`, etc.) |
-| **Fonts** | **Inter + JetBrains Mono** | Already locked in via Google Fonts import in `_group.css` |
-| **Python Backend** | **Python 3.11+ (sidecar)** | All PDF/AI logic runs as a subprocess bundled inside the Tauri app |
-| **PDF Engine** | **PyMuPDF (fitz)** | Fast, reliable, extracts text AND TOC bookmarks |
-| **AI APIs** | **Gemini (default), OpenAI, Claude, Ollama** | Multi-provider with a unified interface layer |
-| **Templating** | **Jinja2** | Clean Markdown generation from JSON data |
-| **Secret Storage** | **keyring (system OS keychain)** | Never store API keys in plaintext |
-| **Packaging** | **Tauri bundler → `.msi` installer** | Self-contained, no Python install required for end-user |
+| Layer | Choice | Rationale |
+|-------|--------|-----------|
+| Desktop Shell | Tauri v2 | ~5MB bundle, native `.msi`, Rust sidecar management |
+| Frontend | React 18 + TypeScript | Existing mockup is already React/TSX |
+| Styling | Vanilla CSS + CSS Variables | Existing `_group.css` token system, zero framework lock-in |
+| PDF Rendering | `pdfjs-dist` (Mozilla) | Industry standard; renders real PDF pages in-browser canvas |
+| Markdown Rendering | `react-markdown` + `remark-gfm` | Full GFM support; custom component overrides for Obsidian-style headings |
+| State Management | Zustand | Lightweight, no boilerplate; stores: book, settings, UI, chat |
+| Fonts | Inter + JetBrains Mono | Locked in `_group.css` |
+| Python Backend | Python 3.11 sidecar | PDF/AI logic; bundled by PyInstaller |
+| PDF Engine | PyMuPDF (fitz) | Text + TOC extraction |
+| AI APIs | Gemini, OpenAI, Claude, Ollama | Multi-provider unified interface |
+| Templating | Jinja2 | Markdown generation |
+| Secret Storage | keyring (OS keychain) | API keys never hit disk |
+| Packaging | Tauri bundler → `.msi` | Self-contained Windows installer |
 
 ---
 
-## 🎨 GUI Design System (from existing mockup)
+## 🎨 Design System
 
-The design is already defined. The `GUI/` folder contains production-ready components.
+### Design Philosophy
+BookSage Studio mirrors the Obsidian visual language: deep dark backgrounds, crimson/red heading accents (matching the Obsidian screenshots provided), clean inter-panel borders, and a monospace log area. The teal `#009688` accent is used for primary actions and interactive states, while red-family colors carry heading hierarchy in reading views.
 
-### Color Tokens (from `_group.css`)
+### Extended Color Tokens
 
 | Token | Dark | Light | Usage |
 |-------|------|-------|-------|
-| `--bs-bg` | `#1a1a1a` | `#f4f4f5` | Root window background |
-| `--bs-panel` | `#242424` | `#e8e8ea` | Sidebar, toolbar, footer |
+| `--bs-bg` | `#1a1a1a` | `#f4f4f5` | Root window |
+| `--bs-panel` | `#242424` | `#e8e8ea` | Sidebars, toolbars |
 | `--bs-surface` | `#2e2e2e` | `#dddde0` | Cards, inputs |
-| `--bs-accent` | `#009688` | `#00796b` | Primary actions, highlights |
-| `--bs-done` | `#4caf50` | `#388e3c` | Success states |
-| `--bs-process` | `#ff9800` | `#e65100` | In-progress spinner |
-| `--bs-error` | `#f44336` | `#c62828` | Error badges |
-
-### UI Layout (three-panel, from `MainWindow.tsx`)
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│  Title Bar: BookSage – PDF to Obsidian Lessons        [─][□][✕] │
-├────────────────────────────────────────────────────────────────┤
-│  [Open PDF] [Extract Text] [Split Chapters] | [✦ Generate]     │
-│  [Export All]                              ☀️━●  [Settings]    │
-├──────────────┬─────────────────────────┬───────────────────────┤
-│ Chapters(48) │  Raw Text │AI Output│MD  │  Project Name        │
-│ ──────────── │ ─────────────────────  │  Output Folder [..] │
-│ ☑ 1 Never.. │                         │  ✅ Vault Sync Ready  │
-│ ☑ 2 Never.. │   Law 3: Conceal Your  │  [Export All →Obsidian│
-│ ☑ 3 Conceal │   Intentions           │  ──────────────────── │
-│ ⟳ 4 Always. │                         │  Progress: 15/48 ███░│
-│ ☑ 5 So Much │   Core Principle: ...  │  ──────────────────── │
-│ □ 6 Court.. │   Key Tactics:         │  📊 Donut + Bar Charts│
-│ ✗ 7 Get Oth │   Historical Example:  │  ──────────────────── │
-│ □ 8 Make... │                         │  Export Log           │
-│   ...        │   847 words · 4,231 ch │  [10:42] ✓ Law 1 ... │
-├──────────────┴─────────────────────────┴───────────────────────┤
-│  PDF: 48_laws.pdf | 48 chapters | 15 processed  Model: gemini  │
-└────────────────────────────────────────────────────────────────┘
-```
+| `--bs-accent` | `#009688` | `#00796b` | CTA buttons, active states |
+| `--bs-heading` | `#e05252` | `#c0392b` | H1/H2 in reader/notes (Obsidian-matched) |
+| `--bs-code-bg` | `#2a1a1a` | `#fde8e8` | Inline code background |
+| `--bs-code-text` | `#e05252` | `#c0392b` | Inline code text |
+| `--bs-callout-border` | `#4a7a9b` | `#2980b9` | Obsidian callout left-border |
+| `--bs-nav-icon` | `#8a8a8a` | `#777` | Icon sidebar inactive |
+| `--bs-nav-active` | `#009688` | `#00796b` | Icon sidebar active view |
+| `--bs-copilot-bg` | `#1e2a2a` | `#e8f5f3` | Copilot popup background |
+| `--bs-done` | `#4caf50` | `#388e3c` | Success badges |
+| `--bs-process` | `#ff9800` | `#e65100` | Processing spinner |
+| `--bs-error` | `#f44336` | `#c62828` | Error states |
 
 ---
 
-## 📁 Final Project Folder Structure
+## 📁 Project Folder Structure (v3)
 
 ```
 BookSage/
-├── .agents/                    ← AG Kit (agents, skills, workflows)
-├── GUI/                        ← Design mockup reference files
-├── src-tauri/                  ← Tauri Rust shell
+├── .agents/                      ← AG Kit
+├── GUI/                          ← Reference mockup files
+├── src-tauri/
 │   ├── Cargo.toml
 │   ├── tauri.conf.json
-│   └── src/
-│       └── main.rs             ← IPC commands + sidecar launch
-├── src/                        ← React frontend
+│   └── src/main.rs               ← IPC + sidecar launch
+├── src/
 │   ├── main.tsx
-│   ├── App.tsx
-│   ├── index.css               ← Global styles (includes _group.css tokens)
-│   └── components/
-│       ├── MainWindow.tsx      ← Port from GUI/
-│       ├── SettingsDialog.tsx  ← Port from GUI/
-│       ├── DonutChart.tsx      ← Extract from MainWindow
-│       ├── ActivityBarChart.tsx
-│       ├── ToolbarButton.tsx
-│       └── StatusBadge.tsx
-├── python/                     ← Python backend sidecar
+│   ├── App.tsx                   ← Router: view switching via icon sidebar
+│   ├── index.css                 ← All CSS tokens (extended _group.css)
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── IconSidebar.tsx   ← VS Code-style nav rail
+│   │   │   ├── TitleBar.tsx
+│   │   │   └── StatusBar.tsx
+│   │   ├── views/
+│   │   │   ├── LibraryView.tsx   ← NEW: book grid / home screen
+│   │   │   ├── BookReader.tsx    ← NEW: PDF page renderer
+│   │   │   ├── NotesViewer.tsx   ← NEW: Obsidian-style Markdown viewer
+│   │   │   ├── PipelineView.tsx  ← Renamed from MainWindow (chapter list + export)
+│   │   │   └── AIChatView.tsx    ← NEW: Full AI chat session view
+│   │   ├── reader/
+│   │   │   ├── PDFCanvas.tsx     ← pdfjs-dist page renderer
+│   │   │   ├── PageControls.tsx  ← prev/next/jump-to-page
+│   │   │   └── WordHighlighter.tsx ← word-by-word navigation
+│   │   ├── notes/
+│   │   │   ├── MarkdownRenderer.tsx ← react-markdown with Obsidian CSS
+│   │   │   ├── ChapterNav.tsx    ← left chapter list for notes view
+│   │   │   └── CalloutBlock.tsx  ← Obsidian [!tip] [!note] callouts
+│   │   ├── copilot/
+│   │   │   ├── CopilotPopup.tsx  ← Floating panel on text selection
+│   │   │   ├── CopilotSidebar.tsx ← Pinned right-side chat panel
+│   │   │   ├── ContextMenu.tsx   ← Right-click menu with Copilot submenu
+│   │   │   ├── ModelSelector.tsx ← Provider + model dropdown
+│   │   │   └── QuickActions.tsx  ← Summarize/Simplify/Explain/etc.
+│   │   ├── pipeline/
+│   │   │   ├── ChapterList.tsx   ← Chapter list with status badges
+│   │   │   ├── PreviewTabs.tsx   ← Raw Text / AI Output / Markdown Source
+│   │   │   ├── ExportPanel.tsx   ← Right panel: progress, charts, log
+│   │   │   ├── DonutChart.tsx
+│   │   │   ├── ActivityBarChart.tsx
+│   │   │   ├── ToolbarButton.tsx
+│   │   │   └── StatusBadge.tsx
+│   │   └── settings/
+│   │       └── SettingsDialog.tsx
+│   ├── stores/
+│   │   ├── bookStore.ts          ← Current book, chapters, processing state
+│   │   ├── settingsStore.ts      ← API keys, model, output folder
+│   │   ├── uiStore.ts            ← Active view, theme, sidebar state
+│   │   └── chatStore.ts          ← Chat history, active context
+│   ├── hooks/
+│   │   ├── useTextSelection.ts   ← Detects text selection, triggers Copilot
+│   │   ├── usePDF.ts             ← pdfjs-dist wrapper
+│   │   └── useTauri.ts           ← Typed invoke() wrappers
+│   └── lib/
+│       └── tauri.ts              ← All Tauri command definitions
+├── python/
 │   ├── requirements.txt
-│   ├── main.py                 ← CLI entry point (called by Tauri)
-│   ├── pdf_handler.py          ← PyMuPDF extraction
-│   ├── chapter_splitter.py     ← TOC + regex splitting
-│   ├── ai_extractor.py         ← Multi-provider AI client
-│   ├── markdown_gen.py         ← Jinja2 → .md files
-│   ├── file_manager.py         ← File I/O + vault copy
-│   ├── config_manager.py       ← Encrypted settings (keyring)
+│   ├── main.py                   ← JSON-in/JSON-out CLI
+│   ├── pdf_handler.py
+│   ├── chapter_splitter.py
+│   ├── ai_extractor.py           ← Lesson extraction
+│   ├── ai_chat.py                ← NEW: session chat with book context
+│   ├── markdown_gen.py
+│   ├── file_manager.py
+│   ├── config_manager.py
 │   └── templates/
-│       └── chapter.md.j2       ← Obsidian-flavoured Markdown template
-├── BookSage_Projects/          ← Runtime output (gitignored)
-│   └── 48_laws_of_power/
-│       ├── raw_text/
-│       │   ├── full.txt
-│       │   └── chapters/
-│       │       ├── 01_Chapter_1.txt
-│       │       └── ...
-│       ├── lessons/
-│       │   ├── 01_Chapter_1.md
-│       │   └── ...
-│       └── config.json
+│       └── chapter.md.j2
+├── BookSage_Projects/            ← Runtime output (gitignored)
 ├── .gitignore
 ├── README.md
-└── RoadMap.md                  ← This file
+├── booksage-plan.md
+└── RoadMap.md
 ```
 
 ---
 
-## 🤖 AI Integration — JSON Schema
+## 🤖 AI Copilot — Interaction Design
 
-Every AI call returns a **strict JSON object** with this schema:
+### Text Selection → Copilot Flow
+
+```
+User selects text in BookReader or NotesViewer
+    ↓
+mouseup event fires → useTextSelection hook captures:
+    - selected text string
+    - bounding rect of selection (x, y, width, height)
+    ↓
+Small "Copilot" pill button appears just above selection
+    ↓
+User right-clicks → Custom ContextMenu renders:
+    ┌─────────────────────────────────┐
+    │  Add selection to chat context  │
+    │  Quick Ask                      │
+    │  ─────────────────────────────  │
+    │  Summarize                      │
+    │  Simplify                       │
+    │  Explain like I am 5            │
+    │  Make shorter                   │
+    │  Make longer                    │
+    │  Fix grammar and spelling       │
+    │  Translate to...                │
+    └─────────────────────────────────┘
+    ↓
+Clicking an action opens CopilotPopup anchored to selection:
+    ┌──────────────────────────────────┐
+    │ [drag handle]              [✕]  │
+    │ Ask a question...                │
+    │ ┌────────────────────────┐  [→] │
+    │ │ gemini-2.0-flash  ⬇  │      │
+    │ └────────────────────────┘      │
+    │ ● Note context included         │
+    └──────────────────────────────────┘
+```
+
+### Model Selector Dropdown (matches screenshot exactly)
+
+```
+gemini-2.0-flash          ● (green = connected)
+gemini-1.5-pro            ● (green)
+─────────────────────────────
+gpt-4o                    ○ Needs API key
+gpt-4o-mini               ○ Needs API key
+─────────────────────────────
+claude-sonnet-4            ○ Needs API key
+─────────────────────────────
+Ollama (local)            ● (if running)
+```
+
+---
+
+## 🤖 AI JSON Schema (unchanged from v2)
 
 ```json
 {
   "chapter_title": "Law 3: Conceal Your Intentions",
   "chapter_number": 3,
-  "summary": "Narrative recap of what the chapter covers...",
-  "teachings": [
-    {
-      "technique": "Use Decoys",
-      "explanation": "Feign interest in something you do not actually want..."
-    }
-  ],
-  "core_lesson": "The single most actionable insight from this chapter.",
-  "implementation_steps": [
-    "Step 1: ...",
-    "Step 2: ...",
-    "Step 3: ..."
-  ],
-  "supporting_quotes": [
-    "Direct quote from the text that grounds the lesson..."
-  ],
+  "summary": "Narrative recap...",
+  "teachings": [{ "technique": "Use Decoys", "explanation": "..." }],
+  "core_lesson": "The single most actionable insight.",
+  "implementation_steps": ["Step 1...", "Step 2..."],
+  "supporting_quotes": ["Direct quote from text..."],
   "obsidian_tags": ["#strategy", "#power", "#deception"],
   "difficulty_to_implement": "Medium"
 }
 ```
 
-**System Prompt Template** (stored in Settings → Prompt Template tab):
-
-```
-You are an expert book analyst. Analyze the following chapter text and return a 
-JSON object that strictly matches the provided schema. Extract the author's 
-actual teachings — do NOT summarize, do NOT generalize. Ground every insight 
-with a direct quote from the text. If you cannot find a quote, omit that field.
-
-Chapter Title: {chapter_title}
-Chapter Text:
----
-{chapter_text}
 ---
 
-Return ONLY valid JSON. No markdown fences, no commentary.
-```
-
----
-
-## 📦 Obsidian Output Format
-
-Each `.md` file exported to the vault will use this Jinja2 template (`chapter.md.j2`):
-
-```markdown
----
-title: "{{ chapter_title }}"
-book: "{{ book_title }}"
-chapter: {{ chapter_number }}
-tags: {{ obsidian_tags | join(", ") }}
-created: {{ created_date }}
-source: BookSage v{{ app_version }}
----
-
-# {{ chapter_title }}
-
-> **Core Lesson:** {{ core_lesson }}
-
-## 📖 Summary
-
-{{ summary }}
-
-## 🎓 What the Author Teaches
-
-{% for t in teachings %}
-### {{ t.technique }}
-{{ t.explanation }}
-{% endfor %}
-
-## 🛠️ How to Implement
-
-{% for step in implementation_steps %}
-{{ loop.index }}. {{ step }}
-{% endfor %}
-
-## 💬 Supporting Quotes
-
-{% for q in supporting_quotes %}
-> "{{ q }}"
-
-{% endfor %}
-
----
-
-*Generated by BookSage · [[{{ book_title }}]] · Difficulty: {{ difficulty_to_implement }}*
-```
-
----
-
-## 🚀 Development Phases
-
-### Phase 0 — Scaffolding & Environment Setup
-**Goal:** Tauri + React + Python sidecar all wired and running locally.
-
-- [ ] Install prerequisites: Rust (stable), Node.js 20+, Python 3.11+, Tauri CLI
-- [ ] Run `npm create tauri-app@latest BookSage -- --template react-ts`
-- [ ] Copy `GUI/MainWindow.tsx`, `GUI/SettingsDialog.tsx`, `GUI/_group.css` into `src/`
-- [ ] Split large `MainWindow.tsx` into sub-components (DonutChart, ActivityBarChart, ToolbarButton, StatusBadge)
-- [ ] Create `python/` sidecar directory with `requirements.txt`
-- [ ] Configure Tauri sidecar to launch `python/main.py`
-- [ ] Create `.env.example` with placeholder keys
-- [ ] **Commit:** `feat(phase-0): scaffold Tauri+React+Python sidecar`
-
-**Verify:** `npm run tauri dev` opens the window. All three panels visible.
-
----
-
-### Phase 1 — PDF Engine (Core Backend)
-**Goal:** Drop a PDF → get chapter text files split by TOC or regex.
-
-#### 1.1 Text Extraction (`pdf_handler.py`)
-- [ ] Implement `extract_text(pdf_path) -> str` using `fitz.open()`
-- [ ] Implement `extract_toc(pdf_path) -> list[dict]` to get bookmark entries `{title, page, level}`
-- [ ] Handle encrypted/password-protected PDFs (return friendly error)
-- [ ] Handle encoding issues (force UTF-8 with error replacement)
-
-#### 1.2 Chapter Splitting (`chapter_splitter.py`)
-- [ ] `split_by_toc(pdf_path, toc) -> list[Chapter]` — use page ranges from TOC
-- [ ] `split_by_regex(full_text) -> list[Chapter]` — fallback for PDFs with no bookmarks
-  - Patterns: `Chapter \d+`, `CHAPTER [A-Z]+`, `Law \d+`, `Part [IVX]+`
-- [ ] Allow user-supplied regex override (stored in config)
-- [ ] Write `chapter_XX_title.txt` files to `BookSage_Projects/<slug>/raw_text/chapters/`
-
-#### 1.3 CLI Entry Point (`main.py`)
-- [ ] Accept JSON-encoded commands on stdin, return JSON responses on stdout
-- [ ] Commands: `extract`, `split`, `extract_ai`, `export`, `get_config`, `save_config`
-
-**Commit:** `feat(phase-1): PDF extraction and chapter splitting engine`
-
-**Verify:** `python main.py '{"cmd":"extract","pdf":"48_laws.pdf"}'` produces chapter `.txt` files.
-
----
-
-### Phase 2 — AI Extractor Module
-**Goal:** Given a chapter `.txt` file, return validated JSON lesson data.
-
-#### 2.1 Unified AI Client (`ai_extractor.py`)
-- [ ] Abstract `AIClient` base class with `extract(chapter_title, chapter_text) -> dict`
-- [ ] `GeminiClient` — uses `google-generativeai`, structured output via `response_schema`
-- [ ] `OpenAIClient` — uses `openai`, structured output via `response_format: json_schema`
-- [ ] `ClaudeClient` — uses `anthropic`, output parsed from markdown code fence
-- [ ] `OllamaClient` — calls `http://localhost:11434/api/chat`, format-enforced via system prompt
-- [ ] Retry logic: 3 attempts with exponential backoff on rate limit / timeout errors
-- [ ] Token estimation before call (warn if chapter > 50k chars)
-
-#### 2.2 JSON Validation
-- [ ] Validate response against the defined schema (all required fields present)
-- [ ] If validation fails, attempt a one-shot "fix" prompt: "Your last response was missing fields. Return corrected JSON."
-- [ ] If still invalid after retry, save raw response as `.err.json` and mark chapter as `error`
-
-#### 2.3 Prompt Template System
-- [ ] Store default system prompt in `config.json` under `prompt_template`
-- [ ] Allow user to edit via Settings → Prompt Template tab
-- [ ] Support placeholders: `{chapter_title}`, `{chapter_text}`, `{book_title}`
-
-**Commit:** `feat(phase-2): multi-provider AI extractor with JSON validation`
-
-**Verify:** `python main.py '{"cmd":"extract_ai","chapter_path":"...","provider":"gemini"}'` returns valid JSON.
-
----
-
-### Phase 3 — GUI Skeleton (Frontend)
-**Goal:** React app matches the mockup pixel-perfectly. File dialog and chapter list work.
-
-#### 3.1 Component Setup
-- [ ] Port all 5 components from `GUI/` into `src/components/`
-- [ ] Set up Tauri `invoke()` wrapper utilities in `src/lib/tauri.ts`
-- [ ] Wire "Open PDF" button → Tauri `open()` dialog → `invoke('cmd_extract', {path})`
-- [ ] Wire chapter list to display state (array of Chapter objects from backend)
-- [ ] Status badges update in real-time (pending / processing / done / error)
-
-#### 3.2 State Management
-- [ ] `useBookStore` (Zustand) — global state: current book, chapters[], processing status
-- [ ] `useSettingsStore` (Zustand) — API key, model, provider, output folder
-- [ ] Persist settings to Tauri's app data directory (not plaintext)
-
-#### 3.3 Settings Dialog
-- [ ] "AI Provider" tab: provider dropdown, API key field (masked), Test Connection button
-- [ ] "Prompt Template" tab: editable textarea with `{chapter_title}`, `{chapter_text}` placeholders
-- [ ] "Output Schema" tab: read-only JSON schema preview
-- [ ] "Chapter Detection" tab: regex pattern override field, test against loaded PDF
-
-**Commit:** `feat(phase-3): GUI skeleton with file dialog and chapter list`
-
-**Verify:** Load a PDF → chapter list populates correctly. All tabs in Settings open.
-
----
-
-### Phase 4 — Full Integration Loop
-**Goal:** Click "Generate Lessons" → app processes all chapters → results appear in center panel.
-
-#### 4.1 Processing Pipeline
-- [ ] "Generate Lessons" button triggers async processing loop
-- [ ] Each chapter: set status to `process` → call AI → parse result → set status to `done` or `error`
-- [ ] Process chapters in configurable batch size (default: 1 at a time to avoid rate limits)
-- [ ] Allow user to pause / resume processing
-- [ ] Allow user to select specific chapters and re-process only those
-
-#### 4.2 Center Panel — Preview/Editor
-- [ ] **Raw Text tab:** Displays the extracted chapter `.txt` content
-- [ ] **AI Output tab:** Renders the structured lesson data as formatted HTML/Markdown
-- [ ] **Markdown Source tab:** Shows the generated `.md` file source, fully editable
-- [ ] "Save edits" button in Markdown Source tab persists changes before export
-
-#### 4.3 Progress & Logging
-- [ ] Progress bar in right panel: `X / N chapters`
-- [ ] Donut chart updates live as chapters complete
-- [ ] Export log scrolls and appends timestamped events with color-coded status
-- [ ] Activity bar chart updates daily counts from `config.json` history
-
-**Commit:** `feat(phase-4): full AI processing pipeline with live progress`
-
-**Verify:** Run on a 5-chapter test PDF. All 5 reach "done" state. Center panel shows formatted lesson.
-
----
-
-### Phase 5 — Markdown Generation & Obsidian Export
-**Goal:** Beautiful `.md` files land in the correct Obsidian vault folder.
-
-#### 5.1 Markdown Generator (`markdown_gen.py`)
-- [ ] Load `chapter.md.j2` template from `python/templates/`
-- [ ] Render with Jinja2: inject all JSON fields + metadata (book title, date, app version)
-- [ ] Support Obsidian-flavoured features:
-  - YAML frontmatter (`title`, `book`, `chapter`, `tags`, `created`)
-  - `[[Book Title]]` wiki-link at bottom
-  - Obsidian callout blocks for Core Lesson: `> [!tip]`
-  - Tag format: `#strategy` (not `#"strategy"`)
-
-#### 5.2 File Manager & Vault Sync (`file_manager.py`)
-- [ ] Write `.md` files to `BookSage_Projects/<slug>/lessons/`
-- [ ] "Export All to Obsidian" copies all `done` chapters to user-selected vault folder
-- [ ] Conflict resolution dialog: Overwrite / Skip / Rename with timestamp
-- [ ] "Export Single" option via right-click on any chapter in the list
-
-#### 5.3 Master Index File
-- [ ] Generate `_index.md` at vault root: a table of all chapters with links and metadata
-- [ ] Format: `| Chapter | Core Lesson | Tags | Status |`
-
-**Commit:** `feat(phase-5): Obsidian markdown generation and vault export`
-
-**Verify:** Export 48 Laws → open Obsidian → 48 `.md` files appear with correct frontmatter + formatting.
-
----
-
-### Phase 6 — Settings, Error Handling & Config
-**Goal:** Full settings dialog works. API keys stored securely. Errors are recoverable.
-
-- [ ] API key saved to OS keychain via `keyring` library (never written to disk)
-- [ ] "Test Connection" button validates key with a minimal API call
-- [ ] Config file `config.json` stores: provider, model, temperature, max_tokens, output_folder, last_used_book
-- [ ] Error recovery: failed chapters show a "Retry" button
-- [ ] Batch retry: "Retry All Failed" button
-- [ ] Timeout handling: configurable timeout (default 30s), shown in log
-- [ ] Rate limit detection: auto-pause + countdown timer shown in UI
-
-**Commit:** `feat(phase-6): settings, secure key storage, error recovery`
-
----
-
-### Phase 7 — Packaging & Distribution
-**Goal:** A single `.msi` installer a non-technical user can run on any Windows machine.
-
-- [ ] Bundle Python sidecar using PyInstaller → single `booksage_engine.exe`
-- [ ] Include sidecar in Tauri's resource directory
-- [ ] Configure `tauri.conf.json` for Windows installer (NSIS or WiX)
-- [ ] Code sign the executable (optional but recommended for SmartScreen bypass)
-- [ ] Test on a clean Windows VM (no Python, no Node installed)
-- [ ] Write `README.md` with: install steps, first-run guide, Gemini free tier setup
-
-**Commit:** `feat(phase-7): production packaging as Windows installer`
-
-**Verify:** Install from `.msi` on a clean VM → app launches → successfully processes a PDF.
-
----
-
-### Phase 8 — Polish & Future Features (Post-MVP)
-> These are non-blocking enhancements for after the core is working.
-
-- [ ] **Batch book processing:** Queue multiple PDFs
-- [ ] **Book library view:** History of all processed books with search
-- [ ] **Custom Obsidian templates:** Let user define their own Jinja2 template
-- [ ] **Vocabulary extractor:** Pull rare/domain-specific words per chapter with definitions
-- [ ] **Mind map export:** Generate a visual map of all laws/principles (Mermaid diagram in `.md`)
-- [ ] **Auto-tag suggestions:** AI suggests relevant tags based on themes
-- [ ] **Reading progress tracker:** Mark chapters as "reviewed" inside the app
-- [ ] **macOS/Linux support:** Tauri is cross-platform; backend already is
+## 🚀 Development Phases (v3 Updated)
+
+### Phase 0 — Scaffold
+- [ ] Install: Rust, Node 20, Python 3.11, Tauri CLI
+- [ ] `npm create tauri-app@latest -- --template react-ts`
+- [ ] Extend `_group.css` with v3 tokens (`--bs-heading`, `--bs-code-bg`, `--bs-nav-*`, `--bs-copilot-*`)
+- [ ] Build `IconSidebar.tsx`: 5 icons, active state, view switching
+- [ ] Build `App.tsx`: view router controlled by `uiStore.activeView`
+- [ ] Set up Zustand stores: `bookStore`, `settingsStore`, `uiStore`, `chatStore`
+- **Verify:** Window opens with icon sidebar; clicking icons switches view placeholder
+
+### Phase 1 — PDF Engine
+- [ ] `pdf_handler.py`: `extract_text()` + `extract_toc()` via PyMuPDF
+- [ ] `chapter_splitter.py`: TOC-based split + regex fallback
+- [ ] `main.py`: JSON-in/JSON-out CLI
+- **Verify:** `python main.py '{"cmd":"extract","pdf":"path"}'` produces chapter `.txt` files
+
+### Phase 2 — AI Extractor
+- [ ] Abstract `AIClient` + `GeminiClient`, `OpenAIClient`, `ClaudeClient`, `OllamaClient`
+- [ ] Structured JSON output + schema validation + one-shot retry
+- [ ] `ai_chat.py`: session-based chat with book context injection
+- **Verify:** Single chapter → valid JSON; chat session returns contextual responses
+
+### Phase 3 — Pipeline View (Port from mockup)
+- [ ] Port `ChapterList`, `PreviewTabs`, `ExportPanel` from GUI mockup
+- [ ] Wire Tauri `invoke()` to PDF + AI backend
+- [ ] Live status badges, progress bar, donut chart, export log
+- **Verify:** Load PDF → chapter list populates → AI processes → center panel shows lesson
+
+### Phase 4 — Book Reader View
+- [ ] `PDFCanvas.tsx`: render PDF pages using `pdfjs-dist`
+- [ ] `PageControls.tsx`: prev/next, page number input, zoom
+- [ ] `WordHighlighter.tsx`: word-by-word mode with keyboard nav
+- [ ] `useTextSelection.ts`: capture selection + bounding rect
+- **Verify:** Open PDF → pages render → text selectable → selection detected
+
+### Phase 5 — Notes Viewer
+- [ ] `MarkdownRenderer.tsx`: `react-markdown` with Obsidian-matching CSS
+  - H1/H2 in `--bs-heading` red
+  - Inline code: `--bs-code-bg` / `--bs-code-text` red pill style
+  - Callout blocks: `[!tip]`, `[!note]`, `[!warning]` with colored left borders
+  - Tables, task lists (GFM) via `remark-gfm`
+- [ ] `ChapterNav.tsx`: left panel chapter list for jumping between notes
+- [ ] Chapter-to-chapter navigation with keyboard shortcuts
+- **Verify:** Processed chapter `.md` renders with full Obsidian visual grammar
+
+### Phase 6 — AI Copilot Layer
+- [ ] `ContextMenu.tsx`: custom right-click menu with Copilot submenu
+- [ ] `CopilotPopup.tsx`: floating panel anchored to text selection
+  - Drag handle, close button, text input, model selector, send button
+  - Quick action buttons pre-filled with selected text
+- [ ] `ModelSelector.tsx`: dropdown with all providers + availability dots
+- [ ] `CopilotSidebar.tsx`: pinned right panel for extended chat sessions
+- [ ] Wire to `ai_chat.py` via Tauri; inject selected text as context
+- **Verify:** Select text in NotesViewer → right-click → Summarize → response appears in popup
+
+### Phase 7 — Library View
+- [ ] `LibraryView.tsx`: grid of all processed books
+  - Book card: auto-generated cover (first page thumbnail), title, chapter count, progress %
+  - "Open Book" → switches to BookReader; "View Notes" → switches to NotesViewer
+  - Search bar to filter library
+- [ ] Persist library index in `BookSage_Projects/library.json`
+- **Verify:** Process two books → library shows both cards → clicking opens correct view
+
+### Phase 8 — Settings, Error Handling, Optional Export
+- [ ] Full Settings dialog: AI Provider, Prompt Template, Output Schema, Chapter Detection tabs
+- [ ] OS keychain storage via `keyring`; "Test Connection" validates live API
+- [ ] Retry per chapter + "Retry All Failed"
+- [ ] **Optional Obsidian export** retained as a "File → Export to Obsidian Vault" menu item
+- **Verify:** API key saved to keychain; failed chapter retries; export creates `.md` in vault folder
+
+### Phase 9 — Packaging
+- [ ] Bundle Python sidecar with PyInstaller → `booksage_engine.exe`
+- [ ] Tauri NSIS/WiX installer config for Windows
+- [ ] Test on clean Windows VM (no Python, no Node)
+- **Verify:** `.msi` installs → app opens → full pipeline works
 
 ---
 
@@ -479,57 +383,46 @@ source: BookSage v{{ app_version }}
 
 | Challenge | Mitigation |
 |-----------|------------|
-| **PDF has no TOC** | Regex fallback covers 90% of cases. UI offers "Manual Split Mode": drag handles to set page ranges |
-| **Scanned PDF (image-based)** | Detect text extraction failure → show error: "This PDF appears to be scanned. Please use an OCR tool first." |
-| **AI hallucination** | Grounded prompts require direct quotes. User can review in the AI Output tab before export. |
-| **Chapter exceeds token limit** | Auto-chunk: split at paragraph boundaries, run AI on each chunk, merge results |
-| **API rate limits** | Exponential backoff + configurable delay between calls. Default: 1 req/2s |
-| **API cost** | Default provider is Gemini free tier (1,500 req/day). 48 chapters = 48 calls. All within free tier. |
-| **Character encoding** | `fitz` returns Unicode. All writes use `encoding='utf-8'` |
-| **Export folder conflict** | Three-option dialog: Overwrite / Skip / Create timestamped subfolder |
-| **App update** | Tauri has built-in `tauri-plugin-updater` for auto-updates |
+| Scanned PDF (image-only) | Detect zero text extraction → error: "This PDF is scanned. Use an OCR tool first." |
+| pdfjs-dist large bundle | Code-split; load only in BookReader view |
+| Copilot popup positioning near screen edge | Flip popup above/below selection based on available viewport space |
+| Chat context too large (long book) | Inject only active chapter + summary of others; not full book |
+| PDF has no TOC | Regex fallback; Manual Split Mode drag handles |
+| API rate limits | Exponential backoff; configurable inter-request delay |
+| Export folder conflict | Overwrite / Skip / Timestamped subfolder dialog |
 
 ---
 
 ## 🔁 Git Branching Strategy
 
 ```
-main          ← Always production-ready. Tagged releases here.
-  └── dev     ← Integration branch for all phases
+main   ← Tagged releases
+  └── dev
        ├── phase/0-scaffold
        ├── phase/1-pdf-engine
        ├── phase/2-ai-extractor
-       ├── phase/3-gui-skeleton
-       ├── phase/4-integration
-       ├── phase/5-obsidian-export
-       ├── phase/6-settings
-       └── phase/7-packaging
+       ├── phase/3-pipeline-view
+       ├── phase/4-book-reader
+       ├── phase/5-notes-viewer
+       ├── phase/6-copilot
+       ├── phase/7-library
+       ├── phase/8-settings
+       └── phase/9-packaging
 ```
 
-**Rule:** Every phase gets its own branch. Merge to `dev` when complete. Merge `dev` → `main` at each milestone. Commit frequently — at least once per sub-task.
+---
+
+## 📊 MVP Definition of Done
+
+- [ ] Icon sidebar switches between all 5 views
+- [ ] PDF loads and renders page-by-page in BookReader
+- [ ] AI extracts all chapters; notes render with full Obsidian visual grammar
+- [ ] Text selection in any view triggers Copilot context menu
+- [ ] CopilotPopup appears, sends query, displays response
+- [ ] Library view shows all processed books with progress
+- [ ] App installs from `.msi` on clean Windows machine
+- [ ] Zero API keys stored in plaintext
 
 ---
 
-## 🧪 Testing Strategy
-
-| Type | Tool | What |
-|------|------|------|
-| Unit (Python) | `pytest` | pdf_handler, chapter_splitter, ai_extractor (mock API) |
-| Integration (Python) | `pytest` | Full pipeline on sample PDFs |
-| E2E (GUI) | Playwright + Tauri | File dialog, chapter list, export workflow |
-| Manual | Dev | Visual review of generated `.md` in Obsidian |
-
----
-
-## 📊 Success Metrics (MVP Definition of Done)
-
-- [ ] App loads a 48-chapter PDF in < 5 seconds
-- [ ] Chapter splitting is correct for ≥ 95% of TOC-based books
-- [ ] AI extraction succeeds on first try for ≥ 90% of chapters
-- [ ] Generated `.md` opens in Obsidian with correct frontmatter and tags
-- [ ] App packages as a single `.msi` and installs on a clean Windows machine
-- [ ] Zero API keys stored in plaintext on disk
-
----
-
-*This roadmap is a living document. Update it after each phase completion.*
+*This is a living document. Update after each phase merge to `dev`.*
