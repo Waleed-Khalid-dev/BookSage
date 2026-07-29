@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Dark theme (default) ── */
+.booksage-theme {
+  --bs-bg: #1a1a1a;
+  --bs-panel: #242424;
+  --bs-surface: #2e2e2e;
+  --bs-surface-hover: #3a3a3a;
+  --bs-border: #333333;
+  --bs-border-strong: #444444;
+
+  --bs-text: #d4d4d4;
+  --bs-text-muted: #8a8a8a;
+  --bs-text-bright: #ffffff;
+
+  --bs-accent: #009688;
+  --bs-accent-hover: #00796b;
+
+  --bs-done: #4caf50;
+  --bs-process: #ff9800;
+  --bs-error: #f44336;
+
+  --bs-log-bg: #111111;
+  --bs-chart-pending: #3a3a3a;
+  --bs-chart-bar: #009688;
+  --bs-chart-bar-dim: #1f4a46;
+
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Light theme override ── */
+.booksage-theme.booksage-light {
+  --bs-bg: #f4f4f5;
+  --bs-panel: #e8e8ea;
+  --bs-surface: #dddde0;
+  --bs-surface-hover: #d0d0d4;
+  --bs-border: #c8c8cc;
+  --bs-border-strong: #b0b0b6;
+
+  --bs-text: #3a3a3a;
+  --bs-text-muted: #777777;
+  --bs-text-bright: #111111;
+
+  --bs-accent: #00796b;
+  --bs-accent-hover: #005a52;
+
+  --bs-done: #388e3c;
+  --bs-process: #e65100;
+  --bs-error: #c62828;
+
+  --bs-log-bg: #ebebed;
+  --bs-chart-pending: #c8c8cc;
+  --bs-chart-bar: #00796b;
+  --bs-chart-bar-dim: #b2dfdb;
+}
+
+.booksage-theme * {
+  border-color: var(--bs-border);
+}
+
+.booksage-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Scrollbars */
+.booksage-theme ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.booksage-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.booksage-theme ::-webkit-scrollbar-thumb {
+  background-color: var(--bs-surface-hover);
+  border: 3px solid var(--bs-panel);
+  border-radius: 6px;
+}
+.booksage-theme ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bs-border-strong);
+}
+.booksage-theme ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Toggle pill animation */
+.bs-toggle-pill {
+  transition: background-color 0.2s ease;
+}
+.bs-toggle-thumb {
+  transition: transform 0.2s ease;
+}

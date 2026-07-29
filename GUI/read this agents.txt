@@ -1,0 +1,5 @@
+The main component file (artifacts/mockup-sandbox/src/components/mockups/booksage/MainWindow.tsx) — contains the full layout structure, all three panels, toolbar, charts, theme toggle logic, and every UI element with exact positioning
+
+The theme/style file (artifacts/mockup-sandbox/src/components/mockups/booksage/_group.css) — contains every color value for both dark and light mode, font choices (Inter + JetBrains Mono), and all the CSS variable names
+
+The settings dialog (artifacts/mockup-sandbox/src/components/mockups/booksage/SettingsDialog.tsx) — the settings popup design
