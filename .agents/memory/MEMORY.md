@@ -36,6 +36,7 @@
 - [reference] Coding standards: project-conventions.md (git, TS, Python, CSS, file org) → project-conventions.md
 - [reference] Phase 0 Scaffold & Phase 1 PDF Engine: COMPLETE & verified. → booksage-project.md
 - [reference] Phase 2 AI Extractor: COMPLETE & verified. Using `gemini-flash-latest` bypassed quota limits. → booksage-project.md
+- [reference] Phase 3 Pipeline View: COMPLETE & verified. Ported UI mockups to Vanilla CSS + wired Zustand state. → booksage-project.md
 
 ## Skills
 - [skill] /checkpoint — saves memory + commits + pushes. Run at end of every phase → .agents/skills/checkpoint-save/SKILL.md
