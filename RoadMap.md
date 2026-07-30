@@ -304,7 +304,7 @@ Ollama (local)            ● (if running)
 
 ### Phase 0 — Scaffold
 - [ ] Install: Rust, Node 20, Python 3.11, Tauri CLI
-- [ ] `npm create tauri-app@latest -- --template react-ts`
+- [ ] `npm create tauri-app@latest` → choose React TypeScript template, identifier: `com.booksage.studio`
 - [ ] Extend `_group.css` with v3 tokens (`--bs-heading`, `--bs-code-bg`, `--bs-nav-*`, `--bs-copilot-*`)
 - [ ] Build `IconSidebar.tsx`: 5 icons, active state, view switching
 - [ ] Build `App.tsx`: view router controlled by `uiStore.activeView`
