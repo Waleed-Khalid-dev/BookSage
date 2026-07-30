@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root, .booksage-theme {
+  --bs-bg: #1a1a1a;
+  --bs-panel: #242424;
+  --bs-surface: #2e2e2e;
+  --bs-surface-hover: #3a3a3a;
+  --bs-border: #333333;
+  --bs-border-strong: #444444;
+  --bs-text: #d4d4d4;
+  --bs-text-muted: #8a8a8a;
+  --bs-text-bright: #ffffff;
+  --bs-accent: #009688;
+  --bs-accent-hover: #00796b;
+  --bs-done: #4caf50;
+  --bs-process: #ff9800;
+  --bs-error: #f44336;
+  --bs-log-bg: #111111;
+  --bs-chart-pending: #3a3a3a;
+  --bs-chart-bar: #009688;
+  --bs-chart-bar-dim: #1f4a46;
+  --bs-heading: #e05252;
+  --bs-code-bg: #2a1a1a;
+  --bs-code-text: #e05252;
+  --bs-callout-border: #4a7a9b;
+  --bs-nav-icon: #8a8a8a;
+  --bs-nav-active: #009688;
+  --bs-copilot-bg: #1e2a2a;
+
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.booksage-theme.booksage-light {
+  --bs-bg: #f4f4f5;
+  --bs-panel: #e8e8ea;
+  --bs-surface: #dddde0;
+  --bs-surface-hover: #d0d0d4;
+  --bs-border: #c8c8cc;
+  --bs-border-strong: #b0b0b6;
+  --bs-text: #3a3a3a;
+  --bs-text-muted: #777777;
+  --bs-text-bright: #111111;
+  --bs-accent: #00796b;
+  --bs-accent-hover: #005a52;
+  --bs-done: #388e3c;
+  --bs-process: #e65100;
+  --bs-error: #c62828;
+  --bs-log-bg: #ebebed;
+  --bs-chart-pending: #c8c8cc;
+  --bs-chart-bar: #00796b;
+  --bs-chart-bar-dim: #b2dfdb;
+  --bs-heading: #c0392b;
+  --bs-code-bg: #fde8e8;
+  --bs-code-text: #c0392b;
+  --bs-callout-border: #2980b9;
+  --bs-nav-icon: #777;
+  --bs-nav-active: #00796b;
+  --bs-copilot-bg: #e8f5f3;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bs-bg);
+  color: var(--bs-text);
+  overflow: hidden;
+}
+
+.booksage-theme * {
+  border-color: var(--bs-border);
+  box-sizing: border-box;
+}
+
+.booksage-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--bs-surface-hover);
+  border: 3px solid var(--bs-panel);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bs-border-strong);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

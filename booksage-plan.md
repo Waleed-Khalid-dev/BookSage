@@ -12,10 +12,10 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
   - [ ] Set up Zustand stores: `bookStore`, `settingsStore`, `uiStore`, `chatStore`
   - [ ] Configure Python sidecar + `requirements.txt`
 
-- [ ] **Phase 1 — PDF Engine** → Verify: CLI splits book into chapter `.txt` files
-  - [ ] `pdf_handler.py`: text + TOC via PyMuPDF
-  - [ ] `chapter_splitter.py`: TOC + regex fallback
-  - [ ] `main.py`: JSON-in/JSON-out CLI entry point
+- [x] **Phase 1 — PDF Engine** → Verify: CLI splits book into chapter `.txt` files
+  - [x] `pdf_handler.py`: text + TOC via PyMuPDF
+  - [x] `chapter_splitter.py`: TOC + regex fallback
+  - [x] `main.py`: JSON-in/JSON-out CLI entry point
 
 - [ ] **Phase 2 — AI Extractor** → Verify: chapter `.txt` → valid JSON; chat returns contextual response
   - [ ] `AIClient` base + `GeminiClient`, `OpenAIClient`, `ClaudeClient`, `OllamaClient`

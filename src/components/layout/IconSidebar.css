@@ -1,0 +1,39 @@
+.icon-sidebar {
+  width: 60px;
+  background-color: var(--bs-panel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-right: 1px solid var(--bs-border);
+}
+
+.icon-sidebar-top, .icon-sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nav-button {
+  background: transparent;
+  border: none;
+  color: var(--bs-nav-icon);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.nav-button:hover {
+  color: var(--bs-text-bright);
+  background-color: var(--bs-surface-hover);
+}
+
+.nav-button.active {
+  color: var(--bs-nav-active);
+  background-color: var(--bs-surface);
+}

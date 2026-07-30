@@ -18,7 +18,7 @@
 - [project] Obsidian export is OPTIONAL — app is self-contained reading studio → booksage-project.md
 - [project] 9 commits on main, all pushed to GitHub as of 2026-07-30 → booksage-project.md
 - [project] ALL 7 UI MOCKUPS COMPLETE — Replit design phase is DONE → booksage-project.md
-- [project] NEXT STEP: Phase 0 scaffold with Tauri v2 + React 18 + TypeScript → booksage-project.md
+- [project] NEXT STEP: Phase 2 AI Extractor with Gemini. (Phase 0 & 1 COMPLETE) → booksage-project.md
 - [project] Mobile (iOS + Android) planned post-v1.0: React Native + Expo + hosted FastAPI + Supabase → booksage-project.md
 - [project] Desktop is LOCAL-FIRST: no auth, no cloud DB needed for v1.0 → tech-decisions.md
 - [project] Git email fixed: all commits attributed to apex.remake@gmail.com (Waleed Khalid) → tech-decisions.md
@@ -34,6 +34,7 @@
 - [reference] Full roadmap at: RoadMap.md (v3) — 9 phases + pitfalls + mobile future work → booksage-project.md
 - [reference] Project plan at: booksage-plan.md (v3) — 9 phases with verify criteria → booksage-project.md
 - [reference] Coding standards: project-conventions.md (git, TS, Python, CSS, file org) → project-conventions.md
+- [reference] Phase 0 Scaffold & Phase 1 PDF Engine: COMPLETE & verified. → booksage-project.md
 
 ## Skills
 - [skill] /checkpoint — saves memory + commits + pushes. Run at end of every phase → .agents/skills/checkpoint-save/SKILL.md
