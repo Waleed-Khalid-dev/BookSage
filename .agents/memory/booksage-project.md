@@ -84,7 +84,7 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 0 | Scaffold (Tauri + React + Python) | ✅ Done |
 | 1 | PDF Engine | ✅ Done |
 | 2 | AI Extractor | ✅ Done |
-| 3 | Pipeline View | ⏳ Not started |
+| 3 | Pipeline View | ✅ Done |
 | 4 | Book Reader | ⏳ Not started |
 | 5 | Notes Viewer | ⏳ Not started |
 | 6 | AI Copilot | ⏳ Not started |
@@ -92,7 +92,7 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 8 | Settings & Polish | ⏳ Not started |
 | 9 | Packaging | ⏳ Not started |
 
-**Current status: All planning + mockups complete. Zero code written yet. Next action = Phase 0.**
+**Current status: Phase 3 complete. Next action = Phase 4.**
 
 ## Key Files
 - `RoadMap.md` — v3, full technical blueprint
@@ -107,4 +107,5 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Verified:** PDF split by chapters using PyMuPDF successfully outputs to `Documents/BookSage_Projects`. React frontend builds cleanly.
 - **Built Phase 2 (AI Extractor):** Developed AI extractor backend with `GeminiClient` and strict JSON schema generation with one-shot retry logic. Added session-based chat with context injection (`ai_chat.py`).
 - **Verified:** `gemini-flash-latest` accurately extracts JSON chapter lessons and bypasses restrictive API quotas.
-- **Next:** Phase 3 — Pipeline View (frontend integration).
+- **Built Phase 3 (Pipeline View):** Configured Tauri `shell:allow-execute` capabilities. Implemented `pythonService.ts` for sidecar IPC and `bookStore.ts` for state management. Refactored Tailwind-based `MainWindow.tsx` to Vanilla CSS (`PipelineView.tsx`, `PipelineView.css`, `DonutChart.tsx`, `ActivityBarChart.tsx`) ensuring strict compliance with the no-Tailwind rule.
+- **Next:** Phase 4 — Book Reader.
