@@ -2,6 +2,8 @@ import json
 import sys
 import traceback
 from chapter_splitter import split_book_into_chapters
+from ai_extractor import process_chapter
+from ai_chat import chat_with_context
 
 def handle_command(cmd_data):
     command = cmd_data.get("command")
@@ -11,6 +13,30 @@ def handle_command(cmd_data):
         if not pdf_path:
             return {"status": "error", "message": "Missing 'path' argument."}
         return split_book_into_chapters(pdf_path)
+    
+    elif command == "extract_chapter":
+        chapter_path = cmd_data.get("chapter_path")
+        provider = cmd_data.get("provider", "gemini")
+        api_key = cmd_data.get("api_key")
+        
+        if not chapter_path or not api_key:
+            return {"status": "error", "message": "Missing 'chapter_path' or 'api_key'."}
+            
+        output_path = process_chapter(chapter_path, provider, api_key)
+        return {"status": "success", "output_path": output_path}
+        
+    elif command == "chat_message":
+        message = cmd_data.get("message")
+        history = cmd_data.get("history", [])
+        context_text = cmd_data.get("context_text", "")
+        provider = cmd_data.get("provider", "gemini")
+        api_key = cmd_data.get("api_key")
+        
+        if not message or not api_key:
+            return {"status": "error", "message": "Missing 'message' or 'api_key'."}
+            
+        response = chat_with_context(message, history, context_text, provider, api_key)
+        return {"status": "success", "response": response}
     
     elif command == "ping":
         return {"status": "success", "message": "pong"}

@@ -17,10 +17,10 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
   - [x] `chapter_splitter.py`: TOC + regex fallback
   - [x] `main.py`: JSON-in/JSON-out CLI entry point
 
-- [ ] **Phase 2 — AI Extractor** → Verify: chapter `.txt` → valid JSON; chat returns contextual response
-  - [ ] `AIClient` base + `GeminiClient`, `OpenAIClient`, `ClaudeClient`, `OllamaClient`
-  - [ ] JSON schema validation + retry
-  - [ ] `ai_chat.py`: session-based chat with chapter context injection
+- [x] **Phase 2 — AI Extractor** → Verify: chapter `.txt` → valid JSON; chat returns contextual response
+  - [x] `AIClient` base + `GeminiClient`, `OpenAIClient`, `ClaudeClient`, `OllamaClient`
+  - [x] JSON schema validation + retry
+  - [x] `ai_chat.py`: session-based chat with chapter context injection
 
 - [ ] **Phase 3 — Pipeline View** → Verify: PDF loads → chapters appear → AI processes → lesson shown
   - [ ] Port `ChapterList`, `PreviewTabs`, `ExportPanel` from `GUI/` mockup

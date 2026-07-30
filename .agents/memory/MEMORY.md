@@ -35,6 +35,7 @@
 - [reference] Project plan at: booksage-plan.md (v3) — 9 phases with verify criteria → booksage-project.md
 - [reference] Coding standards: project-conventions.md (git, TS, Python, CSS, file org) → project-conventions.md
 - [reference] Phase 0 Scaffold & Phase 1 PDF Engine: COMPLETE & verified. → booksage-project.md
+- [reference] Phase 2 AI Extractor: COMPLETE & verified. Using `gemini-flash-latest` bypassed quota limits. → booksage-project.md
 
 ## Skills
 - [skill] /checkpoint — saves memory + commits + pushes. Run at end of every phase → .agents/skills/checkpoint-save/SKILL.md

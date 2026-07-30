@@ -83,7 +83,7 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 |-------|------|--------|
 | 0 | Scaffold (Tauri + React + Python) | ✅ Done |
 | 1 | PDF Engine | ✅ Done |
-| 2 | AI Extractor | ⏳ Not started |
+| 2 | AI Extractor | ✅ Done |
 | 3 | Pipeline View | ⏳ Not started |
 | 4 | Book Reader | ⏳ Not started |
 | 5 | Notes Viewer | ⏳ Not started |
@@ -105,4 +105,6 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 ### Session 2026-07-30 Notes
 - **Built Phase 0 & Phase 1:** Scaffolding complete (Tauri v2 + React 18) and Python sidecar PDF engine built (`pdf_handler.py`, `chapter_splitter.py`, `main.py`).
 - **Verified:** PDF split by chapters using PyMuPDF successfully outputs to `Documents/BookSage_Projects`. React frontend builds cleanly.
-- **Next:** Phase 2 — AI Extractor using Gemini.
+- **Built Phase 2 (AI Extractor):** Developed AI extractor backend with `GeminiClient` and strict JSON schema generation with one-shot retry logic. Added session-based chat with context injection (`ai_chat.py`).
+- **Verified:** `gemini-flash-latest` accurately extracts JSON chapter lessons and bypasses restrictive API quotas.
+- **Next:** Phase 3 — Pipeline View (frontend integration).
