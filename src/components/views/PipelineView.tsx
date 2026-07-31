@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { open } from '@tauri-apps/plugin-dialog';
 import {
   FolderOpen, FileText, Scissors, Upload, Sparkles, Filter,
   Square, CheckSquare, Check, Loader2, AlertCircle
 } from 'lucide-react';
+import { invokePython } from '../../services/pythonService';
 import { useBookStore, Chapter } from '../../stores/bookStore';
 import { DonutChart } from './pipeline/DonutChart';
 import { ActivityBarChart } from './pipeline/ActivityBarChart';
@@ -52,9 +54,57 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function PipelineView() {
-  const { currentBookTitle, pdfPath, chapters, isExtracting, setPdfPath, splitBook, extractLessons } = useBookStore();
+  const { currentBookTitle, pdfPath, chapters, isExtracting, apiKey, setApiKey, setPdfPath, splitBook, extractLessons } = useBookStore();
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'Raw Text' | 'AI Output' | 'Markdown Source'>('AI Output');
+  const [previewContent, setPreviewContent] = useState<string>('Select a chapter to preview');
+
+  useEffect(() => {
+    const fetchPreview = async () => {
+      const chapter = chapters[selectedChapterIndex];
+      if (!chapter || !chapter.path) {
+        setPreviewContent('No content available.');
+        return;
+      }
+      
+      setPreviewContent('Loading...');
+      
+      try {
+        let pathToRead = chapter.path;
+        if (activeTab === 'AI Output' || activeTab === 'Markdown Source') {
+          pathToRead = chapter.path.replace('.txt', '.json');
+        }
+        
+        const res = await invokePython({ command: 'read_file', path: pathToRead });
+        if (res.status === 'success') {
+          if (activeTab === 'Markdown Source') {
+             try {
+                const data = JSON.parse(res.content);
+                let md = `# ${data.chapter_title || chapter.title}\n\n`;
+                if (data.summary) md += `## Summary\n${data.summary}\n\n`;
+                if (data.core_lesson) md += `## Core Lesson\n> ${data.core_lesson}\n\n`;
+                if (data.teachings) {
+                   md += `## Teachings\n`;
+                   data.teachings.forEach((t: any) => {
+                      md += `### ${t.technique}\n${t.explanation}\n\n`;
+                   });
+                }
+                setPreviewContent(md);
+             } catch(e) {
+                setPreviewContent("Invalid JSON data. Cannot render markdown.");
+             }
+          } else {
+             setPreviewContent(res.content);
+          }
+        } else {
+          setPreviewContent(`File not found. Generate lessons first.`);
+        }
+      } catch (err) {
+        setPreviewContent(`Failed to load preview.`);
+      }
+    };
+    fetchPreview();
+  }, [selectedChapterIndex, activeTab, chapters]);
 
   // Stats
   const done = chapters.filter((c: Chapter) => c.status === 'done').length;
@@ -64,14 +114,50 @@ export function PipelineView() {
   const total = chapters.length;
 
   const handleOpenPdf = async () => {
-    // In a real app, we use Tauri dialog to select a file. For now we use a prompt or default.
-    const path = window.prompt("Enter path to PDF:");
-    if (path) setPdfPath(path);
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [{
+          name: 'PDF',
+          extensions: ['pdf']
+        }]
+      });
+      if (selected && typeof selected === 'string') {
+        setPdfPath(selected);
+      }
+    } catch (err) {
+      console.error('Failed to open dialog:', err);
+    }
   };
 
   const handleExtractLessons = () => {
-    // In a real app, this should fetch the API key from settings. For now we mock it.
-    extractLessons('mock-api-key', 'gemini');
+    extractLessons('gemini');
+  };
+
+  const handleExportAll = async () => {
+    try {
+      const dir = await open({
+        directory: true,
+        multiple: false,
+      });
+      
+      if (dir && typeof dir === 'string') {
+        const res = await invokePython({
+           command: 'export_chapters',
+           chapters: chapters,
+           output_dir: dir
+        });
+        
+        if (res.status === 'success') {
+           alert(`Successfully exported ${res.exported_count} chapters to Markdown!`);
+        } else {
+           alert(`Export failed: ${res.message}`);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Export failed.');
+    }
   };
 
   return (
@@ -80,7 +166,7 @@ export function PipelineView() {
       <div className="pipeline-toolbar">
         <div className="toolbar-group">
           <ToolbarButton icon={<FolderOpen size={16} />} label="Open PDF" onClick={handleOpenPdf} />
-          <ToolbarButton icon={<FileText size={16} />} label="Extract Text" disabled={!pdfPath} />
+          <ToolbarButton icon={<FileText size={16} />} label="Extract Text" onClick={splitBook} disabled={!pdfPath || isExtracting} />
           <ToolbarButton icon={<Scissors size={16} />} label="Split Chapters" onClick={splitBook} disabled={!pdfPath || isExtracting} />
         </div>
 
@@ -88,7 +174,7 @@ export function PipelineView() {
 
         <div className="toolbar-group">
           <ToolbarButton icon={<Sparkles size={16} />} label="Generate Lessons" primary onClick={handleExtractLessons} disabled={chapters.length === 0} />
-          <ToolbarButton icon={<Upload size={16} />} label="Export All" disabled={done === 0} />
+          <ToolbarButton icon={<Upload size={16} />} label="Export All" onClick={handleExportAll} disabled={done === 0} />
         </div>
       </div>
 
@@ -143,8 +229,8 @@ export function PipelineView() {
                 <h1 className="preview-title">
                   {chapters[selectedChapterIndex]?.title}
                 </h1>
-                <div className="preview-box">
-                  Preview area for {activeTab}. To be populated from AI Extractor in Phase 3.
+                <div className="preview-box" style={{ whiteSpace: 'pre-wrap', fontFamily: activeTab === 'AI Output' ? 'monospace' : 'inherit' }}>
+                  {previewContent}
                 </div>
               </div>
             ) : (
@@ -165,8 +251,20 @@ export function PipelineView() {
               />
             </div>
 
+            {/* API Key */}
+            <div className="stats-group">
+              <label className="stats-label">Gemini API Key</label>
+              <input
+                type="password" 
+                value={apiKey} 
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="AIzaSy..."
+                className="stats-input"
+              />
+            </div>
+
             {/* Export button */}
-            <button className="btn-export" disabled={done === 0}>
+            <button className="btn-export" onClick={handleExportAll} disabled={done === 0}>
               <Upload size={16} />
               Export All to Obsidian
             </button>

@@ -1,6 +1,7 @@
 import os
 import json
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from typing import Dict, Any, List, Optional
 from abc import ABC, abstractmethod
 
@@ -18,57 +19,50 @@ class BaseAIClient(ABC):
         pass
 
 class GeminiClient(BaseAIClient):
-    def __init__(self, api_key: str, model_name: str = 'gemini-flash-latest'):
-        genai.configure(api_key=api_key)
-        # Configure model to strictly return JSON if possible, but we'll parse it manually if needed.
-        self.generation_config = {
-            "temperature": 0.2,
-            "top_p": 0.95,
-            "top_k": 40,
-            "max_output_tokens": 8192,
-            "response_mime_type": "application/json",
-        }
-        self.model = genai.GenerativeModel(
-            model_name=model_name,
-            generation_config=self.generation_config,
-        )
-        
-        self.chat_model = genai.GenerativeModel(
-            model_name=model_name,
-            generation_config={
-                "temperature": 0.7,
-                "top_p": 0.95,
-                "top_k": 40,
-                "max_output_tokens": 8192,
-            },
-        )
+    def __init__(self, api_key: str, model_name: str = 'gemini-1.5-pro'):
+        self.client = genai.Client(api_key=api_key)
+        self.model_name = model_name
 
     def generate_json(self, prompt: str, system_prompt: str) -> str:
-        # Gemini system instructions can be set via system_instruction in GenerativeModel, 
-        # but for simplicity we can prepend it to the prompt if the version doesn't support it directly.
-        model = genai.GenerativeModel(
-            model_name="gemini-flash-latest", 
-            generation_config=self.generation_config,
+        config = types.GenerateContentConfig(
+            temperature=0.2,
+            top_p=0.95,
+            top_k=40,
+            max_output_tokens=8192,
+            response_mime_type="application/json",
             system_instruction=system_prompt
         )
         
-        response = model.generate_content(prompt)
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=prompt,
+            config=config
+        )
         return response.text
 
     def chat(self, user_message: str, history: List[Dict[str, str]], system_prompt: str) -> str:
-        model = genai.GenerativeModel(
-            model_name="gemini-flash-latest",
+        config = types.GenerateContentConfig(
+            temperature=0.7,
+            top_p=0.95,
+            top_k=40,
+            max_output_tokens=8192,
             system_instruction=system_prompt
         )
         
         # Convert history format to Gemini format
-        formatted_history = []
+        contents = []
         for msg in history:
             role = 'user' if msg['role'] == 'user' else 'model'
-            formatted_history.append({"role": role, "parts": [msg['content']]})
+            contents.append(types.Content(role=role, parts=[types.Part.from_text(text=msg['content'])]))
             
-        chat_session = model.start_chat(history=formatted_history)
-        response = chat_session.send_message(user_message)
+        # Add the new message
+        contents.append(types.Content(role='user', parts=[types.Part.from_text(text=user_message)]))
+            
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=contents,
+            config=config
+        )
         
         return response.text
 

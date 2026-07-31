@@ -12,11 +12,12 @@ export interface PythonCommandResult {
  */
 export async function invokePython(cmdData: any): Promise<PythonCommandResult> {
   try {
-    const cmdString = JSON.stringify(cmdData);
+    const cmdString = btoa(JSON.stringify(cmdData));
     console.log('Invoking python command:', cmdData.command);
     
     // Command.create corresponds to the 'python' identifier in capabilities/default.json
-    const command = Command.create('python', ['python/main.py', cmdString]);
+    // In dev mode, Tauri's CWD is src-tauri, so the path is ../python/main.py
+    const command = Command.create('python', ['../python/main.py', '--b64', cmdString]);
     const output = await command.execute();
 
     if (output.code !== 0) {

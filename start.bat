@@ -1,0 +1,3 @@
+@echo off
+echo Starting BookSage Studio...
+npm run tauri dev

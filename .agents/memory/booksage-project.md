@@ -109,3 +109,8 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Verified:** `gemini-flash-latest` accurately extracts JSON chapter lessons and bypasses restrictive API quotas.
 - **Built Phase 3 (Pipeline View):** Configured Tauri `shell:allow-execute` capabilities. Implemented `pythonService.ts` for sidecar IPC and `bookStore.ts` for state management. Refactored Tailwind-based `MainWindow.tsx` to Vanilla CSS (`PipelineView.tsx`, `PipelineView.css`, `DonutChart.tsx`, `ActivityBarChart.tsx`) ensuring strict compliance with the no-Tailwind rule.
 - **Next:** Phase 4 — Book Reader.
+
+### Session 2026-07-31 Notes
+- **Debugged Phase 3 Pipeline:** Identified cause of immediate extraction failures (empty API key).
+- **Refactoring UI:** Reverting PipelineView back to the exact Tailwind-based GUI mockup to match RoadMap.md specifications.
+- **Next:** Execute the UI refactoring and implement error bubbling.

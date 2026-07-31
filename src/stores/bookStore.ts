@@ -14,11 +14,13 @@ interface BookState {
   pdfPath: string | null;
   chapters: Chapter[];
   isExtracting: boolean;
+  apiKey: string;
   
   // Actions
+  setApiKey: (key: string) => void;
   setPdfPath: (path: string) => void;
   splitBook: () => Promise<void>;
-  extractLessons: (apiKey: string, provider?: string) => Promise<void>;
+  extractLessons: (provider?: string) => Promise<void>;
   setChapterStatus: (index: number, status: Chapter['status']) => void;
 }
 
@@ -27,6 +29,9 @@ export const useBookStore = create<BookState>((set, get) => ({
   pdfPath: null,
   chapters: [],
   isExtracting: false,
+  apiKey: '',
+
+  setApiKey: (key: string) => set({ apiKey: key }),
 
   setPdfPath: (path: string) => {
     // Extract filename for title
@@ -42,26 +47,34 @@ export const useBookStore = create<BookState>((set, get) => ({
     try {
       const res = await invokePython({ command: 'split_book', path: pdfPath });
       
-      if (res.status === 'success' && res.chapters) {
-        // Assuming python returns { chapters: [{ number: 1, title: '...', file_path: '...', pages: '...' }] }
-        const parsedChapters: Chapter[] = res.chapters.map((c: any) => ({
-          num: c.number,
-          title: c.title || `Chapter ${c.number}`,
-          pp: c.pages || '',
+      if (res.status === 'success' && res.metadata && res.metadata.chapters) {
+        const parsedChapters: Chapter[] = res.metadata.chapters.map((c: any) => ({
+          num: c.chapter_num,
+          title: c.title || `Chapter ${c.chapter_num}`,
+          pp: `${c.start_page}-${c.end_page}`,
           status: 'none',
-          path: c.file_path
+          path: c.file
         }));
         set({ chapters: parsedChapters });
       } else {
-        console.error('Failed to split book:', res.message);
+        console.error('Failed to split book:', res.message || res);
+        alert(`Failed to split book:\n\n${res.message || JSON.stringify(res)}\n\nPlease check the terminal for Python errors.`);
       }
+    } catch (e: any) {
+      console.error('splitBook threw error:', e);
+      alert(`Split Book Error: ${e.message || String(e)}`);
     } finally {
       set({ isExtracting: false });
     }
   },
 
-  extractLessons: async (apiKey: string, provider: string = 'gemini') => {
-    const { chapters } = get();
+  extractLessons: async (provider: string = 'gemini') => {
+    const { chapters, apiKey } = get();
+    
+    if (!apiKey) {
+      alert("Please enter a Gemini API Key first.");
+      return;
+    }
     
     // Process one by one or in small batches
     for (let i = 0; i < chapters.length; i++) {
@@ -97,3 +110,8 @@ export const useBookStore = create<BookState>((set, get) => ({
     });
   }
 }));
+
+// Expose for debugging
+if (typeof window !== 'undefined') {
+  (window as any).bookStore = useBookStore;
+}

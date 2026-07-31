@@ -40,3 +40,4 @@
 
 ## Skills
 - [skill] /checkpoint — saves memory + commits + pushes. Run at end of every phase → .agents/skills/checkpoint-save/SKILL.md
+- [reference] Phase 3 Pipeline Debug: Identified missing API key issue, preparing to refactor PipelineView to match Tailwind GUI mockups -> booksage-project.md
