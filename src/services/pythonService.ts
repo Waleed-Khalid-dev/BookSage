@@ -12,7 +12,12 @@ export interface PythonCommandResult {
  */
 export async function invokePython(cmdData: any): Promise<PythonCommandResult> {
   try {
-    const cmdString = btoa(JSON.stringify(cmdData));
+    // Unicode-safe base64: btoa() only handles Latin-1, but real book text
+    // contains em-dashes, curly quotes, and other multi-byte chars that blow it up.
+    // encodeURIComponent → unescape converts the full UTF-8 string into a
+    // Latin-1-safe byte sequence that btoa can encode without errors.
+    const json = JSON.stringify(cmdData);
+    const cmdString = btoa(unescape(encodeURIComponent(json)));
     console.log('Invoking python command:', cmdData.command);
     
     // Command.create corresponds to the 'python' identifier in capabilities/default.json

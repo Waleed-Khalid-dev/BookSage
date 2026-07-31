@@ -18,11 +18,12 @@ def handle_command(cmd_data):
         chapter_path = cmd_data.get("chapter_path")
         provider = cmd_data.get("provider", "gemini")
         api_key = cmd_data.get("api_key")
+        model_name = cmd_data.get("model_name", "gemini-3.6-flash")
         
         if not chapter_path or not api_key:
             return {"status": "error", "message": "Missing 'chapter_path' or 'api_key'."}
             
-        output_path = process_chapter(chapter_path, provider, api_key)
+        output_path = process_chapter(chapter_path, provider, api_key, model_name=model_name)
         return {"status": "success", "output_path": output_path}
         
     elif command == "chat_message":
@@ -31,11 +32,12 @@ def handle_command(cmd_data):
         context_text = cmd_data.get("context_text", "")
         provider = cmd_data.get("provider", "gemini")
         api_key = cmd_data.get("api_key")
+        model_name = cmd_data.get("model_name", "gemini-3.6-flash")
         
         if not message or not api_key:
             return {"status": "error", "message": "Missing 'message' or 'api_key'."}
             
-        response = chat_with_context(message, history, context_text, provider, api_key)
+        response = chat_with_context(message, history, context_text, provider, api_key, model_name=model_name)
         return {"status": "success", "response": response}
     
     elif command == "read_file":
@@ -155,7 +157,14 @@ def main():
                 print(json.dumps(result))
                 sys.stdout.flush()
             except Exception as e:
-                print(json.dumps({"status": "error", "message": str(e)}))
+                err_str = str(e)
+                if "401 UNAUTHENTICATED" in err_str or "API_KEY_INVALID" in err_str:
+                    err_msg = "Invalid Gemini API Key! Please get a valid key from https://aistudio.google.com/app/apikey"
+                elif "429 Too Many Requests" in err_str or "Quota exceeded" in err_str:
+                    err_msg = "API Quota Exceeded. You have hit the rate limit for this Gemini API key."
+                else:
+                    err_msg = err_str
+                print(json.dumps({"status": "error", "message": err_msg}))
                 sys.stdout.flush()
 
 if __name__ == "__main__":

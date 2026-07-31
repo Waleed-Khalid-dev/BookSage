@@ -7,14 +7,15 @@ def chat_with_context(
     history: List[Dict[str, str]], 
     context_text: str, 
     provider: str, 
-    api_key: str
+    api_key: str,
+    model_name: str = "gemini-3.6-flash"
 ) -> str:
     """
     Sends a chat message to the AI provider, using the provided context_text 
     as the system context for the conversation.
     """
     
-    client = get_ai_client(provider, api_key)
+    client = get_ai_client(provider, api_key, model_name)
     
     system_prompt = (
         "You are BookSage Copilot, an intelligent reading assistant. "

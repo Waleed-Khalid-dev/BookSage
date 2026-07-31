@@ -28,7 +28,7 @@ You MUST output ONLY valid JSON matching this exact schema:
 Do not wrap the JSON in Markdown backticks or include any conversational text. Return only the raw JSON object.
 """
 
-def extract_lesson(chapter_file_path: str, provider: str, api_key: str) -> Dict[str, Any]:
+def extract_lesson(chapter_file_path: str, provider: str, api_key: str, model_name: str = "gemini-3.6-flash") -> Dict[str, Any]:
     """Extracts a structured lesson from a chapter text file."""
     
     if not os.path.exists(chapter_file_path):
@@ -37,7 +37,7 @@ def extract_lesson(chapter_file_path: str, provider: str, api_key: str) -> Dict[
     with open(chapter_file_path, 'r', encoding='utf-8') as f:
         chapter_text = f.read()
         
-    client = get_ai_client(provider, api_key)
+    client = get_ai_client(provider, api_key, model_name)
     
     prompt = f"Analyze the following chapter and extract the requested JSON payload:\n\n{chapter_text}"
     
@@ -75,9 +75,9 @@ def extract_lesson(chapter_file_path: str, provider: str, api_key: str) -> Dict[
             
         return json.loads(retry_response)
 
-def process_chapter(chapter_file_path: str, provider: str, api_key: str) -> str:
+def process_chapter(chapter_file_path: str, provider: str, api_key: str, model_name: str = "gemini-3.6-flash") -> str:
     """Extracts lesson and saves it alongside the text file."""
-    result_json = extract_lesson(chapter_file_path, provider, api_key)
+    result_json = extract_lesson(chapter_file_path, provider, api_key, model_name)
     
     # Save the output
     base_name = os.path.splitext(os.path.basename(chapter_file_path))[0]

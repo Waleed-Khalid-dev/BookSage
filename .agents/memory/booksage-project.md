@@ -113,4 +113,7 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 ### Session 2026-07-31 Notes
 - **Debugged Phase 3 Pipeline:** Identified cause of immediate extraction failures (empty API key).
 - **Refactoring UI:** Reverting PipelineView back to the exact Tailwind-based GUI mockup to match RoadMap.md specifications.
-- **Next:** Execute the UI refactoring and implement error bubbling.
+- **Fixed Encoding & UI Accessibility:** Replaced `btoa` with Unicode-safe encoder (`encodeURIComponent`) in `pythonService.ts` to fix extraction crashes on special characters. Fixed light/dark mode CSS bugs in `PipelineView` (chapter titles & dropdown readability).
+- **Added Robustness & Persistence:** Implemented "Retry Failed" feature. Wrapped `bookStore.ts` with Zustand `persist` middleware to save API Key and Model choice to localStorage across app restarts.
+- **Decision:** Use SQLite (Phase 3.5) for proper session persistence instead of localStorage to support production-grade long-term storage and the upcoming Library View.
+- **Next:** Phase 4 — Book Reader (after optionally implementing Phase 3.5).

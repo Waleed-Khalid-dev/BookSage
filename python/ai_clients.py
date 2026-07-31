@@ -19,7 +19,7 @@ class BaseAIClient(ABC):
         pass
 
 class GeminiClient(BaseAIClient):
-    def __init__(self, api_key: str, model_name: str = 'gemini-1.5-pro'):
+    def __init__(self, api_key: str, model_name: str = 'gemini-3.6-flash'):
         self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
 
@@ -67,8 +67,8 @@ class GeminiClient(BaseAIClient):
         return response.text
 
 # Client Factory
-def get_ai_client(provider: str, api_key: str) -> BaseAIClient:
+def get_ai_client(provider: str, api_key: str, model_name: str = "gemini-3.6-flash") -> BaseAIClient:
     if provider.lower() == 'gemini':
-        return GeminiClient(api_key=api_key)
+        return GeminiClient(api_key=api_key, model_name=model_name)
     else:
         raise ValueError(f"Unsupported AI provider: {provider}")

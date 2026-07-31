@@ -2,13 +2,30 @@ import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import {
   FolderOpen, FileText, Scissors, Upload, Sparkles, Filter,
-  Square, CheckSquare, Check, Loader2, AlertCircle
+  Square, CheckSquare, Check, Loader2, AlertCircle,
+  BookOpen, Minus, X, Sun, Moon, Settings
 } from 'lucide-react';
 import { invokePython } from '../../services/pythonService';
 import { useBookStore, Chapter } from '../../stores/bookStore';
 import { DonutChart } from './pipeline/DonutChart';
 import { ActivityBarChart } from './pipeline/ActivityBarChart';
 import './PipelineView.css';
+
+function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="toolbar-btn theme-toggle"
+    >
+      <Sun size={13} style={{ color: isDark ? 'var(--bs-text-muted)' : 'var(--bs-accent)' }} />
+      <div className="bs-toggle-pill" style={{ backgroundColor: isDark ? 'var(--bs-surface-hover)' : 'var(--bs-accent)' }}>
+        <div className="bs-toggle-thumb" style={{ transform: isDark ? 'translateX(2px)' : 'translateX(18px)' }} />
+      </div>
+      <Moon size={13} style={{ color: isDark ? 'var(--bs-accent)' : 'var(--bs-text-muted)' }} />
+    </button>
+  );
+}
 
 function ToolbarButton({ icon, label, primary = false, onClick, disabled = false }: { icon: React.ReactNode; label: string; primary?: boolean; onClick?: () => void; disabled?: boolean }) {
   return (
@@ -54,10 +71,12 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function PipelineView() {
-  const { currentBookTitle, pdfPath, chapters, isExtracting, apiKey, setApiKey, setPdfPath, splitBook, extractLessons } = useBookStore();
+  const { currentBookTitle, pdfPath, chapters, isExtracting, apiKey, aiModel, setApiKey, setAiModel, setPdfPath, splitBook, extractLessons, retryFailed } = useBookStore();
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'Raw Text' | 'AI Output' | 'Markdown Source'>('AI Output');
   const [previewContent, setPreviewContent] = useState<string>('Select a chapter to preview');
+  const [isDark, setIsDark] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const fetchPreview = async () => {
@@ -70,6 +89,11 @@ export function PipelineView() {
       setPreviewContent('Loading...');
       
       try {
+        if (chapter.status === 'error' && chapter.error) {
+           setPreviewContent(`Extraction failed:\n\n${chapter.error}`);
+           return;
+        }
+
         let pathToRead = chapter.path;
         if (activeTab === 'AI Output' || activeTab === 'Markdown Source') {
           pathToRead = chapter.path.replace('.txt', '.json');
@@ -161,7 +185,24 @@ export function PipelineView() {
   };
 
   return (
-    <div className="pipeline-view">
+    <div className={`pipeline-view booksage-theme${isDark ? '' : ' booksage-light'}`}>
+      {/* ── Title Bar ── */}
+      <div className="title-bar">
+        <div className="title-bar-left">
+          <div className="title-bar-icon">
+            <BookOpen size={14} />
+            <Sparkles size={10} className="title-sparkle" />
+          </div>
+          <span className="title-text-main">BookSage</span>
+          <span className="title-text-sub">– PDF to Obsidian Lessons</span>
+        </div>
+        <div className="title-bar-controls">
+          <Minus size={14} />
+          <Square size={12} />
+          <X size={14} />
+        </div>
+      </div>
+
       {/* ── Top Toolbar ── */}
       <div className="pipeline-toolbar">
         <div className="toolbar-group">
@@ -173,10 +214,72 @@ export function PipelineView() {
         <div className="toolbar-divider" />
 
         <div className="toolbar-group">
-          <ToolbarButton icon={<Sparkles size={16} />} label="Generate Lessons" primary onClick={handleExtractLessons} disabled={chapters.length === 0} />
+          <ToolbarButton icon={<Sparkles size={16} />} label="Generate Lessons" primary onClick={handleExtractLessons} disabled={chapters.length === 0 || isExtracting} />
+          {error > 0 && (
+            <ToolbarButton
+              icon={<AlertCircle size={16} />}
+              label={`Retry Failed (${error})`}
+              onClick={() => retryFailed('gemini')}
+              disabled={isExtracting}
+            />
+          )}
           <ToolbarButton icon={<Upload size={16} />} label="Export All" onClick={handleExportAll} disabled={done === 0} />
         </div>
+
+        <div style={{ flex: 1 }} />
+
+        <div className="toolbar-group">
+          <ThemeToggle isDark={isDark} onToggle={() => setIsDark((d) => !d)} />
+          <div className="toolbar-divider" />
+          <ToolbarButton icon={<Settings size={16} />} label="Settings" onClick={() => setShowSettings(!showSettings)} />
+        </div>
       </div>
+
+      {/* Basic Settings Overlay (Temporary) */}
+      {showSettings && (
+        <div className="settings-overlay">
+           <div className="settings-modal">
+             <h3>Settings</h3>
+             <label className="stats-label" style={{ marginTop: '16px', display: 'block' }}>Gemini API Key</label>
+             <input
+               type="password"
+               value={apiKey}
+               onChange={(e) => setApiKey(e.target.value)}
+               placeholder="AIzaSy..."
+               className="stats-input"
+               style={{ marginTop: '8px' }}
+             />
+             
+             <label className="stats-label" style={{ marginTop: '16px', display: 'block' }}>AI Model</label>
+             <select
+               value={aiModel}
+               onChange={(e) => setAiModel(e.target.value)}
+               className="stats-input"
+               style={{ marginTop: '8px', padding: '8px', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '4px', width: '100%' }}
+             >
+               {/* ─── Stable / GA ─── */}
+               <optgroup label="── Stable (Free Tier Available) ──">
+                 <option value="gemini-3.6-flash">Gemini 3.6 Flash ⚡ (Recommended)</option>
+                 <option value="gemini-3.5-flash">Gemini 3.5 Flash ⚡</option>
+                 <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite ⚡ (Fastest)</option>
+                 <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite ⚡</option>
+                 <option value="gemini-2.5-flash">Gemini 2.5 Flash ⚡</option>
+                 <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite ⚡</option>
+               </optgroup>
+               {/* ─── Preview (Pro / Advanced) ─── */}
+               <optgroup label="── Preview (Pro / Advanced) ──">
+                 <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro 🔬 (Preview)</option>
+                 <option value="gemini-3-flash-preview">Gemini 3 Flash 🔬 (Preview)</option>
+                 <option value="gemini-2.5-pro">Gemini 2.5 Pro 👑</option>
+               </optgroup>
+             </select>
+             
+             <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+               <button onClick={() => setShowSettings(false)} className="btn-export" style={{ width: 'auto', padding: '6px 16px' }}>Save & Close</button>
+             </div>
+           </div>
+        </div>
+      )}
 
       {/* ── Main Content ── */}
       <div className="pipeline-main">
@@ -251,16 +354,27 @@ export function PipelineView() {
               />
             </div>
 
-            {/* API Key */}
+            {/* Output Folder */}
             <div className="stats-group">
-              <label className="stats-label">Gemini API Key</label>
-              <input
-                type="password" 
-                value={apiKey} 
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="AIzaSy..."
-                className="stats-input"
-              />
+              <label className="stats-label">Output Folder</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text" value="~/Documents/BookSage_Projects/" readOnly
+                  className="stats-input" style={{ flex: 1, textOverflow: 'ellipsis' }}
+                />
+                <button className="stats-btn">Change...</button>
+              </div>
+            </div>
+
+            {/* Vault Sync Ready */}
+            <div className="vault-sync-box">
+               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="status-badge" style={{ backgroundColor: 'color-mix(in srgb, var(--bs-done) 15%, transparent)', color: 'var(--bs-done)' }}>
+                     <Check size={12} strokeWidth={3} />
+                  </div>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--bs-text-bright)' }}>Vault Sync Ready</span>
+               </div>
+               <p style={{ fontSize: '12px', color: 'var(--bs-text-muted)', margin: '4px 0 0 26px' }}>Will save to selected folder</p>
             </div>
 
             {/* Export button */}
@@ -296,6 +410,24 @@ export function PipelineView() {
               </div>
               <ActivityBarChart />
             </div>
+
+            {/* Export Log */}
+            <div className="stats-group" style={{ paddingTop: '4px' }}>
+              <label className="stats-label">Export Log</label>
+              <div className="export-log">
+                {chapters.filter((c: Chapter) => c.status !== 'none').map((c: Chapter, i: number) => (
+                   <div key={i} className="export-log-entry">
+                     <span className="log-time">[sys]</span>
+                     {c.status === 'done' && <><span className="log-success">✓</span> Ch {c.num} processed successfully</>}
+                     {c.status === 'error' && <><span className="log-error">✗</span> Ch {c.num} failed: {c.error || 'Unknown error'}</>}
+                     {c.status === 'process' && <><span className="log-process">⟳</span> Ch {c.num} processing...</>}
+                   </div>
+                ))}
+                {chapters.filter((c: Chapter) => c.status !== 'none').length === 0 && (
+                   <div style={{ color: 'var(--bs-text-muted)', fontStyle: 'italic', padding: '4px' }}>Awaiting pipeline execution...</div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -308,7 +440,7 @@ export function PipelineView() {
         <span className="status-divider" />
         <span>{done} chapters processed</span>
         <div style={{ flex: 1 }} />
-        <span>Model: <span style={{ color: 'var(--bs-text)' }}>gemini-1.5-pro</span></span>
+        <span>Model: <span className="status-value">{aiModel}</span></span>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 # BookSage — AI-Powered Book Studio
 
-> **Version:** 3.0 · **Status:** Active Development · **Last Updated:** 2026-07-29
+> **Version:** 3.0 · **Status:** Active Development · **Last Updated:** 2026-08-01
 
 ---
 
@@ -80,6 +80,7 @@ Floating Layer (renders on top of any view):
 │  │  Modal: SettingsDialog                                  │   │
 │  │                                                         │   │
 │  │  State: Zustand (bookStore · settingsStore · uiStore)   │   │
+│  │  Persist: localStorage (settings) · SQLite (library)    │   │
 │  └──────────────────────┬──────────────────────────────────┘   │
 │                         │ Tauri Commands (IPC)                  │
 │  ┌──────────────────────▼──────────────────────────────────┐   │
@@ -93,6 +94,9 @@ Floating Layer (renders on top of any view):
 │  │  file_manager.py     ← I/O, optional Obsidian export    │   │
 │  │  config_manager.py   ← keyring for API keys             │   │
 │  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  SQLite DB: AppData/Roaming/BookSage/booksage.db               │
+│    └── books · chapters · (future: tags, annotations)          │
 │                                                                 │
 │  pdfjs-dist (JS)       ← PDF page rendering in BookReader      │
 │  react-markdown (JS)   ← Markdown rendering in NotesViewer     │
@@ -110,13 +114,14 @@ Floating Layer (renders on top of any view):
 | Styling | Vanilla CSS + CSS Variables | Existing `_group.css` token system, zero framework lock-in |
 | PDF Rendering | `pdfjs-dist` (Mozilla) | Industry standard; renders real PDF pages in-browser canvas |
 | Markdown Rendering | `react-markdown` + `remark-gfm` | Full GFM support; custom component overrides for Obsidian-style headings |
-| State Management | Zustand | Lightweight, no boilerplate; stores: book, settings, UI, chat |
+| State Management | Zustand + `persist` middleware | Lightweight, no boilerplate; API key + model persist via localStorage |
+| **Local Database** | **SQLite via `@tauri-apps/plugin-sql`** | **Production-grade session/library persistence; single `.db` file in AppData** |
 | Fonts | Inter + JetBrains Mono | Locked in `_group.css` |
 | Python Backend | Python 3.11 sidecar | PDF/AI logic; bundled by PyInstaller |
 | PDF Engine | PyMuPDF (fitz) | Text + TOC extraction |
 | AI APIs | Gemini, OpenAI, Claude, Ollama | Multi-provider unified interface |
 | Templating | Jinja2 | Markdown generation |
-| Secret Storage | keyring (OS keychain) | API keys never hit disk |
+| Secret Storage | keyring (OS keychain) — Phase 8 | API keys never hit disk in production build |
 | Packaging | Tauri bundler → `.msi` | Self-contained Windows installer |
 
 ---
@@ -201,6 +206,9 @@ BookSage/
 │   │   ├── settingsStore.ts      ← API keys, model, output folder
 │   │   ├── uiStore.ts            ← Active view, theme, sidebar state
 │   │   └── chatStore.ts          ← Chat history, active context
+│   ├── services/
+│   │   ├── pythonService.ts      ← Unicode-safe IPC to Python sidecar
+│   │   └── dbService.ts          ← [Phase 3.5] SQLite CRUD for books/chapters
 │   ├── hooks/
 │   │   ├── useTextSelection.ts   ← Detects text selection, triggers Copilot
 │   │   ├── usePDF.ts             ← pdfjs-dist wrapper
@@ -220,6 +228,10 @@ BookSage/
 │   └── templates/
 │       └── chapter.md.j2
 ├── BookSage_Projects/            ← Runtime output (gitignored)
+│   └── {book-id}/                ← [Phase 3.5] Permanent per-book folder
+│       └── chapters/
+│           ├── ch01.txt          ← Raw extracted text
+│           └── ch01.json         ← AI lesson output
 ├── .gitignore
 ├── README.md
 ├── booksage-plan.md
@@ -324,10 +336,56 @@ Ollama (local)            ● (if running)
 - **Verify:** Single chapter → valid JSON; chat session returns contextual responses
 
 ### Phase 3 — Pipeline View (Port from mockup)
-- [ ] Port `ChapterList`, `PreviewTabs`, `ExportPanel` from GUI mockup
-- [ ] Wire Tauri `invoke()` to PDF + AI backend
-- [ ] Live status badges, progress bar, donut chart, export log
-- **Verify:** Load PDF → chapter list populates → AI processes → center panel shows lesson
+- [x] Port `ChapterList`, `PreviewTabs`, `ExportPanel` from GUI mockup
+- [x] Wire Tauri `invoke()` to PDF + AI backend
+- [x] Live status badges, progress bar, donut chart, export log
+- [x] Model selector with grouped Gemini model list
+- [x] Retry Failed chapters button
+- [x] API key persistence via Zustand `persist` middleware (localStorage)
+- [x] Unicode-safe `btoa` encoding fix for non-Latin1 book text
+- **Verify:** Load PDF → chapter list populates → AI processes → center panel shows lesson ✅
+
+### Phase 3.5 — SQLite Persistence Layer 🗄️
+> **Priority:** Build before Phase 4. Required for Library View and production-grade session survival.
+> **Why not localStorage:** localStorage can be wiped on app updates, has a 5MB cap, and can't support multi-book sessions or the Library grid.
+
+#### Database Schema
+```sql
+-- AppData/Roaming/BookSage/booksage.db
+
+CREATE TABLE books (
+  id          TEXT PRIMARY KEY,   -- UUID
+  title       TEXT NOT NULL,
+  pdf_path    TEXT,               -- original source PDF location
+  data_dir    TEXT NOT NULL,      -- BookSage_Projects/{id}/ folder
+  cover_path  TEXT,               -- first-page thumbnail
+  total_chapters INTEGER DEFAULT 0,
+  created_at  INTEGER NOT NULL,   -- Unix timestamp
+  last_opened INTEGER
+);
+
+CREATE TABLE chapters (
+  id          TEXT PRIMARY KEY,   -- UUID
+  book_id     TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  num         INTEGER NOT NULL,
+  title       TEXT NOT NULL,
+  pages       TEXT,               -- "26-35"
+  status      TEXT DEFAULT 'none', -- none | process | done | error
+  txt_path    TEXT,               -- absolute path to .txt file
+  json_path   TEXT,               -- absolute path to .json file
+  error_msg   TEXT,
+  updated_at  INTEGER
+);
+```
+
+#### Implementation Tasks
+- [ ] Add `@tauri-apps/plugin-sql` to `Cargo.toml` + `tauri.conf.json`
+- [ ] Create `src/services/dbService.ts` — typed wrappers: `upsertBook`, `upsertChapter`, `getBook`, `getAllBooks`, `getChapters`
+- [ ] Migrate `bookStore.ts`: write to DB on every chapter status change; load from DB on startup
+- [ ] Move chapter output files from temp → permanent `BookSage_Projects/{book-id}/chapters/` folder
+- [ ] Add startup validation: check each `done` chapter's `.json` file still exists on disk; reset to `none` if missing
+- [ ] Remove `library.json` approach from Phase 7 (DB replaces it)
+- **Verify:** Process a book, restart app → chapter list restores with correct statuses; Library can read all past books
 
 ### Phase 4 — Book Reader View
 - [ ] `PDFCanvas.tsx`: render PDF pages using `pdfjs-dist`
@@ -361,7 +419,8 @@ Ollama (local)            ● (if running)
   - Book card: auto-generated cover (first page thumbnail), title, chapter count, progress %
   - "Open Book" → switches to BookReader; "View Notes" → switches to NotesViewer
   - Search bar to filter library
-- [ ] Persist library index in `BookSage_Projects/library.json`
+- [ ] Powered by SQLite `books` table (built in Phase 3.5) — NOT a flat JSON file
+- [ ] Cover thumbnails generated at import time; stored in `BookSage_Projects/{id}/cover.png`
 - **Verify:** Process two books → library shows both cards → clicking opens correct view
 
 ### Phase 8 — Settings, Error Handling, Optional Export
