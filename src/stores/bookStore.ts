@@ -26,6 +26,7 @@ interface BookState {
   splitBook: () => Promise<void>;
   extractLessons: (provider?: string) => Promise<void>;
   retryFailed: (provider?: string) => Promise<void>;
+  retrySpecificChapters: (indices: number[], provider?: string) => Promise<void>;
   setChapterStatus: (index: number, status: Chapter['status']) => void;
 }
 
@@ -161,6 +162,60 @@ export const useBookStore = create<BookState>()(
             }
             return { chapters: ch };
           });
+        }
+        set({ isExtracting: false });
+      },
+
+      retrySpecificChapters: async (indices: number[], provider: string = 'gemini') => {
+        const { chapters, apiKey, aiModel } = get();
+        if (!apiKey) {
+           alert("Please enter a Gemini API Key first.");
+           return;
+        }
+
+        const validIndices = indices.filter(i => chapters[i] && chapters[i].path);
+        if (validIndices.length === 0) return;
+        
+        set({ isExtracting: true });
+        
+        for (const index of validIndices) {
+           const chap = chapters[index];
+           
+           set((state) => {
+              const newChapters = [...state.chapters];
+              newChapters[index].status = 'process';
+              newChapters[index].error = undefined;
+              return { chapters: newChapters };
+           });
+           
+           try {
+              const res = await invokePython({
+                command: 'extract_chapter',
+                chapter_path: chap.path,
+                provider,
+                api_key: apiKey,
+                model_name: aiModel
+              });
+              
+              set((state) => {
+                 const newChapters = [...state.chapters];
+                 if (res.status === 'success') {
+                    newChapters[index].status = 'done';
+                    newChapters[index].error = undefined;
+                 } else {
+                    newChapters[index].status = 'error';
+                    newChapters[index].error = res.message || 'Unknown error occurred.';
+                 }
+                 return { chapters: newChapters };
+              });
+           } catch (e: any) {
+              set((state) => {
+                 const newChapters = [...state.chapters];
+                 newChapters[index].status = 'error';
+                 newChapters[index].error = e.message || String(e);
+                 return { chapters: newChapters };
+              });
+           }
         }
         set({ isExtracting: false });
       },

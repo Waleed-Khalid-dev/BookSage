@@ -3,7 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import {
   FolderOpen, FileText, Scissors, Upload, Sparkles, Filter,
   Square, CheckSquare, Check, Loader2, AlertCircle,
-  BookOpen, Minus, X, Sun, Moon, Settings
+  BookOpen, Minus, X, Sun, Moon, Settings, RotateCw
 } from 'lucide-react';
 import { invokePython } from '../../services/pythonService';
 import { useBookStore, Chapter } from '../../stores/bookStore';
@@ -71,8 +71,9 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function PipelineView() {
-  const { currentBookTitle, pdfPath, chapters, isExtracting, apiKey, aiModel, setApiKey, setAiModel, setPdfPath, splitBook, extractLessons, retryFailed } = useBookStore();
+  const { currentBookTitle, pdfPath, chapters, isExtracting, apiKey, aiModel, setApiKey, setAiModel, setPdfPath, splitBook, extractLessons, retryFailed, retrySpecificChapters } = useBookStore();
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number>(0);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([0]);
   const [activeTab, setActiveTab] = useState<'Raw Text' | 'AI Output' | 'Markdown Source'>('AI Output');
   const [previewContent, setPreviewContent] = useState<string>('Select a chapter to preview');
   const [isDark, setIsDark] = useState(true);
@@ -102,8 +103,9 @@ export function PipelineView() {
         const res = await invokePython({ command: 'read_file', path: pathToRead });
         if (res.status === 'success') {
           if (activeTab === 'Markdown Source') {
-             try {
-                const data = JSON.parse(res.content);
+              try {
+                const parsedData = JSON.parse(res.content);
+                const data = Array.isArray(parsedData) ? parsedData[0] : parsedData;
                 let md = `# ${data.chapter_title || chapter.title}\n\n`;
                 if (data.summary) md += `## Summary\n${data.summary}\n\n`;
                 if (data.core_lesson) md += `## Core Lesson\n> ${data.core_lesson}\n\n`;
@@ -112,6 +114,25 @@ export function PipelineView() {
                    data.teachings.forEach((t: any) => {
                       md += `### ${t.technique}\n${t.explanation}\n\n`;
                    });
+                }
+                if (data.implementation_steps) {
+                   md += `## Implementation Steps\n`;
+                   data.implementation_steps.forEach((s: any) => {
+                      md += `- ${s}\n`;
+                   });
+                   md += `\n`;
+                }
+                if (data.supporting_quotes) {
+                   md += `## Quotes\n`;
+                   data.supporting_quotes.forEach((q: any) => {
+                      md += `> "${q}"\n\n`;
+                   });
+                }
+                if (data.difficulty_to_implement) {
+                   md += `**Difficulty to Implement:** ${data.difficulty_to_implement}\n\n`;
+                }
+                if (data.obsidian_tags) {
+                   md += `**Tags:** ${data.obsidian_tags.join(' ')}\n\n`;
                 }
                 setPreviewContent(md);
              } catch(e) {
@@ -223,6 +244,12 @@ export function PipelineView() {
               disabled={isExtracting}
             />
           )}
+          <ToolbarButton 
+             icon={<RotateCw size={16} />} 
+             label={`Retry Selected (${selectedIndices.length})`} 
+             onClick={() => retrySpecificChapters(selectedIndices, 'gemini')} 
+             disabled={isExtracting || selectedIndices.length === 0} 
+          />
           <ToolbarButton icon={<Upload size={16} />} label="Export All" onClick={handleExportAll} disabled={done === 0} />
         </div>
 
@@ -296,8 +323,28 @@ export function PipelineView() {
               chapters.map((c: Chapter, i: number) => (
                 <div
                   key={i}
-                  onClick={() => setSelectedChapterIndex(i)}
-                  className={`chapter-item ${selectedChapterIndex === i ? 'active' : ''}`}
+                  onClick={(e) => {
+                     let newIndices = [...selectedIndices];
+                     if (e.shiftKey && newIndices.length > 0) {
+                        const lastIndex = newIndices[newIndices.length - 1];
+                        const min = Math.min(lastIndex, i);
+                        const max = Math.max(lastIndex, i);
+                        for (let j = min; j <= max; j++) {
+                           if (!newIndices.includes(j)) newIndices.push(j);
+                        }
+                     } else if (e.ctrlKey || e.metaKey) {
+                        if (newIndices.includes(i)) {
+                           newIndices = newIndices.filter(idx => idx !== i);
+                        } else {
+                           newIndices.push(i);
+                        }
+                     } else {
+                        newIndices = [i];
+                     }
+                     setSelectedIndices(newIndices);
+                     setSelectedChapterIndex(i);
+                  }}
+                  className={`chapter-item ${selectedIndices.includes(i) ? 'active' : ''}`}
                 >
                   <div className="chapter-icon">
                     {c.status === 'done' ? <CheckSquare size={14} className="text-[var(--bs-accent)]" /> : <Square size={14} />}

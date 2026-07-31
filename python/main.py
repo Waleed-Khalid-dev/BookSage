@@ -77,6 +77,9 @@ def handle_command(cmd_data):
                 with open(json_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     
+                if isinstance(data, list) and len(data) > 0:
+                    data = data[0]
+                    
                 # Format as markdown
                 md_content = f"# {data.get('chapter_title', chap.get('title', 'Unknown Title'))}\n\n"
                 
@@ -103,8 +106,11 @@ def handle_command(cmd_data):
                         md_content += f"> \"{q}\"\n"
                     md_content += "\n"
                 
+                if data.get('difficulty_to_implement'):
+                    md_content += f"**Difficulty to Implement:** {data['difficulty_to_implement']}\n\n"
+
                 if data.get('obsidian_tags'):
-                    md_content += f"**Tags:** {' '.join(data['obsidian_tags'])}\n"
+                    md_content += f"**Tags:** {' '.join(data['obsidian_tags'])}\n\n"
                     
                 # Save markdown file
                 safe_title = "".join(c for c in chap.get('title', f"Chapter_{chap.get('num')}") if c.isalnum() or c in " -_").strip()

@@ -39,6 +39,7 @@
 - [reference] Phase 3 Pipeline View: COMPLETE & verified. Ported UI mockups to Vanilla CSS + wired Zustand state. → booksage-project.md
 - [reference] Phase 3 Pipeline Debug: Identified missing API key issue, preparing to refactor PipelineView to match Tailwind GUI mockups -> booksage-project.md
 - [reference] Phase 3 Final Polish: COMPLETE. Fixed btoa encoding, UI themes, added Retry Failed, persisted settings. → booksage-project.md
+- [reference] Phase 3 Markdown Audit & Multi-Select: COMPLETE & verified. Fixed missing markdown fields, added batch retry → booksage-project.md
 - [decision] Use SQLite (Phase 3.5) for session persistence instead of localStorage for production readiness. → booksage-project.md
 
 ## Skills

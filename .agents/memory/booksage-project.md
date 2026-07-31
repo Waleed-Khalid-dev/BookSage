@@ -92,7 +92,7 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 8 | Settings & Polish | ⏳ Not started |
 | 9 | Packaging | ⏳ Not started |
 
-**Current status: Phase 3 complete. Next action = Phase 4.**
+**Current status: Phase 3 complete (Final UI tweaks & Verification). Next action = Phase 3.5 (SQLite) or Phase 4.**
 
 ## Key Files
 - `RoadMap.md` — v3, full technical blueprint
@@ -115,5 +115,6 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Refactoring UI:** Reverting PipelineView back to the exact Tailwind-based GUI mockup to match RoadMap.md specifications.
 - **Fixed Encoding & UI Accessibility:** Replaced `btoa` with Unicode-safe encoder (`encodeURIComponent`) in `pythonService.ts` to fix extraction crashes on special characters. Fixed light/dark mode CSS bugs in `PipelineView` (chapter titles & dropdown readability).
 - **Added Robustness & Persistence:** Implemented "Retry Failed" feature. Wrapped `bookStore.ts` with Zustand `persist` middleware to save API Key and Model choice to localStorage across app restarts.
+- **Multi-chapter selection & Markdown Rendering Fix:** Added multi-select retry logic. Fixed UI and backend Python script to properly render `Quotes`, `Difficulty to Implement`, and `Tags` missing from the markdown export.
 - **Decision:** Use SQLite (Phase 3.5) for proper session persistence instead of localStorage to support production-grade long-term storage and the upcoming Library View.
-- **Next:** Phase 4 — Book Reader (after optionally implementing Phase 3.5).
+- **Next:** Phase 3.5 — SQLite Persistence Layer or Phase 4 — Book Reader.

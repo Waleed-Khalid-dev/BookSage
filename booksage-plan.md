@@ -22,10 +22,10 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
   - [x] JSON schema validation + retry
   - [x] `ai_chat.py`: session-based chat with chapter context injection
 
-- [ ] **Phase 3 — Pipeline View** → Verify: PDF loads → chapters appear → AI processes → lesson shown
-  - [ ] Port `ChapterList`, `PreviewTabs`, `ExportPanel` from `GUI/` mockup
-  - [ ] Wire all Tauri `invoke()` calls to sidecar
-  - [ ] Live status badges, progress bar, donut chart, log
+- [x] **Phase 3 — Pipeline View** → Verify: PDF loads → chapters appear → AI processes → lesson shown
+  - [x] Port `ChapterList`, `PreviewTabs`, `ExportPanel` from `GUI/` mockup
+  - [x] Wire all Tauri `invoke()` calls to sidecar
+  - [x] Live status badges, progress bar, donut chart, log
 
 - [ ] **Phase 4 — Book Reader** → Verify: PDF pages render; text selection detected
   - [ ] `PDFCanvas.tsx` using `pdfjs-dist`
