@@ -10,9 +10,10 @@ def handle_command(cmd_data):
     
     if command == "split_book":
         pdf_path = cmd_data.get("path")
+        book_id = cmd_data.get("book_id", "")
         if not pdf_path:
             return {"status": "error", "message": "Missing 'path' argument."}
-        return split_book_into_chapters(pdf_path)
+        return split_book_into_chapters(pdf_path, book_id)
     
     elif command == "extract_chapter":
         chapter_path = cmd_data.get("chapter_path")

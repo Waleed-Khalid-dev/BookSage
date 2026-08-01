@@ -10,6 +10,10 @@
     "dialog:default",
     "opener:default",
     "shell:default",
+    "sql:default",
+    "sql:allow-execute",
+    "sql:allow-select",
+    "sql:allow-load",
     {
       "identifier": "shell:allow-execute",
       "allow": [

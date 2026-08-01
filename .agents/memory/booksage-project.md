@@ -86,13 +86,14 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 2 | AI Extractor | ✅ Done |
 | 3 | Pipeline View | ✅ Done |
 | 4 | Book Reader | ⏳ Not started |
+| 3.5 | SQLite Persistence | ✅ Done |
 | 5 | Notes Viewer | ⏳ Not started |
 | 6 | AI Copilot | ⏳ Not started |
 | 7 | Library View | ⏳ Not started |
 | 8 | Settings & Polish | ⏳ Not started |
 | 9 | Packaging | ⏳ Not started |
 
-**Current status: Phase 3 complete (Final UI tweaks & Verification). Next action = Phase 3.5 (SQLite) or Phase 4.**
+**Current status: Phase 3.5 complete (SQLite DB working perfectly). Next action = Phase 4 (Book Reader).**
 
 ## Key Files
 - `RoadMap.md` — v3, full technical blueprint
@@ -118,3 +119,14 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Multi-chapter selection & Markdown Rendering Fix:** Added multi-select retry logic. Fixed UI and backend Python script to properly render `Quotes`, `Difficulty to Implement`, and `Tags` missing from the markdown export.
 - **Decision:** Use SQLite (Phase 3.5) for proper session persistence instead of localStorage to support production-grade long-term storage and the upcoming Library View.
 - **Next:** Phase 3.5 — SQLite Persistence Layer or Phase 4 — Book Reader.
+
+### Session 2026-08-01 Notes
+- **Storage & Build Resolution:** Resolved a massive disk space crash on the C: drive caused by Rust compiler artifacts. Moved the Windows Page File to D: and restored the Rust environment to maintain the build system.
+- **Completed Phase 3.5 (SQLite Persistence):** 
+  - Integrated `tauri-plugin-sql` and successfully created `booksage.db` in the AppData directory.
+  - Implemented `dbService.ts` to perform CRUD operations (upsertBook, upsertChapter).
+  - Wired `bookStore.ts` to save and resume extraction state into SQLite, completely bypassing localStorage for chapter data.
+  - Fixed a Tauri capabilities error by explicitly enabling `sql:allow-execute` in `default.json`.
+- **Verified:** Extracted 34 chapters, closed the app midway, and confirmed the SQLite DB perfectly saved the `done` and `process` state for future resumption.
+- **Roadmap Validation:** Checked `RoadMap.md` to verify that Phase 7 (Library View) correctly dictates how the saved SQLite books will be visually loaded into the UI.
+- **Next:** Phase 4 (Book Reader).

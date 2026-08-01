@@ -46,7 +46,7 @@ def fallback_chapter_split(pdf_path: str, page_count: int, book_dir: Path) -> Li
         
     return chapters
 
-def split_book_into_chapters(pdf_path: str) -> Dict[str, Any]:
+def split_book_into_chapters(pdf_path: str, book_id: str = "") -> Dict[str, Any]:
     """
     Splits the PDF into text files per chapter using TOC.
     """
@@ -59,8 +59,8 @@ def split_book_into_chapters(pdf_path: str) -> Dict[str, Any]:
     
     # Determine book folder
     book_title = metadata.get("title", "") or Path(pdf_path).stem
-    safe_title = clean_filename(book_title)
-    book_dir = get_projects_dir() / safe_title
+    folder_name = clean_filename(book_id) if book_id else clean_filename(book_title)
+    book_dir = get_projects_dir() / folder_name
     book_dir.mkdir(parents=True, exist_ok=True)
     
     chapters_metadata = []
