@@ -379,19 +379,19 @@ CREATE TABLE chapters (
 ```
 
 #### Implementation Tasks
-- [ ] Add `@tauri-apps/plugin-sql` to `Cargo.toml` + `tauri.conf.json`
-- [ ] Create `src/services/dbService.ts` — typed wrappers: `upsertBook`, `upsertChapter`, `getBook`, `getAllBooks`, `getChapters`
-- [ ] Migrate `bookStore.ts`: write to DB on every chapter status change; load from DB on startup
-- [ ] Move chapter output files from temp → permanent `BookSage_Projects/{book-id}/chapters/` folder
-- [ ] Add startup validation: check each `done` chapter's `.json` file still exists on disk; reset to `none` if missing
-- [ ] Remove `library.json` approach from Phase 7 (DB replaces it)
+- [x] Add `@tauri-apps/plugin-sql` to `Cargo.toml` + `tauri.conf.json`
+- [x] Create `src/services/dbService.ts` — typed wrappers: `upsertBook`, `upsertChapter`, `getBook`, `getAllBooks`, `getChapters`
+- [x] Migrate `bookStore.ts`: write to DB on every chapter status change; load from DB on startup
+- [x] Move chapter output files from temp → permanent `BookSage_Projects/{book-id}/chapters/` folder
+- [x] Add startup validation: check each `done` chapter's `.json` file still exists on disk; reset to `none` if missing
+- [x] Remove `library.json` approach from Phase 7 (DB replaces it)
 - **Verify:** Process a book, restart app → chapter list restores with correct statuses; Library can read all past books
 
 ### Phase 4 — Book Reader View
-- [ ] `PDFCanvas.tsx`: render PDF pages using `pdfjs-dist`
-- [ ] `PageControls.tsx`: prev/next, page number input, zoom
-- [ ] `WordHighlighter.tsx`: word-by-word mode with keyboard nav
-- [ ] `useTextSelection.ts`: capture selection + bounding rect
+- [x] `PDFCanvas.tsx`: render PDF pages using `pdfjs-dist`
+- [x] `PageControls.tsx`: prev/next, page number input, zoom
+- [x] `WordHighlighter.tsx`: word-by-word mode with keyboard nav
+- [x] `useTextSelection.ts`: capture selection + bounding rect
 - **Verify:** Open PDF → pages render → text selectable → selection detected
 
 ### Phase 5 — Notes Viewer

@@ -85,7 +85,7 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 1 | PDF Engine | ✅ Done |
 | 2 | AI Extractor | ✅ Done |
 | 3 | Pipeline View | ✅ Done |
-| 4 | Book Reader | ⏳ Not started |
+| 4 | Book Reader | ✅ Done |
 | 3.5 | SQLite Persistence | ✅ Done |
 | 5 | Notes Viewer | ⏳ Not started |
 | 6 | AI Copilot | ⏳ Not started |
@@ -93,7 +93,7 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 8 | Settings & Polish | ⏳ Not started |
 | 9 | Packaging | ⏳ Not started |
 
-**Current status: Phase 3.5 complete (SQLite DB working perfectly). Next action = Phase 4 (Book Reader).**
+**Current status: Phase 4 complete (Book Reader). Next action = Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).**
 
 ## Key Files
 - `RoadMap.md` — v3, full technical blueprint
@@ -130,3 +130,12 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Verified:** Extracted 34 chapters, closed the app midway, and confirmed the SQLite DB perfectly saved the `done` and `process` state for future resumption.
 - **Roadmap Validation:** Checked `RoadMap.md` to verify that Phase 7 (Library View) correctly dictates how the saved SQLite books will be visually loaded into the UI.
 - **Next:** Phase 4 (Book Reader).
+
+### Session 2026-08-03 Notes
+- **Completed Phase 4 (Book Reader):**
+  - Built Continuous and Single Page reading modes.
+  - Fixed native PDF text selection by using pdfjs-dist native CSS.
+  - Fixed infinite render loop in Continuous mode by removing IntersectionObserver state dependency.
+  - Implemented highlight extraction rendering and context menu removal feature.
+  - Resolved trackpad pinch-to-zoom by enabling zoomHotkeysEnabled in Tauri.
+- **Next:** Phase 5 — Notes Viewer or Phase 6 — AI Copilot.

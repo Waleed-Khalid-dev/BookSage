@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invokePython } from '../services/pythonService';
-import { upsertBook, upsertChapter, getBook, getChaptersForBook } from '../services/dbService';
+import { upsertBook, upsertChapter, getBook, getChaptersForBook, deleteHighlight } from '../services/dbService';
 
 export interface Chapter {
   id?: string;
@@ -22,17 +22,20 @@ interface BookState {
   isExtracting: boolean;
   apiKey: string;
   aiModel: string;
+  highlightsRefreshCounter: number;
   
   // Actions
   setApiKey: (key: string) => void;
   setAiModel: (model: string) => void;
-  setPdfPath: (path: string) => void;
+  setPdfPath: (path: string) => Promise<void>;
   loadBook: (id: string) => Promise<void>;
   splitBook: () => Promise<void>;
   extractLessons: (provider?: string) => Promise<void>;
   retryFailed: (provider?: string) => Promise<void>;
   retrySpecificChapters: (indices: number[], provider?: string) => Promise<void>;
   setChapterStatus: (index: number, status: Chapter['status']) => void;
+  triggerHighlightsRefresh: () => void;
+  deleteHighlightAction: (id: string) => Promise<void>;
 }
 
 export const useBookStore = create<BookState>()(
@@ -45,35 +48,79 @@ export const useBookStore = create<BookState>()(
       isExtracting: false,
       apiKey: '',
       aiModel: 'gemini-3.6-flash',
+      highlightsRefreshCounter: 0,
+
+      triggerHighlightsRefresh: () => set(state => ({ highlightsRefreshCounter: state.highlightsRefreshCounter + 1 })),
+      
+      deleteHighlightAction: async (id: string) => {
+        try {
+          await deleteHighlight(id);
+          get().triggerHighlightsRefresh();
+        } catch (e) {
+          console.error("Failed to delete highlight:", e);
+        }
+      },
 
       setApiKey: (key: string) => set({ apiKey: key }),
       setAiModel: (model: string) => set({ aiModel: model }),
 
-      setPdfPath: (path: string) => {
+      setPdfPath: async (path: string) => {
         const filename = path.split(/[/\\]/).pop() || 'Unknown Book';
-        set({ pdfPath: path, currentBookTitle: filename, chapters: [], bookId: null });
+        const newBookId = crypto.randomUUID();
+        
+        try {
+          await upsertBook({
+            id: newBookId,
+            title: filename,
+            pdf_path: path,
+            data_dir: '', // Empty initially, updated by splitBook later
+            cover_path: null,
+            total_chapters: 0,
+            created_at: Date.now(),
+            last_opened: Date.now()
+          });
+          set({ pdfPath: path, currentBookTitle: filename, chapters: [], bookId: newBookId });
+        } catch (e) {
+          console.error("Failed to insert initial book record:", e);
+          set({ pdfPath: path, currentBookTitle: filename, chapters: [], bookId: null });
+        }
       },
 
       loadBook: async (id: string) => {
         try {
           const book = await getBook(id);
           if (!book) return;
-          const chapters = await getChaptersForBook(id);
+          const dbChapters = await getChaptersForBook(id);
+          
+          const verifiedChapters = [];
+          
+          for (const c of dbChapters) {
+            let status = c.status;
+            // Phase 3.5 Validation: if it says done but json is missing, reset it
+            if (status === 'done' && c.json_path) {
+              const res = await invokePython({ command: 'check_exists', path: c.json_path });
+              if (res.status === 'success' && !res.exists) {
+                status = 'none';
+                await upsertChapter({ ...c, status: 'none' });
+              }
+            }
+            verifiedChapters.push({
+              id: c.id,
+              num: c.num,
+              title: c.title,
+              pp: c.pages,
+              status: status,
+              path: c.txt_path || undefined,
+              json_path: c.json_path || undefined,
+              error: c.error_msg || undefined
+            });
+          }
           
           set({
             bookId: book.id,
             currentBookTitle: book.title,
             pdfPath: book.pdf_path,
-            chapters: chapters.map(c => ({
-              id: c.id,
-              num: c.num,
-              title: c.title,
-              pp: c.pages,
-              status: c.status,
-              path: c.txt_path || undefined,
-              json_path: c.json_path || undefined,
-              error: c.error_msg || undefined
-            }))
+            chapters: verifiedChapters
           });
         } catch (e) {
           console.error('Failed to load book from DB', e);

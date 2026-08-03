@@ -42,6 +42,7 @@
 - [reference] Phase 3 Markdown Audit & Multi-Select: COMPLETE & verified. Fixed missing markdown fields, added batch retry → booksage-project.md
 - [decision] Use SQLite (Phase 3.5) for session persistence instead of localStorage for production readiness. → booksage-project.md
 - [reference] Phase 3.5 SQLite Persistence Layer: COMPLETE & verified. Fixed Rust cache build issues. Strictly following roadmap: Next step is Phase 4 (Book Reader). → booksage-project.md
+- [reference] Phase 4 Book Reader: COMPLETE & verified. Continuous/Single reading, highlight context menu, trackpad zoom. Next step is Phase 5 (Notes Viewer) or 6 (Copilot). → booksage-project.md
 
 ## Skills
 - [skill] /checkpoint — saves memory + commits + pushes. Run at end of every phase → .agents/skills/checkpoint-save/SKILL.md

@@ -26,6 +26,16 @@ export interface ChapterRecord {
   updated_at: number;
 }
 
+export interface HighlightRecord {
+  id: string;
+  book_id: string;
+  page_num: number;
+  color: string;
+  text: string | null;
+  rects: string;
+  created_at: number;
+}
+
 export async function getDb(): Promise<Database> {
   if (!db) {
     db = await Database.load('sqlite:booksage.db');
@@ -61,6 +71,19 @@ async function initDb(database: Database) {
       json_path TEXT,
       error_msg TEXT,
       updated_at INTEGER,
+      FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+    );
+  `);
+
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS highlights (
+      id TEXT PRIMARY KEY,
+      book_id TEXT NOT NULL,
+      page_num INTEGER NOT NULL,
+      color TEXT NOT NULL,
+      text TEXT,
+      rects TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
       FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
     );
   `);
@@ -118,3 +141,26 @@ export async function updateBookLastOpened(id: string): Promise<void> {
   const now = Date.now();
   await database.execute('UPDATE books SET last_opened = $1 WHERE id = $2', [now, id]);
 }
+
+export async function upsertHighlight(highlight: HighlightRecord): Promise<void> {
+  const database = await getDb();
+  await database.execute(
+    `INSERT INTO highlights (id, book_id, page_num, color, text, rects, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT(id) DO UPDATE SET
+     color=excluded.color,
+     rects=excluded.rects`,
+    [highlight.id, highlight.book_id, highlight.page_num, highlight.color, highlight.text, highlight.rects, highlight.created_at]
+  );
+}
+
+export async function getHighlightsForBook(bookId: string): Promise<HighlightRecord[]> {
+  const database = await getDb();
+  return await database.select<HighlightRecord[]>('SELECT * FROM highlights WHERE book_id = $1 ORDER BY page_num ASC, created_at ASC', [bookId]);
+}
+
+export async function deleteHighlight(id: string): Promise<void> {
+  const database = await getDb();
+  await database.execute('DELETE FROM highlights WHERE id = $1', [id]);
+}
+

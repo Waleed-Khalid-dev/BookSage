@@ -41,6 +41,13 @@ def handle_command(cmd_data):
         response = chat_with_context(message, history, context_text, provider, api_key, model_name=model_name)
         return {"status": "success", "response": response}
     
+    elif command == "check_exists":
+        file_path = cmd_data.get("path")
+        if not file_path:
+            return {"status": "error", "message": "Missing 'path' argument."}
+        import os
+        return {"status": "success", "exists": os.path.exists(file_path)}
+        
     elif command == "read_file":
         file_path = cmd_data.get("path")
         if not file_path:
