@@ -5,6 +5,7 @@ import { BookReader } from "./components/views/BookReader";
 import { NotesViewer } from "./components/views/NotesViewer";
 import { PipelineView } from "./components/views/PipelineView";
 import { AIChatView } from "./components/views/AIChatView";
+import "pdfjs-dist/web/pdf_viewer.css";
 import "./App.css";
 
 function App() {
