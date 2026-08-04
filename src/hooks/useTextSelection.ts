@@ -23,7 +23,8 @@ export function useTextSelection(onSelection: (data: SelectionData | null) => vo
         const range = selection.getRangeAt(0);
         
         // Find if we are inside a textLayer (which means we are selecting PDF text)
-        let container = range.commonAncestorContainer as HTMLElement;
+        // Use anchorNode instead of commonAncestorContainer so cross-page selections in Continuous Mode still work
+        let container = selection.anchorNode as HTMLElement;
         if (container.nodeType === 3) container = container.parentElement as HTMLElement;
         
         const textLayer = container.closest('.textLayer') as HTMLElement;

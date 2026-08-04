@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 // Vite configuration for pdfjs worker
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -16,6 +16,16 @@ export interface UsePDFResult {
   basePageSize: { width: number, height: number } | null;
   setPage: (page: number) => void;
   setScale: (scale: number | ((prev: number) => number)) => void;
+}
+
+export const PDFContext = createContext<UsePDFResult | null>(null);
+
+export function usePDFContext() {
+  const context = useContext(PDFContext);
+  if (!context) {
+    throw new Error('usePDFContext must be used within a PDFContext.Provider');
+  }
+  return context;
 }
 
 export function usePDF(pdfPath: string | null): UsePDFResult {
