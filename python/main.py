@@ -1,9 +1,6 @@
 import json
 import sys
 import traceback
-from chapter_splitter import split_book_into_chapters
-from ai_extractor import process_chapter
-from ai_chat import chat_with_context
 
 def handle_command(cmd_data):
     command = cmd_data.get("command")
@@ -13,6 +10,7 @@ def handle_command(cmd_data):
         book_id = cmd_data.get("book_id", "")
         if not pdf_path:
             return {"status": "error", "message": "Missing 'path' argument."}
+        from chapter_splitter import split_book_into_chapters
         return split_book_into_chapters(pdf_path, book_id)
     
     elif command == "extract_chapter":
@@ -24,6 +22,7 @@ def handle_command(cmd_data):
         if not chapter_path or not api_key:
             return {"status": "error", "message": "Missing 'chapter_path' or 'api_key'."}
             
+        from ai_extractor import process_chapter
         output_path = process_chapter(chapter_path, provider, api_key, model_name=model_name)
         return {"status": "success", "output_path": output_path}
         
@@ -38,9 +37,49 @@ def handle_command(cmd_data):
         if not message or not api_key:
             return {"status": "error", "message": "Missing 'message' or 'api_key'."}
             
+        from ai_chat import chat_with_context
         response = chat_with_context(message, history, context_text, provider, api_key, model_name=model_name)
         return {"status": "success", "response": response}
     
+    elif command == "search_pdf":
+        pdf_path = cmd_data.get("path")
+        query = cmd_data.get("query", "").strip()
+            
+        if not pdf_path or not query:
+            return {"status": "error", "message": "Missing 'path' or 'query' argument."}
+            
+        try:
+            import fitz
+            doc = fitz.open(pdf_path)
+            matches = []
+            total = 0
+            for i, page in enumerate(doc):
+                rects = page.search_for(query)
+                if rects:
+                    page_matches = []
+                    for r in rects:
+                        page_matches.append({
+                            "top": r.y0,
+                            "left": r.x0,
+                            "width": r.x1 - r.x0,
+                            "height": r.y1 - r.y0,
+                            "matchIndex": total
+                        })
+                        total += 1
+                    matches.append({
+                        "page": i + 1,
+                        "rects": page_matches
+                    })
+            doc.close()
+                
+            return {
+                "status": "success",
+                "total": total,
+                "matches": matches
+            }
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+            
     elif command == "check_exists":
         file_path = cmd_data.get("path")
         if not file_path:
@@ -61,6 +100,21 @@ def handle_command(cmd_data):
             return {"status": "success", "content": content}
         except Exception as e:
             return {"status": "error", "message": str(e)}
+
+    elif command == "generate_tts":
+        text = cmd_data.get("text")
+        voice = cmd_data.get("voice", "en-US-AriaNeural")
+        
+        if not text:
+            return {"status": "error", "message": "Missing 'text' argument."}
+            
+        from tts_engine import generate_audio_b64
+        b64_data = generate_audio_b64(text, voice)
+        if b64_data:
+            return {"status": "success", "audio_b64": b64_data}
+        else:
+            return {"status": "error", "message": "Failed to generate TTS audio."}
+            
             
     elif command == "export_chapters":
         chapters = cmd_data.get("chapters", [])
