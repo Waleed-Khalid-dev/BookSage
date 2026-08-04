@@ -1,16 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import { UsePDFResult } from '../../hooks/usePDF';
+import React, { useEffect, useRef, useState } from 'react';
+import { usePDFContext } from '../../hooks/usePDF';
 import { PDFCanvas } from './PDFCanvas';
 
 interface LazyPDFPageProps {
-  pdfState: UsePDFResult;
   pageNum: number;
   onContextMenuRequest?: (x: number, y: number, highlightId: string) => void;
+  onPageVisible: (pageNum: number) => void;
 }
 
-function LazyPDFPage({ pdfState, pageNum, onContextMenuRequest }: LazyPDFPageProps) {
+const LazyPDFPage = React.memo(function LazyPDFPage({ pageNum, onContextMenuRequest, onPageVisible }: LazyPDFPageProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [hasRendered, setHasRendered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -18,12 +17,11 @@ function LazyPDFPage({ pdfState, pageNum, onContextMenuRequest }: LazyPDFPagePro
       (entries) => {
         if (entries[0].isIntersecting) {
           setIsVisible(true);
-          setHasRendered(true);
         } else {
           setIsVisible(false);
         }
       },
-      { rootMargin: '150% 0px' } // Load 1.5 viewports above and below
+      { rootMargin: '400% 0px' } // Load 4 viewports above and below to prevent loading flashes
     );
 
     if (containerRef.current) {
@@ -38,7 +36,7 @@ function LazyPDFPage({ pdfState, pageNum, onContextMenuRequest }: LazyPDFPagePro
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          pdfState.setPage(pageNum);
+          onPageVisible(pageNum);
         }
       },
       { threshold: 0.3 } // If 30% of the page is visible, count it as the current page
@@ -49,56 +47,64 @@ function LazyPDFPage({ pdfState, pageNum, onContextMenuRequest }: LazyPDFPagePro
     }
     
     return () => observer.disconnect();
-  }, [pageNum]);
+  }, [pageNum, onPageVisible]);
 
-  // Use accurate height from global base size if available, fallback to estimate
-  const currentWidth = pdfState.basePageSize ? pdfState.basePageSize.width * (pdfState.scale || 1.2) : 800 * (pdfState.scale || 1.2);
-  const currentHeight = pdfState.basePageSize ? pdfState.basePageSize.height * (pdfState.scale || 1.2) : 1100 * (pdfState.scale || 1.2);
-
-  // If a page has EVER been rendered, we keep it in the DOM without content-visibility to perfectly preserve cross-page text selection
-  const shouldRender = isVisible || hasRendered;
+  // We only render when visible (or nearby). This drops GPU memory for pages scrolled past.
+  const shouldRender = isVisible;
 
   return (
     <div 
       id={`pdf-page-${pageNum}`}
       ref={containerRef} 
       style={{ 
-        height: `${currentHeight}px`, 
-        marginBottom: '10px', 
+        height: 'calc(var(--pdf-base-height, 1100px) * var(--pdf-scale, 1.2))', 
+        marginBottom: 'calc(10px * var(--pdf-scale, 1.2))', 
         position: 'relative',
         display: 'flex',
         justifyContent: 'center',
-        width: '100%'
+        width: '100%',
+        overflow: 'hidden'
       }}
     >
       {shouldRender ? (
-        <div style={{ position: 'relative', width: `${currentWidth}px`, height: `${currentHeight}px`, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ 
+          position: 'relative', 
+          width: 'calc(var(--pdf-base-width, 800px) * var(--pdf-scale, 1.2))', 
+          height: 'calc(var(--pdf-base-height, 1100px) * var(--pdf-scale, 1.2))', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center' 
+        }}>
           <PDFCanvas 
-            pdfState={pdfState} 
             pageNumber={pageNum} 
             onContextMenuRequest={onContextMenuRequest}
           />
         </div>
       ) : (
         <div style={{ 
-          height: `${currentHeight}px`, 
-          background: 'var(--bs-surface)', 
-          width: `${currentWidth}px`,
-          maxWidth: '100%',
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          color: 'var(--bs-muted)',
+          height: '100%', 
+          background: 'white', 
+          width: 'calc(var(--pdf-base-width, 800px) * var(--pdf-scale, 1.2))',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-        }}>
-          Loading Page {pageNum}...
-        </div>
+        }} />
       )}
     </div>
   );
-}
+});
 
-export function ContinuousReader({ pdfState, onContextMenuRequest }: { pdfState: UsePDFResult, onContextMenuRequest?: (x: number, y: number, highlightId: string) => void }) {
+export function ContinuousReader({ onContextMenuRequest }: { onContextMenuRequest?: (x: number, y: number, highlightId: string) => void }) {
+  const pdfState = usePDFContext();
+  
+  // Create a stable callback for setPage so we don't break LazyPDFPage memoization
+  const setPageRef = useRef(pdfState.setPage);
+  useEffect(() => {
+    setPageRef.current = pdfState.setPage;
+  }, [pdfState.setPage]);
+  
+  const handlePageVisible = React.useCallback((pageNum: number) => {
+    setPageRef.current(pageNum);
+  }, []);
+  
   // Jump to the current page on initial mount before IntersectionObserver overrides it
   useEffect(() => {
     // Small timeout ensures the DOM has rendered the placeholders
@@ -116,9 +122,24 @@ export function ContinuousReader({ pdfState, onContextMenuRequest }: { pdfState:
   const pages = Array.from({ length: pdfState.totalPages }, (_, i) => i + 1);
   
   return (
-    <div className="continuous-reader" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div 
+      className="continuous-reader" 
+      style={{ 
+        display: 'inline-flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', // Centers pages within the reader, but the reader itself grows to fit them
+        '--pdf-scale': pdfState.scale || 1.2,
+        '--pdf-base-width': pdfState.basePageSize ? `${pdfState.basePageSize.width}px` : '800px',
+        '--pdf-base-height': pdfState.basePageSize ? `${pdfState.basePageSize.height}px` : '1100px',
+      } as React.CSSProperties}
+    >
       {pages.map((pageNum) => (
-        <LazyPDFPage key={pageNum} pdfState={pdfState} pageNum={pageNum} onContextMenuRequest={onContextMenuRequest} />
+        <LazyPDFPage 
+          key={pageNum} 
+          pageNum={pageNum} 
+          onContextMenuRequest={onContextMenuRequest} 
+          onPageVisible={handlePageVisible}
+        />
       ))}
     </div>
   );

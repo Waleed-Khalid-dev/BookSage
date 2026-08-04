@@ -27,10 +27,10 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
   - [x] Wire all Tauri `invoke()` calls to sidecar
   - [x] Live status badges, progress bar, donut chart, log
 
-- [ ] **Phase 4 — Book Reader** → Verify: PDF pages render; text selection detected
-  - [ ] `PDFCanvas.tsx` using `pdfjs-dist`
-  - [ ] `PageControls.tsx`: prev/next/jump/zoom
-  - [ ] `useTextSelection.ts`: captures selection string + screen position
+- [x] **Phase 4 — Book Reader** → Verify: PDF pages render; text selection detected
+  - [x] `PDFCanvas.tsx` using `pdfjs-dist`
+  - [x] `PageControls.tsx`: prev/next/jump/zoom
+  - [x] `useTextSelection.ts`: captures selection string + screen position
 
 - [ ] **Phase 5 — Notes Viewer** → Verify: chapter `.md` renders with Obsidian visual grammar
   - [ ] `MarkdownRenderer.tsx` with `react-markdown` + `remark-gfm`

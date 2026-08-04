@@ -1,22 +1,41 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import 'pdfjs-dist/web/pdf_viewer.css';
-import { UsePDFResult } from '../../hooks/usePDF';
 import { HighlightLayer } from './HighlightLayer';
 import { useBookStore } from '../../stores/bookStore';
 import { getHighlightsForBook } from '../../services/dbService';
 
+import { usePDFContext } from '../../hooks/usePDF';
+
 interface PDFCanvasProps {
-  pdfState: UsePDFResult;
   pageNumber: number;
   onLoadSuccess?: (width: number, height: number) => void;
   onContextMenuRequest?: (x: number, y: number, highlightId: string) => void;
 }
 
-export function PDFCanvas({ pdfState, pageNumber, onLoadSuccess, onContextMenuRequest }: PDFCanvasProps) {
+export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: PDFCanvasProps) {
+  const pdfState = usePDFContext();
   const { pdfDocument, scale, isLoading, error } = pdfState;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Track the scale at which the canvas was LAST actually rendered
+  const [renderedScale, setRenderedScale] = useState(scale);
+  const renderTimeout = useRef<number | null>(null);
+
+  // Debounce the heavy PDF.js rendering by 250ms during active pinch/scroll
+  useEffect(() => {
+    if (scale !== renderedScale) {
+      if (renderTimeout.current) clearTimeout(renderTimeout.current);
+      renderTimeout.current = setTimeout(() => {
+        setRenderedScale(scale);
+      }, 250);
+    }
+    return () => {
+      if (renderTimeout.current) clearTimeout(renderTimeout.current);
+    };
+  }, [scale, renderedScale]);
 
   useEffect(() => {
     if (!pdfDocument || !canvasRef.current || !textLayerRef.current) return;
@@ -27,16 +46,17 @@ export function PDFCanvas({ pdfState, pageNumber, onLoadSuccess, onContextMenuRe
     const renderPage = async () => {
       try {
         const page = await pdfDocument.getPage(pageNumber);
-        const viewport = page.getViewport({ scale });
+        const viewport = page.getViewport({ scale: renderedScale });
         
         const canvas = canvasRef.current;
         if (!canvas) return;
         
-        const context = canvas.getContext('2d');
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.height = viewport.height;
+        offscreenCanvas.width = viewport.width;
+        
+        const context = offscreenCanvas.getContext('2d', { alpha: false });
         if (!context) return;
-
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
 
         const renderContext = {
           canvasContext: context,
@@ -51,24 +71,31 @@ export function PDFCanvas({ pdfState, pageNumber, onLoadSuccess, onContextMenuRe
         renderTask = page.render(renderContext);
         await renderTask.promise;
 
+        // Copy rendered frame to the visible canvas instantaneously
+        if (active && canvasRef.current) {
+          const visibleCanvas = canvasRef.current;
+          visibleCanvas.height = viewport.height;
+          visibleCanvas.width = viewport.width;
+          const visibleContext = visibleCanvas.getContext('2d', { alpha: false });
+          if (visibleContext) {
+            visibleContext.drawImage(offscreenCanvas, 0, 0);
+          }
+        }
+
         const textContent = await page.getTextContent();
 
         if (active && textLayerRef.current) {
           const textLayerDiv = textLayerRef.current;
           textLayerDiv.innerHTML = '';
-          // Use the ACTUAL scaled viewport dimensions
           textLayerDiv.style.height = `${viewport.height}px`;
           textLayerDiv.style.width = `${viewport.width}px`;
-          // Remove the transform hack that broke hitboxes
           textLayerDiv.style.transform = `none`;
-          
-          // Provide the scale factor to CSS so we can bypass browser min-font limits mathematically
           textLayerDiv.style.setProperty('--scale-factor', viewport.scale.toString());
 
           pdfjsLib.renderTextLayer({
             textContentSource: textContent,
             container: textLayerDiv,
-            viewport: viewport, // Pass the scaled viewport so it calculates positions correctly
+            viewport: viewport,
             textDivs: []
           });
         }
@@ -89,7 +116,7 @@ export function PDFCanvas({ pdfState, pageNumber, onLoadSuccess, onContextMenuRe
         renderTask.cancel();
       }
     };
-  }, [pdfDocument, pageNumber, scale]);
+  }, [pdfDocument, pageNumber, renderedScale]);
 
   const { bookId } = useBookStore();
 
@@ -98,15 +125,15 @@ export function PDFCanvas({ pdfState, pageNumber, onLoadSuccess, onContextMenuRe
   if (!pdfDocument) return <div className="pdf-status">No PDF loaded</div>;
 
   const handleContextMenu = async (e: React.MouseEvent<HTMLDivElement>) => {
-    // Prevent the native browser context menu IMMEDIATELY.
-    // If we wait for the async SQLite call, the browser will have already shown it!
     e.preventDefault();
     e.stopPropagation();
 
     if (!bookId || !onContextMenuRequest) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / scale;
-    const y = (e.clientY - rect.top) / scale;
+    // Hitbox detection must account for the CSS transform ratio as well
+    const visualScale = scale; 
+    const x = (e.clientX - rect.left) / visualScale;
+    const y = (e.clientY - rect.top) / visualScale;
 
     try {
       const allHighlights = await getHighlightsForBook(bookId);
@@ -115,7 +142,6 @@ export function PDFCanvas({ pdfState, pageNumber, onLoadSuccess, onContextMenuRe
       for (const hl of pageHighlights) {
         const hlRects = JSON.parse(hl.rects);
         for (const r of hlRects) {
-          // Add a small buffer of 2px to make clicking easier
           if (x >= r.left - 2 && x <= r.left + r.width + 2 && y >= r.top - 2 && y <= r.top + r.height + 2) {
             e.preventDefault();
             e.stopPropagation();
@@ -130,15 +156,40 @@ export function PDFCanvas({ pdfState, pageNumber, onLoadSuccess, onContextMenuRe
   };
 
   return (
-    <div className="pdf-container" style={{ position: 'relative', display: 'inline-block' }}>
-      <canvas ref={canvasRef} className="pdf-canvas" />
+    <div 
+      ref={containerRef}
+      className="pdf-container" 
+      style={{ 
+        position: 'relative', 
+        display: 'inline-block',
+        flexShrink: 0,
+        overflow: 'hidden',
+        width: pdfState.basePageSize ? `${pdfState.basePageSize.width * scale}px` : undefined,
+        height: pdfState.basePageSize ? `${pdfState.basePageSize.height * scale}px` : undefined
+      }}
+    >
+      <canvas 
+        ref={canvasRef} 
+        className="pdf-canvas" 
+        style={{ width: '100%', height: '100%' }}
+      />
       <HighlightLayer pageNumber={pageNumber} scale={scale} />
       <div 
         ref={textLayerRef} 
         className="textLayer" 
         onContextMenu={handleContextMenu}
         data-page-number={pageNumber}
-        style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, overflow: 'hidden' }}
+        style={{ 
+          position: 'absolute', 
+          left: 0, 
+          top: 0, 
+          right: 0, 
+          bottom: 0, 
+          overflow: 'hidden',
+          pointerEvents: 'auto',
+          userSelect: 'text',
+          WebkitUserSelect: 'text'
+        }}
       />
     </div>
   );

@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useBookStore } from '../../stores/bookStore';
-import { usePDF } from '../../hooks/usePDF';
+import { usePDF, PDFContext } from '../../hooks/usePDF';
 import { useTextSelection, SelectionData } from '../../hooks/useTextSelection';
 import { PDFCanvas } from '../reader/PDFCanvas';
 import { PageControls } from '../reader/PageControls';
@@ -89,20 +89,49 @@ export function BookReader() {
     };
   }, [pdfState.currentPage, pdfState.totalPages, viewMode, pdfState.setScale]);
 
-  // Use a ref to store the latest setScale to avoid re-adding the wheel listener on every render
+  // Keep references for event listeners without triggering re-renders
   const setScaleRef = useRef(pdfState.setScale);
+  const previousScaleRef = useRef(pdfState.scale);
+  const anchorRef = useRef({ x: 0, y: 0, mouseX: 0, mouseY: 0 });
+  
+  // Helper to record the anchor point exactly where the mouse is
+  const recordAnchor = (clientX: number, clientY: number, scrollEl: HTMLElement) => {
+    // We target the explicit zoom-target wrapper to ensure contentRect is accurate
+    const contentEl = scrollEl.firstElementChild as HTMLElement;
+    if (!contentEl) return;
+
+    const scrollRect = scrollEl.getBoundingClientRect();
+    const contentRect = contentEl.getBoundingClientRect();
+
+    // Mouse position relative to the scroll container's viewport
+    anchorRef.current.mouseX = clientX - scrollRect.left;
+    anchorRef.current.mouseY = clientY - scrollRect.top;
+
+    // Mouse position relative to the content element
+    const contentX = clientX - contentRect.left;
+    const contentY = clientY - contentRect.top;
+
+    // Normalized coordinates (0 to 1) inside the content element
+    anchorRef.current.x = contentX / contentRect.width;
+    anchorRef.current.y = contentY / contentRect.height;
+  };
+
   useEffect(() => {
     setScaleRef.current = pdfState.setScale;
-  }, [pdfState.setScale]);
+    previousScaleRef.current = pdfState.scale;
+  }, [pdfState.setScale, pdfState.scale]);
 
   // Native wheel handler for pinch-to-zoom (requires passive: false)
   useEffect(() => {
     const nativeWheelHandler = (e: WheelEvent) => {
       if (e.ctrlKey) {
-        // Prevent default browser zoom
         e.preventDefault();
-        // Standard exponential zoom formula. Trackpad pinch deltaY is usually smaller but frequent.
-        // We use a more aggressive multiplier so small pinches result in visible zoom
+        
+        const scrollEl = scrollContainerRef.current;
+        if (scrollEl) {
+          recordAnchor(e.clientX, e.clientY, scrollEl);
+        }
+        
         const zoomFactor = Math.exp(-e.deltaY * 0.01);
         setScaleRef.current(prev => Math.min(Math.max(prev * zoomFactor, 0.5), 3.0));
       }
@@ -111,8 +140,42 @@ export function BookReader() {
     document.addEventListener('wheel', nativeWheelHandler, { passive: false });
     return () => document.removeEventListener('wheel', nativeWheelHandler);
   }, []);
+  
+  React.useLayoutEffect(() => {
+    if (previousScaleRef.current !== pdfState.scale) {
+      const scrollEl = scrollContainerRef.current;
+      if (scrollEl) {
+        const contentEl = scrollEl.firstElementChild as HTMLElement;
+        if (contentEl) {
+          const contentRect = contentEl.getBoundingClientRect();
+          const scrollRect = scrollEl.getBoundingClientRect();
+          
+          // Where the anchor point SHOULD be now that the layout has changed
+          const newContentX = anchorRef.current.x * contentRect.width;
+          const newContentY = anchorRef.current.y * contentRect.height;
+          
+          // Where the mouse cursor CURRENTLY is over the new layout before we scroll
+          const currentMouseXOnContent = anchorRef.current.mouseX - (contentRect.left - scrollRect.left);
+          const currentMouseYOnContent = anchorRef.current.mouseY - (contentRect.top - scrollRect.top);
+          
+          // The distance we need to scroll to put the anchor back under the mouse
+          const deltaX = newContentX - currentMouseXOnContent;
+          const deltaY = newContentY - currentMouseYOnContent;
+          
+          scrollEl.scrollLeft += deltaX;
+          scrollEl.scrollTop += deltaY;
+        }
+      }
+      // Update the previous scale after adjustments
+      previousScaleRef.current = pdfState.scale;
+    }
+  }, [pdfState.scale, viewMode]);
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    // Record mouse X/Y relative to the scroll container for perfect zoom anchoring
+    const container = e.currentTarget;
+    recordAnchor(e.clientX, e.clientY, container);
+    
     // Ignore Ctrl+Wheel here, handled by native event
     if (e.ctrlKey) return;
 
@@ -185,14 +248,26 @@ export function BookReader() {
         ref={scrollContainerRef}
         className="pdf-scroll-container" 
         onWheel={handleWheel}
-        style={{ flex: 1, overflow: 'auto', textAlign: 'center', padding: '1rem', background: 'var(--bs-bg)' }}
+        style={{ flex: 1, overflow: 'auto', padding: '1rem', background: 'var(--bs-bg)', overflowAnchor: 'none' }}
       >
-        {viewMode === 'single' ? (
-          <PDFCanvas pdfState={pdfState} pageNumber={pdfState.currentPage} onContextMenuRequest={handleContextMenuRequest} />
-        ) : (
-          <ContinuousReader pdfState={pdfState} onContextMenuRequest={handleContextMenuRequest} />
-        )}
-        {viewMode === 'single' && <WordHighlighter />}
+        <div 
+          className="zoom-target" 
+          style={{ 
+            width: 'fit-content', // Shrink-wraps the content for accurate contentRect math
+            margin: '0 auto', // Safe centering that never cuts off left edge
+            flexShrink: 0,
+            textAlign: 'left' // Reset text alignment for inner content
+          }}
+        >
+          <PDFContext.Provider value={pdfState}>
+            {viewMode === 'single' ? (
+              <PDFCanvas pageNumber={pdfState.currentPage} onContextMenuRequest={handleContextMenuRequest} />
+            ) : (
+              <ContinuousReader onContextMenuRequest={handleContextMenuRequest} />
+            )}
+          </PDFContext.Provider>
+          {viewMode === 'single' && <WordHighlighter />}
+        </div>
       </div>
       
       <HighlightToolbar selection={selection} onHighlightSaved={() => setSelection(null)} />
