@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useBookStore } from '../../stores/bookStore';
 import { usePDFContext } from '../../hooks/usePDF';
 import { getBookmarksForBook, getHighlightsForBook, BookmarkRecord, HighlightRecord } from '../../services/dbService';
+import { ThumbnailList } from './ThumbnailList';
 
 export function SidebarTabs() {
   const [activeTab, setActiveTab] = useState<'toc' | 'thumbnails' | 'annotations'>('toc');
@@ -107,9 +108,7 @@ export function SidebarTabs() {
         )}
 
         {activeTab === 'thumbnails' && (
-          <div style={{ textAlign: 'center', color: 'var(--bs-muted)', paddingTop: '2rem' }}>
-            <p>Thumbnails coming soon</p>
-          </div>
+          <ThumbnailList onPageSelect={handlePageJump} />
         )}
 
         {activeTab === 'annotations' && (

@@ -152,4 +152,5 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - **Full-Text Search:** Integrated PyMuPDF `search_for` via IPC. Replaced `window.find()` with a robust backend engine. Highlight rectangles are rendered over the PDF natively.
   - **Annotation System:** Upgraded highlights with 4 colors, sticky notes, and a dedicated Annotations Sidebar displaying both bookmarks and highlights.
   - **Visual Polish:** Added on-canvas sticky note indicator icons, a reading progress bar in the header, and improved hotkey bindings.
+  - **Virtualization:** Implemented a highly performant PDF Thumbnail Strip in the sidebar using `@tanstack/react-virtual` to dynamically render mini canvases without lagging the UI.
 - **Next:** Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).
