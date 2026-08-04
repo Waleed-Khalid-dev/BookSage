@@ -1,0 +1,32 @@
+Search requested: query='power', path='C:\Users\Ace\Desktop\Robert Greene - 48 Laws of Power -- Robert Greene.pdf'
+Search error: Page.search_for() got an unexpected keyword argument 'hit_max'
+Traceback (most recent call last):
+  File "D:\[Project]\BookSage\python\main.py", line 62, in handle_command
+    rects = page.search_for(query, hit_max=1000)
+TypeError: Page.search_for() got an unexpected keyword argument 'hit_max'
+
+Search requested: query='power', path='C:\Users\Ace\Desktop\Robert Greene - 48 Laws of Power -- Robert Greene.pdf'
+Search error: Page.search_for() got an unexpected keyword argument 'hit_max'
+Traceback (most recent call last):
+  File "D:\[Project]\BookSage\python\main.py", line 62, in handle_command
+    rects = page.search_for(query, hit_max=1000)
+TypeError: Page.search_for() got an unexpected keyword argument 'hit_max'
+
+Search requested: query='power', path='C:\Users\Ace\Desktop\Robert Greene - 48 Laws of Power -- Robert Greene.pdf'
+Search error: Page.search_for() got an unexpected keyword argument 'hit_max'
+Traceback (most recent call last):
+  File "D:\[Project]\BookSage\python\main.py", line 62, in handle_command
+    rects = page.search_for(query, hit_max=1000)
+TypeError: Page.search_for() got an unexpected keyword argument 'hit_max'
+
+Search requested: query='power', path='C:\Users\Ace\Desktop\Robert Greene - 48 Laws of Power -- Robert Greene.pdf'
+Search error: Page.search_for() got an unexpected keyword argument 'hit_max'
+Traceback (most recent call last):
+  File "D:\[Project]\BookSage\python\main.py", line 62, in handle_command
+    rects = page.search_for(query, hit_max=1000)
+TypeError: Page.search_for() got an unexpected keyword argument 'hit_max'
+
+Search requested: query='power', path='C:\Users\Ace\Desktop\Robert Greene - 48 Laws of Power -- Robert Greene.pdf'
+Search requested: query='power', path='C:\Users\Ace\Desktop\Robert Greene - 48 Laws of Power -- Robert Greene.pdf'
+Search successful: found 1047 matches
+Search successful: found 1047 matches

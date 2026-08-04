@@ -394,6 +394,119 @@ CREATE TABLE chapters (
 - [x] `useTextSelection.ts`: capture selection + bounding rect
 - **Verify:** Open PDF → pages render → text selectable → selection detected
 
+### Phase 4.5 — Reader Polish & Feature Completeness 🏆
+> **Source:** `reader_feature_research.md` — aggregated from Adobe Acrobat, Readwise Reader, Kindle, Foxit, PDF-XChange, Moon+, Drawboard, Xodo, Sumatra PDF.
+> **Goal:** Close the gap between a working PDF viewer and a *premium* reading experience. Implement all CORE features immediately; HIGH/NICE features in descending priority.
+
+---
+
+#### 🔴 CORE — Must-have (implement first)
+
+**Navigation & Reading**
+- [x] **Keyboard shortcuts** — Arrow keys (←/→ pages), Space (next page), PgUp/PgDn, `Ctrl+F` search, `Ctrl++/-` zoom already done; verify all are wired
+- [x] **Table of Contents (TOC) sidebar** — Parse the book's chapter structure from the Python sidecar's `extract_toc()` output; render as a clickable left panel inside `BookReader`; clicking a TOC entry jumps to the correct page
+- [x] **Remember last read position** — On page change, write the current page number and book ID to the SQLite `books` table (`last_page` column); restore it when the book is re-opened
+- [x] **Reading progress bar** — Fixed bar at the bottom of the reader showing `currentPage / totalPages` as a percentage; also display `"Page X of Y"` text
+- [ ] **Two-page spread view** — Side-by-side page rendering mode (even pages left, odd pages right); toggle button in `PageControls`
+
+**Annotations & Highlights**
+- [x] **Multi-color text highlighting** — Extend the existing highlight system with 4 color choices (Yellow, Green, Blue, Pink); render as semi-transparent overlays on the PDF canvas; color picker in the context menu
+- [x] **Highlight persistence** — Save all highlights (page, rects, color, selected text) to a new `highlights` table in SQLite; reload and re-render them every time the PDF page is drawn
+- [ ] **Export annotations to Markdown** — Add an "Export Highlights" action that generates a `.md` file containing every highlight grouped by chapter (BookSage's killer differentiator)
+- [x] **Highlight sync across sessions** — Highlights must survive app restarts (backed by SQLite — covered by persistence task above)
+
+**Search**
+- [x] **`Ctrl+F` full-text search within the PDF** — Use `pdfjs-dist` `getTextContent()` to index all pages; render a search bar overlay; jump to first match and highlight all matches on the current page
+- [x] **Navigate search matches** — Up/Down arrow buttons in the search bar to cycle through matches; match count indicator (`"3 of 12"`)
+
+**AI Integration (hooks for Phase 6)**
+- [ ] **Select text → AI Explain/Summarize** — Wire `useTextSelection` result to the Copilot context; this is the bridge to Phase 6 (stub the button now, wire AI in Phase 6)
+- [ ] **Select text → Simplify language ("Explain like I'm 5")** — Same stub; quick-action pill above text selection
+
+**Layout**
+- [ ] **Split view (Book + Notes side-by-side)** — Draggable divider between `BookReader` and `NotesViewer` panels; already in app architecture; wire the toggle in the toolbar
+
+---
+
+#### 🟡 HIGH — Strong differentiators (implement after CORE)
+
+**Display & Themes**
+- [ ] **Sepia / Warm tone mode** — CSS `filter: sepia(0.4) brightness(0.95)` applied to the PDF canvas wrapper; toggle in the reader toolbar
+- [ ] **Invert PDF colors (white-on-black night mode)** — CSS `filter: invert(1) hue-rotate(180deg)` on the canvas; separate toggle from dark mode
+
+**Navigation & Reading**
+- [ ] **Thumbnail strip / page preview panel** — Collapsible left panel showing small previews of all pages (rendered at low DPI); clicking jumps to that page
+- [ ] **Distraction-free / Focus mode** — Hide the icon sidebar, toolbar, and status bar; keep only the PDF canvas and a minimal exit button; toggle with `F11` or a toolbar button
+- [x] **Bookmarks** — Star/flag any page; save to a `bookmarks` SQLite table; display a bookmark icon in the page gutter
+
+**Annotations**
+- [ ] **Underline / Strikethrough markup** — Additional markup modes selectable from the annotation toolbar alongside highlight colors
+- [x] **Sticky note / Pop-up comment on highlight** — Click any saved highlight → open a small floating input to attach a private text note; save note text alongside the highlight in SQLite
+- [x] **Annotation sidebar** — Collapsible right panel listing all highlights and notes for the current book, sorted by page; clicking jumps to that page
+- [ ] **Search within annotations** — Search bar inside the annotation sidebar to filter saved highlights by text content
+
+**AI (Phase 6 stubs)**
+- [ ] **Select text → Translate** — Quick-action stub in the copilot pill; wire to AI in Phase 6
+- [ ] **AI-generated "Story So Far" recap** — On book open, if `last_page > 1`, offer a button to generate a resumption summary from the chapters already read (uses existing AI pipeline)
+- [ ] **Inline word definition on tap/hover** — Long-press or `Ctrl+click` any word → dictionary lookup + AI explanation in a small tooltip
+
+**Reading Stats**
+- [ ] **Reading time estimate** — Calculate average WPM from page count and typical word density; display `"~X min left in chapter"` in the status bar
+- [ ] **Total pages read today / this week** — Track daily page count in SQLite; show in a small stats widget in the reader toolbar
+
+**Search**
+- [ ] **Search across all books in library** — Library-wide full-text search (Phase 7 integration); search bar in `LibraryView` queries indexed page text from all books
+
+**Audio (stub)**
+- [ ] **Text-to-speech (TTS) toggle** — Stub button in the toolbar; wire to browser `SpeechSynthesis` API or a TTS service; word-by-word highlighting during playback
+
+---
+
+#### 🟢 NICE — Power-user extras (implement last / as time allows)
+
+- [ ] **True black / OLED mode** — `--bs-bg: #000000` variant; toggle in display settings
+- [ ] **Custom background color picker** — Color input in the display settings panel for user-defined reading background
+- [ ] **Minimap scroll indicator** — Tiny full-document preview in the scrollbar gutter; highlights current viewport position
+- [ ] **Reading streak counter** — Motivational daily habit tracker; shown on the Library home screen
+- [ ] **Time spent reading per book** — Track session duration per book in SQLite; display in book card on Library screen
+- [ ] **Vim-style keybindings (J/K navigation)** — Optional power-user mode toggle; `J`/`K` scroll down/up by one line
+- [ ] **Customizable keyboard shortcuts** — Settings panel tab to remap any reader action to a user-chosen key
+- [ ] **Adjustable TTS speed** — 0.5× to 2.5× playback speed slider for the TTS feature
+- [ ] **Draw / freehand annotation** — Canvas overlay for stylus or mouse drawing; save as SVG paths in SQLite
+
+---
+
+#### New Database Columns Required (Phase 4.5 additions)
+```sql
+-- Add to books table:
+ALTER TABLE books ADD COLUMN last_page INTEGER DEFAULT 1;
+ALTER TABLE books ADD COLUMN reading_time_secs INTEGER DEFAULT 0;
+ALTER TABLE books ADD COLUMN pages_read_total INTEGER DEFAULT 0;
+
+-- New highlights table:
+CREATE TABLE highlights (
+  id         TEXT PRIMARY KEY,  -- UUID
+  book_id    TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  page_num   INTEGER NOT NULL,
+  color      TEXT NOT NULL,     -- 'yellow' | 'green' | 'blue' | 'pink'
+  rects      TEXT NOT NULL,     -- JSON array of {x, y, width, height}
+  text       TEXT NOT NULL,     -- the highlighted text
+  note       TEXT,              -- optional sticky note
+  created_at INTEGER NOT NULL
+);
+
+-- New bookmarks table:
+CREATE TABLE bookmarks (
+  id         TEXT PRIMARY KEY,  -- UUID
+  book_id    TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  page_num   INTEGER NOT NULL,
+  label      TEXT,              -- optional user label
+  created_at INTEGER NOT NULL
+);
+```
+
+- **Verify:** All CORE items checked → reader opens any PDF with TOC sidebar, remembers page, shows progress, supports multi-color highlights that survive restart, Ctrl+F search works across all pages
+
 ### Phase 5 — Notes Viewer
 - [ ] `MarkdownRenderer.tsx`: `react-markdown` with Obsidian-matching CSS
   - H1/H2 in `--bs-heading` red
@@ -462,6 +575,7 @@ main   ← Tagged releases
        ├── phase/2-ai-extractor
        ├── phase/3-pipeline-view
        ├── phase/4-book-reader
+       ├── phase/4.5-reader-polish
        ├── phase/5-notes-viewer
        ├── phase/6-copilot
        ├── phase/7-library

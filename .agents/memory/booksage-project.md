@@ -93,7 +93,7 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 8 | Settings & Polish | ⏳ Not started |
 | 9 | Packaging | ⏳ Not started |
 
-**Current status: Phase 4 complete (Book Reader). Next action = Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).**
+**Current status: Phase 4.5 complete (Reader Polish). Next action = Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).**
 
 ## Key Files
 - `RoadMap.md` — v3, full technical blueprint
@@ -139,3 +139,17 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - Implemented highlight extraction rendering and context menu removal feature.
   - Resolved trackpad pinch-to-zoom by enabling zoomHotkeysEnabled in Tauri.
 - **Next:** Phase 5 — Notes Viewer or Phase 6 — AI Copilot.
+
+### Session 2026-08-04 Notes
+- **Completed Phase 4 (Book Reader) Refinements:**
+- **Fixed Render Crashes:** Added ErrorBoundary and fixed hooks execution order.
+- **Fixed Zoom & Layout Bugs:** Removed flexbox vertical squishing, enforced strict `overflow: hidden` to prevent text layer bleed, and stabilized continuous mode viewport jumping.
+- **Text Selection:** Validated perfect sync between internal pdf.js coordinates and rendered text layers.
+- **Next:** Phase 4.5 (Reader Polish) or Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).
+
+### Session 2026-08-05 Notes
+- **Completed Phase 4.5 (Reader Polish):**
+  - **Full-Text Search:** Integrated PyMuPDF `search_for` via IPC. Replaced `window.find()` with a robust backend engine. Highlight rectangles are rendered over the PDF natively.
+  - **Annotation System:** Upgraded highlights with 4 colors, sticky notes, and a dedicated Annotations Sidebar displaying both bookmarks and highlights.
+  - **Visual Polish:** Added on-canvas sticky note indicator icons, a reading progress bar in the header, and improved hotkey bindings.
+- **Next:** Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).
