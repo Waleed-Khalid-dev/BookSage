@@ -153,4 +153,6 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - **Annotation System:** Upgraded highlights with 4 colors, sticky notes, and a dedicated Annotations Sidebar displaying both bookmarks and highlights.
   - **Visual Polish:** Added on-canvas sticky note indicator icons, a reading progress bar in the header, and improved hotkey bindings.
   - **Virtualization:** Implemented a highly performant PDF Thumbnail Strip in the sidebar using `@tanstack/react-virtual` to dynamically render mini canvases without lagging the UI.
+  - **Two-Page Spread:** Implemented a true side-by-side Book view (`SpreadReader`) with automatic cover page handling (even=left, odd=right), smart 2-page jump navigation, smooth 3D page flip animations, and a realistic central spine gradient.
+  - **Collapsible Sidebar:** Maximized reading focus with a fully collapsible sidebar, utilizing smooth width transitions and a floating toggle button.
 - **Next:** Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).

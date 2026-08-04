@@ -6,18 +6,20 @@ import { PDFCanvas } from '../reader/PDFCanvas';
 import { PageControls } from '../reader/PageControls';
 import { WordHighlighter } from '../reader/WordHighlighter';
 import { ContinuousReader } from '../reader/ContinuousReader';
+import { SpreadReader } from '../reader/SpreadReader';
 import { HighlightToolbar } from '../reader/HighlightToolbar';
 import { SidebarTabs } from '../reader/SidebarTabs';
 import { DisplaySettings } from '../reader/DisplaySettings';
 import { AudioToolbar } from '../reader/AudioToolbar';
 import { SearchBar } from '../reader/SearchBar';
 import { ReadingStats } from '../reader/ReadingStats';
-import { Search } from 'lucide-react';
+import { Search, ChevronRight } from 'lucide-react';
 
 export function BookReader() {
   const { pdfPath, currentBookTitle, lastPage, setLastPage, incrementReadingStats } = useBookStore();
   const pdfState = usePDF(pdfPath, lastPage);
-  const [viewMode, setViewMode] = useState<'single' | 'continuous'>('single');
+  const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('single');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selection, setSelection] = useState<SelectionData | null>(null);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -106,10 +108,12 @@ export function BookReader() {
 
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        handlePageChangeRequest(pdfState.currentPage + 1);
+        const step = (viewMode === 'spread' && pdfState.currentPage > 1) ? 2 : 1;
+        handlePageChangeRequest(pdfState.currentPage + step);
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        handlePageChangeRequest(pdfState.currentPage - 1);
+        const step = (viewMode === 'spread' && pdfState.currentPage === 2) ? 1 : (viewMode === 'spread' && pdfState.currentPage > 2) ? 2 : 1;
+        handlePageChangeRequest(pdfState.currentPage - step);
       } else if (e.key === 'j') {
         // Vim down
         const scrollEl = scrollContainerRef.current;
@@ -358,6 +362,13 @@ export function BookReader() {
           >
             Continuous
           </button>
+          <button 
+            className={`btn-toggle ${viewMode === 'spread' ? 'active' : ''}`}
+            onClick={() => setViewMode('spread')}
+            style={{ padding: '0.25rem 0.75rem', borderRadius: '4px', background: viewMode === 'spread' ? 'var(--bs-accent)' : 'transparent', color: viewMode === 'spread' ? 'white' : 'var(--bs-text)', border: '1px solid var(--bs-border)', cursor: 'pointer' }}
+          >
+            Spread
+          </button>
           
           <div style={{ width: '1px', height: '24px', background: 'var(--bs-border)' }}></div>
           <button 
@@ -373,10 +384,54 @@ export function BookReader() {
         </div>
       </header>
       
-      <PageControls pdfState={pdfState} onPageChangeRequest={handlePageChangeRequest} />
+      <PageControls 
+        pdfState={pdfState} 
+        onPageChangeRequest={handlePageChangeRequest} 
+        viewMode={viewMode}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
 
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          <SidebarTabs />
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+          
+          <div style={{
+            width: isSidebarOpen ? '300px' : '0px',
+            minWidth: isSidebarOpen ? '300px' : '0px',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            overflow: 'hidden',
+            borderRight: isSidebarOpen ? '1px solid var(--bs-border)' : 'none',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <SidebarTabs />
+          </div>
+
+          {!isSidebarOpen && (
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'var(--bs-surface)',
+                border: '1px solid var(--bs-border)',
+                borderLeft: 'none',
+                borderRadius: '0 8px 8px 0',
+                padding: '16px 4px',
+                cursor: 'pointer',
+                zIndex: 10,
+                boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--bs-muted)'
+              }}
+              title="Show Sidebar"
+            >
+              <ChevronRight size={16} />
+            </button>
+          )}
           
           <div 
             ref={scrollContainerRef}
@@ -393,10 +448,14 @@ export function BookReader() {
                 textAlign: 'left' // Reset text alignment for inner content
               }}
             >
-              {viewMode === 'single' ? (
+              {viewMode === 'single' && (
                 <PDFCanvas pageNumber={pdfState.currentPage} onContextMenuRequest={handleContextMenuRequest} />
-              ) : (
+              )}
+              {viewMode === 'continuous' && (
                 <ContinuousReader onContextMenuRequest={handleContextMenuRequest} />
+              )}
+              {viewMode === 'spread' && (
+                <SpreadReader onContextMenuRequest={handleContextMenuRequest} />
               )}
               {viewMode === 'single' && <WordHighlighter />}
             </div>

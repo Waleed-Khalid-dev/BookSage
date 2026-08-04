@@ -1,5 +1,5 @@
 import { UsePDFResult } from '../../hooks/usePDF';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Bookmark } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Bookmark, PanelLeft } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useBookStore } from '../../stores/bookStore';
 import { getBookmarksForBook } from '../../services/dbService';
@@ -7,9 +7,12 @@ import { getBookmarksForBook } from '../../services/dbService';
 interface PageControlsProps {
   pdfState: UsePDFResult;
   onPageChangeRequest?: (page: number) => void;
+  viewMode?: 'single' | 'continuous' | 'spread';
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-export function PageControls({ pdfState, onPageChangeRequest }: PageControlsProps) {
+export function PageControls({ pdfState, onPageChangeRequest, viewMode = 'single', isSidebarOpen, onToggleSidebar }: PageControlsProps) {
   const { currentPage, totalPages, setPage, setScale, isLoading } = pdfState;
   const { bookId, bookmarksRefreshCounter, toggleBookmarkAction } = useBookStore();
 
@@ -36,8 +39,15 @@ export function PageControls({ pdfState, onPageChangeRequest }: PageControlsProp
     }
   };
 
-  const handlePrev = () => requestPage(currentPage - 1);
-  const handleNext = () => requestPage(currentPage + 1);
+  const handlePrev = () => {
+    const step = (viewMode === 'spread' && currentPage === 2) ? 1 : (viewMode === 'spread' && currentPage > 2) ? 2 : 1;
+    requestPage(currentPage - step);
+  };
+  
+  const handleNext = () => {
+    const step = (viewMode === 'spread' && currentPage > 1) ? 2 : 1;
+    requestPage(currentPage + step);
+  };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -72,6 +82,19 @@ export function PageControls({ pdfState, onPageChangeRequest }: PageControlsProp
       margin: '1rem 0'
     }}>
       <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {onToggleSidebar && (
+          <>
+            <button 
+              onClick={onToggleSidebar}
+              className={`icon-btn ${!isSidebarOpen ? 'inactive' : ''}`}
+              title="Toggle Sidebar"
+              style={{ color: isSidebarOpen ? 'var(--bs-accent)' : 'var(--bs-muted)' }}
+            >
+              <PanelLeft size={20} />
+            </button>
+            <div style={{ width: '1px', height: '20px', background: 'var(--bs-border)', margin: '0 4px', alignSelf: 'center' }}></div>
+          </>
+        )}
         <button onClick={handlePrev} disabled={currentPage <= 1 || isLoading} className="icon-btn">
           <ChevronLeft size={20} />
         </button>
