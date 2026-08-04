@@ -7,18 +7,29 @@ import { PageControls } from '../reader/PageControls';
 import { WordHighlighter } from '../reader/WordHighlighter';
 import { ContinuousReader } from '../reader/ContinuousReader';
 import { HighlightToolbar } from '../reader/HighlightToolbar';
+import { SidebarTabs } from '../reader/SidebarTabs';
+import { DisplaySettings } from '../reader/DisplaySettings';
+import { AudioToolbar } from '../reader/AudioToolbar';
+import { SearchBar } from '../reader/SearchBar';
+import { ReadingStats } from '../reader/ReadingStats';
+import { Search } from 'lucide-react';
 
 export function BookReader() {
-  const { pdfPath, currentBookTitle } = useBookStore();
-  const pdfState = usePDF(pdfPath);
+  const { pdfPath, currentBookTitle, lastPage, setLastPage, incrementReadingStats } = useBookStore();
+  const pdfState = usePDF(pdfPath, lastPage);
   const [viewMode, setViewMode] = useState<'single' | 'continuous'>('single');
   const [selection, setSelection] = useState<SelectionData | null>(null);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollAccumulator = useRef(0);
+  const lastActivityTime = useRef(Date.now());
+  const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
   
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, highlightId: string } | null>(null);
+  
+  // Note Editor State
+  const [editingNote, setEditingNote] = useState<{ highlightId: string, text: string } | null>(null);
 
   useTextSelection((sel) => {
     setSelection(sel);
@@ -27,16 +38,49 @@ export function BookReader() {
     }
   });
 
-  if (!pdfPath) {
-    return (
-      <div className="view-container empty-state" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-        <div style={{ textAlign: 'center' }}>
-          <h2>No Book Loaded</h2>
-          <p style={{ color: 'var(--bs-muted)' }}>Select a book from the Library to start reading.</p>
-        </div>
-      </div>
-    );
-  }
+  // Sync current page back to store
+  useEffect(() => {
+    if (pdfState.currentPage > 0 && pdfState.currentPage !== lastPage) {
+      setLastPage(pdfState.currentPage);
+      incrementReadingStats(0, 1);
+    }
+  }, [pdfState.currentPage, lastPage, setLastPage, incrementReadingStats]);
+
+  // Track reading time with idle detection
+  useEffect(() => {
+    if (!pdfPath) return;
+
+    // Activity tracking to prevent infinite tracking if user walks away
+    const updateActivity = () => {
+      lastActivityTime.current = Date.now();
+    };
+
+    // Attach global listeners for common interactions
+    window.addEventListener('mousemove', updateActivity);
+    window.addEventListener('keydown', updateActivity);
+    window.addEventListener('click', updateActivity);
+    window.addEventListener('scroll', updateActivity, true); // capture phase for any scroll container
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const timeSinceLastActivity = now - lastActivityTime.current;
+      
+      // Only increment time if user has been active within the timeout threshold
+      if (timeSinceLastActivity < IDLE_TIMEOUT_MS) {
+        incrementReadingStats(10, 0); // Add 10 seconds
+      }
+    }, 10000);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('mousemove', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('click', updateActivity);
+      window.removeEventListener('scroll', updateActivity, true);
+    };
+  }, [pdfPath, incrementReadingStats]);
+
+
 
   const handlePageChangeRequest = (newPage: number) => {
     if (newPage >= 1 && newPage <= pdfState.totalPages) {
@@ -55,6 +99,7 @@ export function BookReader() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setContextMenu(null);
+        setEditingNote(null);
       }
       
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -65,6 +110,18 @@ export function BookReader() {
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         handlePageChangeRequest(pdfState.currentPage - 1);
+      } else if (e.key === 'j') {
+        // Vim down
+        const scrollEl = scrollContainerRef.current;
+        if (scrollEl) {
+          scrollEl.scrollTop += 100;
+        }
+      } else if (e.key === 'k') {
+        // Vim up
+        const scrollEl = scrollContainerRef.current;
+        if (scrollEl) {
+          scrollEl.scrollTop -= 100;
+        }
       } else if (e.ctrlKey) {
         if (e.key === '=' || e.key === '+') {
           e.preventDefault();
@@ -79,13 +136,28 @@ export function BookReader() {
       }
     };
     
-    const handleClick = () => setContextMenu(null);
+    const handleClick = () => {
+      setContextMenu(null);
+    };
+    
+    const handleSearchJump = (e: any) => {
+      if (e.detail && e.detail.page) {
+        if (viewMode === 'single') {
+          pdfState.setPage(e.detail.page);
+        } else if (viewMode === 'continuous') {
+          // For continuous, we trigger the native scroll event handled by ContinuousReader
+          window.dispatchEvent(new CustomEvent('continuous-jump', { detail: { page: e.detail.page } }));
+        }
+      }
+    };
     
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('click', handleClick);
+    window.addEventListener('search-jump', handleSearchJump);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('click', handleClick);
+      window.removeEventListener('search-jump', handleSearchJump);
     };
   }, [pdfState.currentPage, pdfState.totalPages, viewMode, pdfState.setScale]);
 
@@ -219,8 +291,55 @@ export function BookReader() {
     }
   };
 
+  const handleEditNoteRequest = async () => {
+    if (contextMenu) {
+      const { highlightId } = contextMenu;
+      setContextMenu(null);
+      
+      const { getHighlightsForBook } = await import('../../services/dbService');
+      const { bookId } = useBookStore.getState();
+      if (bookId) {
+        const hls = await getHighlightsForBook(bookId);
+        const hl = hls.find(h => h.id === highlightId);
+        if (hl) {
+          setEditingNote({ highlightId, text: hl.note || '' });
+        }
+      }
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (editingNote) {
+      const { upsertHighlight, getHighlightsForBook } = await import('../../services/dbService');
+      const { bookId, triggerHighlightsRefresh } = useBookStore.getState();
+      if (bookId) {
+        const hls = await getHighlightsForBook(bookId);
+        const hl = hls.find(h => h.id === editingNote.highlightId);
+        if (hl) {
+          await upsertHighlight({ ...hl, note: editingNote.text });
+          triggerHighlightsRefresh();
+        }
+      }
+      setEditingNote(null);
+    }
+  };
+
+  if (!pdfPath) {
+    return (
+      <div className="view-container empty-state" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2>No Book Loaded</h2>
+          <p style={{ color: 'var(--bs-muted)' }}>Select a book from the Library to start reading.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="view-container book-reader" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
+    <PDFContext.Provider value={pdfState}>
+      <div className="view-container book-reader" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
+        <SearchBar />
+      
       <header className="view-header" style={{ padding: '1rem', borderBottom: '1px solid var(--bs-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ color: 'var(--bs-heading)', margin: 0 }}>{currentBookTitle}</h2>
         
@@ -239,38 +358,64 @@ export function BookReader() {
           >
             Continuous
           </button>
+          
+          <div style={{ width: '1px', height: '24px', background: 'var(--bs-border)' }}></div>
+          <button 
+            className="icon-btn" 
+            onClick={() => window.dispatchEvent(new Event('open-search'))}
+            title="Search (Ctrl+F)"
+          >
+            <Search size={20} />
+          </button>
+          <ReadingStats />
+          <AudioToolbar />
+          <DisplaySettings />
         </div>
       </header>
       
       <PageControls pdfState={pdfState} onPageChangeRequest={handlePageChangeRequest} />
 
-      <div 
-        ref={scrollContainerRef}
-        className="pdf-scroll-container" 
-        onWheel={handleWheel}
-        style={{ flex: 1, overflow: 'auto', padding: '1rem', background: 'var(--bs-bg)', overflowAnchor: 'none' }}
-      >
-        <div 
-          className="zoom-target" 
-          style={{ 
-            width: 'fit-content', // Shrink-wraps the content for accurate contentRect math
-            margin: '0 auto', // Safe centering that never cuts off left edge
-            flexShrink: 0,
-            textAlign: 'left' // Reset text alignment for inner content
-          }}
-        >
-          <PDFContext.Provider value={pdfState}>
-            {viewMode === 'single' ? (
-              <PDFCanvas pageNumber={pdfState.currentPage} onContextMenuRequest={handleContextMenuRequest} />
-            ) : (
-              <ContinuousReader onContextMenuRequest={handleContextMenuRequest} />
-            )}
-          </PDFContext.Provider>
-          {viewMode === 'single' && <WordHighlighter />}
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          <SidebarTabs />
+          
+          <div 
+            ref={scrollContainerRef}
+            className="pdf-scroll-container" 
+            onWheel={handleWheel}
+            style={{ flex: 1, overflow: 'auto', padding: '1rem', background: 'var(--bs-bg)', overflowAnchor: 'none' }}
+          >
+            <div 
+              className="zoom-target" 
+              style={{ 
+                width: 'fit-content', // Shrink-wraps the content for accurate contentRect math
+                margin: '0 auto', // Safe centering that never cuts off left edge
+                flexShrink: 0,
+                textAlign: 'left' // Reset text alignment for inner content
+              }}
+            >
+              {viewMode === 'single' ? (
+                <PDFCanvas pageNumber={pdfState.currentPage} onContextMenuRequest={handleContextMenuRequest} />
+              ) : (
+                <ContinuousReader onContextMenuRequest={handleContextMenuRequest} />
+              )}
+              {viewMode === 'single' && <WordHighlighter />}
+            </div>
+          </div>
         </div>
-      </div>
       
       <HighlightToolbar selection={selection} onHighlightSaved={() => setSelection(null)} />
+
+      {/* Reading Progress Bar */}
+      <div style={{ height: '4px', width: '100%', background: 'var(--bs-border)' }}>
+        <div 
+          style={{ 
+            height: '100%', 
+            width: `${pdfState.totalPages > 0 ? (pdfState.currentPage / pdfState.totalPages) * 100 : 0}%`, 
+            background: 'var(--bs-accent)',
+            transition: 'width 0.3s ease'
+          }} 
+        />
+      </div>
 
       {contextMenu && (
         <div 
@@ -287,6 +432,24 @@ export function BookReader() {
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          <button 
+            onClick={handleEditNoteRequest}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--bs-text)',
+              cursor: 'pointer',
+              padding: '8px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: 500,
+              width: '100%',
+              textAlign: 'left'
+            }}
+          >
+            <span>📝</span> Edit Note
+          </button>
           <button 
             onClick={handleDeleteHighlight}
             style={{
@@ -307,6 +470,67 @@ export function BookReader() {
           </button>
         </div>
       )}
-    </div>
+
+      {editingNote && (
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'var(--bs-surface)',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+          zIndex: 10001,
+          width: '400px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          <h3 style={{ margin: 0, color: 'var(--bs-heading)' }}>Edit Note</h3>
+          <textarea 
+            value={editingNote.text}
+            onChange={(e) => setEditingNote({ ...editingNote, text: e.target.value })}
+            autoFocus
+            style={{
+              width: '100%',
+              minHeight: '100px',
+              padding: '0.5rem',
+              background: 'var(--bs-bg)',
+              color: 'var(--bs-text)',
+              border: '1px solid var(--bs-border)',
+              borderRadius: '4px',
+              resize: 'vertical'
+            }}
+            placeholder="Write your note here..."
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+            <button 
+              onClick={() => setEditingNote(null)}
+              style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--bs-border)', color: 'var(--bs-text)', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleSaveNote}
+              style={{ padding: '0.5rem 1rem', background: 'var(--bs-accent)', border: 'none', color: 'white', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Save Note
+            </button>
+          </div>
+        </div>
+      )}
+
+      {editingNote && (
+        <div 
+          onClick={() => setEditingNote(null)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', zIndex: 10000
+          }} 
+        />
+      )}
+      </div>
+    </PDFContext.Provider>
   );
 }

@@ -1,4 +1,5 @@
 import { useUiStore } from "./stores/uiStore";
+import { useBookStore } from "./stores/bookStore";
 import { IconSidebar } from "./components/layout/IconSidebar";
 import { LibraryView } from "./components/views/LibraryView";
 import { BookReader } from "./components/views/BookReader";
@@ -10,6 +11,7 @@ import "./App.css";
 
 function App() {
   const { activeView, theme } = useUiStore();
+  const { readerTheme } = useBookStore();
 
   const renderView = () => {
     switch (activeView) {
@@ -23,7 +25,10 @@ function App() {
   };
 
   return (
-    <div className={`booksage-theme ${theme === "light" ? "booksage-light" : ""} app-container`}>
+    <div 
+      className={`booksage-theme ${theme === "light" ? "booksage-light" : ""} app-container`}
+      data-reader-theme={readerTheme}
+    >
       <IconSidebar />
       <main className="main-content">
         {renderView()}

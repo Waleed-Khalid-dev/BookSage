@@ -114,7 +114,21 @@ export function ContinuousReader({ onContextMenuRequest }: { onContextMenuReques
         el.scrollIntoView();
       }
     }, 50);
-    return () => clearTimeout(timeout);
+    
+    const handleSearchJump = (e: any) => {
+      if (e.detail && e.detail.page) {
+        const el = document.getElementById(`pdf-page-${e.detail.page}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    };
+    window.addEventListener('continuous-jump', handleSearchJump);
+    
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('continuous-jump', handleSearchJump);
+    };
   }, []); // Only run once on mount!
 
   if (pdfState.totalPages === 0) return null;

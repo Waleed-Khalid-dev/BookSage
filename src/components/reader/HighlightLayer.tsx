@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getHighlightsForBook, HighlightRecord } from '../../services/dbService';
 import { useBookStore } from '../../stores/bookStore';
 import { RelativeRect } from '../../hooks/useTextSelection';
+import { StickyNote } from 'lucide-react';
 
 interface HighlightLayerProps {
   pageNumber: number;
@@ -46,6 +47,8 @@ export function HighlightLayer({ pageNumber, scale = 1.0 }: HighlightLayerProps)
           console.error('Failed to parse highlight rects', e);
         }
         
+        const hasNote = Boolean(hl.note && hl.note.trim() !== '');
+        
         return rects.map((rect, idx) => (
           <div
             key={`${hl.id}-${idx}`}
@@ -58,7 +61,30 @@ export function HighlightLayer({ pageNumber, scale = 1.0 }: HighlightLayerProps)
               backgroundColor: hl.color,
               mixBlendMode: 'multiply',
             }}
-          />
+          >
+            {idx === 0 && hasNote && (
+              <div 
+                title={hl.note!} 
+                style={{ 
+                  position: 'absolute', 
+                  top: -8, 
+                  right: -8, 
+                  pointerEvents: 'auto',
+                  backgroundColor: '#fef3c7',
+                  color: '#92400e',
+                  borderRadius: '50%',
+                  padding: '2px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                  zIndex: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <StickyNote size={12} fill="#fde68a" />
+              </div>
+            )}
+          </div>
         ));
       })}
     </div>

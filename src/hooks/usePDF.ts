@@ -28,9 +28,9 @@ export function usePDFContext() {
   return context;
 }
 
-export function usePDF(pdfPath: string | null): UsePDFResult {
+export function usePDF(pdfPath: string | null, initialPage: number = 1): UsePDFResult {
   const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(0);
   const [scale, setScale] = useState(1.2);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +62,7 @@ export function usePDF(pdfPath: string | null): UsePDFResult {
         if (active) {
           setPdfDocument(doc);
           setTotalPages(doc.numPages);
-          setCurrentPage(1); // Reset to page 1 on load
+          setCurrentPage(initialPage); // Start at initial page
           
           // Pre-fetch page 1 to establish the global base size for all pages
           try {

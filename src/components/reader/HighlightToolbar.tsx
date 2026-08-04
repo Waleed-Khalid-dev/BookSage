@@ -1,6 +1,7 @@
 import { useBookStore } from '../../stores/bookStore';
 import { upsertHighlight } from '../../services/dbService';
 import { SelectionData } from '../../hooks/useTextSelection';
+import { Sparkles } from 'lucide-react';
 
 interface HighlightToolbarProps {
   selection: SelectionData | null;
@@ -46,6 +47,13 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
     { name: 'pink', value: 'rgba(255, 105, 180, 0.3)' }
   ];
 
+  const handleCopilotAction = (action: string) => {
+    // Stub for now. In Phase 6 this will send to AIChatView or open a popup.
+    console.log(`Copilot action [${action}] on text: "${selection.text}"`);
+    alert(`Copilot [${action}] feature coming in Phase 6!\nSelected: "${selection.text.substring(0, 50)}..."`);
+    window.getSelection()?.removeAllRanges();
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -76,6 +84,19 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
           title={`Highlight ${c.name}`}
         />
       ))}
+      <div style={{ width: '1px', height: '24px', background: 'var(--bs-border)' }}></div>
+      <button 
+        onClick={() => handleCopilotAction('Explain')}
+        style={{ background: 'transparent', border: 'none', color: 'var(--bs-accent)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 500 }}
+      >
+        <Sparkles size={14} /> Explain
+      </button>
+      <button 
+        onClick={() => handleCopilotAction('Summarize')}
+        style={{ background: 'transparent', border: 'none', color: 'var(--bs-accent)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 500 }}
+      >
+        <Sparkles size={14} /> Summarize
+      </button>
     </div>
   );
 }

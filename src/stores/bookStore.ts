@@ -14,6 +14,11 @@ export interface Chapter {
   json_path?: string;
 }
 
+export interface SearchMatch {
+  page: number;
+  rects: { top: number; left: number; width: number; height: number; matchIndex: number }[];
+}
+
 interface BookState {
   bookId: string | null;
   currentBookTitle: string;
@@ -22,7 +27,19 @@ interface BookState {
   isExtracting: boolean;
   apiKey: string;
   aiModel: string;
+  readerTheme: 'dark' | 'light' | 'sepia' | 'night' | 'oled' | 'focus';
   highlightsRefreshCounter: number;
+  bookmarksRefreshCounter: number;
+  lastPage: number;
+  readingTimeSecs: number;
+  pagesReadTotal: number;
+  
+  // Search State
+  searchQuery: string;
+  searchResults: SearchMatch[];
+  currentSearchIndex: number;
+  isSearching: boolean;
+  totalSearchMatches: number;
   
   // Actions
   setApiKey: (key: string) => void;
@@ -35,7 +52,18 @@ interface BookState {
   retrySpecificChapters: (indices: number[], provider?: string) => Promise<void>;
   setChapterStatus: (index: number, status: Chapter['status']) => void;
   triggerHighlightsRefresh: () => void;
+  triggerBookmarksRefresh: () => void;
   deleteHighlightAction: (id: string) => Promise<void>;
+  toggleBookmarkAction: (pageNum: number) => Promise<void>;
+  setLastPage: (page: number) => Promise<void>;
+  incrementReadingStats: (timeSecs: number, newPagesCount: number) => Promise<void>;
+  setReaderTheme: (theme: BookState['readerTheme']) => void;
+  
+  // Search Actions
+  performSearch: (query: string) => Promise<void>;
+  nextSearchResult: () => void;
+  prevSearchResult: () => void;
+  clearSearch: () => void;
 }
 
 export const useBookStore = create<BookState>()(
@@ -48,9 +76,21 @@ export const useBookStore = create<BookState>()(
       isExtracting: false,
       apiKey: '',
       aiModel: 'gemini-3.6-flash',
+      readerTheme: 'dark',
       highlightsRefreshCounter: 0,
+      bookmarksRefreshCounter: 0,
+      lastPage: 1,
+      readingTimeSecs: 0,
+      pagesReadTotal: 0,
+      
+      searchQuery: '',
+      searchResults: [],
+      currentSearchIndex: -1,
+      isSearching: false,
+      totalSearchMatches: 0,
 
       triggerHighlightsRefresh: () => set(state => ({ highlightsRefreshCounter: state.highlightsRefreshCounter + 1 })),
+      triggerBookmarksRefresh: () => set(state => ({ bookmarksRefreshCounter: state.bookmarksRefreshCounter + 1 })),
       
       deleteHighlightAction: async (id: string) => {
         try {
@@ -58,6 +98,70 @@ export const useBookStore = create<BookState>()(
           get().triggerHighlightsRefresh();
         } catch (e) {
           console.error("Failed to delete highlight:", e);
+        }
+      },
+
+      toggleBookmarkAction: async (pageNum: number) => {
+        const { bookId } = get();
+        if (!bookId) return;
+        try {
+          // Import here to avoid circular dependency if needed, or we just import at the top
+          // Wait, we need to import upsertBookmark, getBookmarksForBook, deleteBookmark
+          const { getBookmarksForBook, deleteBookmark, upsertBookmark } = await import('../services/dbService');
+          
+          const bookmarks = await getBookmarksForBook(bookId);
+          const existing = bookmarks.find(b => b.page_num === pageNum);
+          
+          if (existing) {
+            await deleteBookmark(existing.id);
+          } else {
+            await upsertBookmark({
+              id: crypto.randomUUID(),
+              book_id: bookId,
+              page_num: pageNum,
+              created_at: Date.now()
+            });
+          }
+          get().triggerBookmarksRefresh();
+        } catch (e) {
+          console.error("Failed to toggle bookmark:", e);
+        }
+      },
+
+      setLastPage: async (page: number) => {
+        const { bookId } = get();
+        if (!bookId) return;
+        set({ lastPage: page });
+        
+        try {
+          const book = await getBook(bookId);
+          if (book) {
+            await upsertBook({ ...book, last_page: page });
+          }
+        } catch (e) {
+          console.error("Failed to save last_page to DB", e);
+        }
+      },
+
+      incrementReadingStats: async (timeSecs: number, newPagesCount: number) => {
+        const { bookId, readingTimeSecs, pagesReadTotal } = get();
+        if (!bookId) return;
+        
+        const newTime = readingTimeSecs + timeSecs;
+        const newPages = pagesReadTotal + newPagesCount;
+        set({ readingTimeSecs: newTime, pagesReadTotal: newPages });
+        
+        try {
+          const book = await getBook(bookId);
+          if (book) {
+            await upsertBook({ 
+              ...book, 
+              reading_time_secs: newTime,
+              pages_read_total: newPages
+            });
+          }
+        } catch (e) {
+          console.error("Failed to save reading stats to DB", e);
         }
       },
 
@@ -77,9 +181,20 @@ export const useBookStore = create<BookState>()(
             cover_path: null,
             total_chapters: 0,
             created_at: Date.now(),
-            last_opened: Date.now()
+            last_opened: Date.now(),
+            last_page: 1,
+            reading_time_secs: 0,
+            pages_read_total: 0
           });
-          set({ pdfPath: path, currentBookTitle: filename, chapters: [], bookId: newBookId });
+          set({ 
+            pdfPath: path, 
+            currentBookTitle: filename, 
+            chapters: [], 
+            bookId: newBookId,
+            lastPage: 1,
+            readingTimeSecs: 0,
+            pagesReadTotal: 0
+          });
         } catch (e) {
           console.error("Failed to insert initial book record:", e);
           set({ pdfPath: path, currentBookTitle: filename, chapters: [], bookId: null });
@@ -120,7 +235,10 @@ export const useBookStore = create<BookState>()(
             bookId: book.id,
             currentBookTitle: book.title,
             pdfPath: book.pdf_path,
-            chapters: verifiedChapters
+            chapters: verifiedChapters,
+            lastPage: book.last_page ?? 1,
+            readingTimeSecs: book.reading_time_secs ?? 0,
+            pagesReadTotal: book.pages_read_total ?? 0
           });
         } catch (e) {
           console.error('Failed to load book from DB', e);
@@ -397,6 +515,57 @@ export const useBookStore = create<BookState>()(
               error_msg: ch.error || null, updated_at: Date.now()
            }).catch(console.error);
         }
+      },
+
+      setReaderTheme: (theme: BookState['readerTheme']) => set({ readerTheme: theme }),
+
+      
+      performSearch: async (query: string) => {
+        const { pdfPath } = get();
+        if (!pdfPath || !query.trim()) {
+          get().clearSearch();
+          return;
+        }
+        
+        set({ isSearching: true, searchQuery: query, currentSearchIndex: -1, searchResults: [], totalSearchMatches: 0 });
+        
+        try {
+          const res = await invokePython({ command: 'search_pdf', path: pdfPath, query });
+          if (res.status === 'success') {
+            set({
+              searchResults: res.matches,
+              totalSearchMatches: res.total,
+              currentSearchIndex: res.total > 0 ? 0 : -1,
+              isSearching: false
+            });
+          } else {
+            console.error("Search failed:", res.message);
+            set({ isSearching: false });
+          }
+        } catch (e) {
+          console.error("Search request failed:", e);
+          set({ isSearching: false });
+        }
+      },
+      
+      nextSearchResult: () => {
+        const { totalSearchMatches, currentSearchIndex } = get();
+        if (totalSearchMatches > 0) {
+          const next = (currentSearchIndex + 1) % totalSearchMatches;
+          set({ currentSearchIndex: next });
+        }
+      },
+      
+      prevSearchResult: () => {
+        const { totalSearchMatches, currentSearchIndex } = get();
+        if (totalSearchMatches > 0) {
+          const prev = currentSearchIndex <= 0 ? totalSearchMatches - 1 : currentSearchIndex - 1;
+          set({ currentSearchIndex: prev });
+        }
+      },
+      
+      clearSearch: () => {
+        set({ searchQuery: '', searchResults: [], currentSearchIndex: -1, totalSearchMatches: 0, isSearching: false });
       }
     }),
     {
@@ -405,6 +574,7 @@ export const useBookStore = create<BookState>()(
       partialize: (state) => ({
         apiKey: state.apiKey,
         aiModel: state.aiModel,
+        readerTheme: state.readerTheme,
       }),
     }
   )

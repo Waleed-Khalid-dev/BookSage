@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import 'pdfjs-dist/web/pdf_viewer.css';
 import { HighlightLayer } from './HighlightLayer';
+import { SearchHighlightLayer } from './SearchHighlightLayer';
 import { useBookStore } from '../../stores/bookStore';
 import { getHighlightsForBook } from '../../services/dbService';
 
@@ -173,6 +174,7 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
         className="pdf-canvas" 
         style={{ width: '100%', height: '100%' }}
       />
+      <SearchHighlightLayer pageNumber={pageNumber} scale={scale} />
       <HighlightLayer pageNumber={pageNumber} scale={scale} />
       <div 
         ref={textLayerRef} 

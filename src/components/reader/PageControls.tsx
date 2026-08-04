@@ -1,6 +1,8 @@
 import { UsePDFResult } from '../../hooks/usePDF';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Bookmark } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+import { useBookStore } from '../../stores/bookStore';
+import { getBookmarksForBook } from '../../services/dbService';
 
 interface PageControlsProps {
   pdfState: UsePDFResult;
@@ -9,12 +11,22 @@ interface PageControlsProps {
 
 export function PageControls({ pdfState, onPageChangeRequest }: PageControlsProps) {
   const { currentPage, totalPages, setPage, setScale, isLoading } = pdfState;
+  const { bookId, bookmarksRefreshCounter, toggleBookmarkAction } = useBookStore();
 
   const [inputValue, setInputValue] = useState(currentPage.toString());
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     setInputValue(currentPage.toString());
   }, [currentPage]);
+
+  useEffect(() => {
+    if (bookId) {
+      getBookmarksForBook(bookId).then(bookmarks => {
+        setIsBookmarked(bookmarks.some(b => b.page_num === currentPage));
+      });
+    }
+  }, [bookId, currentPage, bookmarksRefreshCounter]);
 
   const requestPage = (page: number) => {
     if (onPageChangeRequest) {
@@ -83,6 +95,15 @@ export function PageControls({ pdfState, onPageChangeRequest }: PageControlsProp
       <div style={{ flex: 1 }}></div>
 
       <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button 
+          onClick={() => toggleBookmarkAction(currentPage)} 
+          disabled={isLoading || !bookId} 
+          className="icon-btn" 
+          title={isBookmarked ? "Remove Bookmark" : "Bookmark Page"}
+          style={{ color: isBookmarked ? 'var(--bs-accent)' : 'inherit' }}
+        >
+          <Bookmark size={20} fill={isBookmarked ? 'currentColor' : 'none'} />
+        </button>
         <button onClick={zoomOut} disabled={isLoading} className="icon-btn" title="Zoom Out">
           <ZoomOut size={20} />
         </button>

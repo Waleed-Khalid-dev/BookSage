@@ -11,6 +11,9 @@ export interface BookRecord {
   total_chapters: number;
   created_at: number;
   last_opened: number;
+  last_page?: number;
+  reading_time_secs?: number;
+  pages_read_total?: number;
 }
 
 export interface ChapterRecord {
@@ -33,6 +36,15 @@ export interface HighlightRecord {
   color: string;
   text: string | null;
   rects: string;
+  note?: string | null;
+  created_at: number;
+}
+
+export interface BookmarkRecord {
+  id: string;
+  book_id: string;
+  page_num: number;
+  label?: string | null;
   created_at: number;
 }
 
@@ -83,25 +95,60 @@ async function initDb(database: Database) {
       color TEXT NOT NULL,
       text TEXT,
       rects TEXT NOT NULL,
+      note TEXT,
       created_at INTEGER NOT NULL,
       FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
     );
   `);
+
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS bookmarks (
+      id TEXT PRIMARY KEY,
+      book_id TEXT NOT NULL,
+      page_num INTEGER NOT NULL,
+      label TEXT,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+    );
+  `);
+
+  // Migrations for existing databases
+  const migrations = [
+    'ALTER TABLE books ADD COLUMN last_page INTEGER DEFAULT 1',
+    'ALTER TABLE books ADD COLUMN reading_time_secs INTEGER DEFAULT 0',
+    'ALTER TABLE books ADD COLUMN pages_read_total INTEGER DEFAULT 0',
+    'ALTER TABLE highlights ADD COLUMN note TEXT'
+  ];
+
+  for (const query of migrations) {
+    try {
+      await database.execute(query);
+    } catch (e) {
+      // Column likely already exists, safe to ignore
+    }
+  }
 }
 
 export async function upsertBook(book: BookRecord): Promise<void> {
   const database = await getDb();
   await database.execute(
-    `INSERT INTO books (id, title, pdf_path, data_dir, cover_path, total_chapters, created_at, last_opened)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO books (id, title, pdf_path, data_dir, cover_path, total_chapters, created_at, last_opened, last_page, reading_time_secs, pages_read_total)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      ON CONFLICT(id) DO UPDATE SET
      title=excluded.title,
      pdf_path=excluded.pdf_path,
      data_dir=excluded.data_dir,
      cover_path=excluded.cover_path,
      total_chapters=excluded.total_chapters,
-     last_opened=excluded.last_opened`,
-    [book.id, book.title, book.pdf_path, book.data_dir, book.cover_path, book.total_chapters, book.created_at, book.last_opened]
+     last_opened=excluded.last_opened,
+     last_page=excluded.last_page,
+     reading_time_secs=excluded.reading_time_secs,
+     pages_read_total=excluded.pages_read_total`,
+    [
+      book.id, book.title, book.pdf_path, book.data_dir, book.cover_path, 
+      book.total_chapters, book.created_at, book.last_opened, 
+      book.last_page ?? 1, book.reading_time_secs ?? 0, book.pages_read_total ?? 0
+    ]
   );
 }
 
@@ -145,12 +192,13 @@ export async function updateBookLastOpened(id: string): Promise<void> {
 export async function upsertHighlight(highlight: HighlightRecord): Promise<void> {
   const database = await getDb();
   await database.execute(
-    `INSERT INTO highlights (id, book_id, page_num, color, text, rects, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO highlights (id, book_id, page_num, color, text, rects, note, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      ON CONFLICT(id) DO UPDATE SET
      color=excluded.color,
-     rects=excluded.rects`,
-    [highlight.id, highlight.book_id, highlight.page_num, highlight.color, highlight.text, highlight.rects, highlight.created_at]
+     rects=excluded.rects,
+     note=excluded.note`,
+    [highlight.id, highlight.book_id, highlight.page_num, highlight.color, highlight.text, highlight.rects, highlight.note, highlight.created_at]
   );
 }
 
@@ -164,3 +212,23 @@ export async function deleteHighlight(id: string): Promise<void> {
   await database.execute('DELETE FROM highlights WHERE id = $1', [id]);
 }
 
+export async function upsertBookmark(bookmark: BookmarkRecord): Promise<void> {
+  const database = await getDb();
+  await database.execute(
+    `INSERT INTO bookmarks (id, book_id, page_num, label, created_at)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT(id) DO UPDATE SET
+     label=excluded.label`,
+    [bookmark.id, bookmark.book_id, bookmark.page_num, bookmark.label, bookmark.created_at]
+  );
+}
+
+export async function getBookmarksForBook(bookId: string): Promise<BookmarkRecord[]> {
+  const database = await getDb();
+  return await database.select<BookmarkRecord[]>('SELECT * FROM bookmarks WHERE book_id = $1 ORDER BY page_num ASC', [bookId]);
+}
+
+export async function deleteBookmark(id: string): Promise<void> {
+  const database = await getDb();
+  await database.execute('DELETE FROM bookmarks WHERE id = $1', [id]);
+}
