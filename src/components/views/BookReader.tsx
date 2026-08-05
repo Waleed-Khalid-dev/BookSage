@@ -13,10 +13,15 @@ import { DisplaySettings } from '../reader/DisplaySettings';
 import { AudioToolbar } from '../reader/AudioToolbar';
 import { SearchBar } from '../reader/SearchBar';
 import { ReadingStats } from '../reader/ReadingStats';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, PenTool, Undo, Redo, Eraser } from 'lucide-react';
 
 export function BookReader() {
-  const { pdfPath, currentBookTitle, lastPage, setLastPage, incrementReadingStats } = useBookStore();
+  const { 
+    pdfPath, currentBookTitle, lastPage, setLastPage, incrementReadingStats,
+    isDrawingMode, drawingColor, setIsDrawingMode, setDrawingColor, 
+    undoDrawingAction, redoDrawingAction, undoStack, redoStack,
+    drawingTool, setDrawingTool, eraserSize, setEraserSize, penSize, setPenSize
+  } = useBookStore();
   const pdfState = usePDF(pdfPath, lastPage);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('single');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -81,9 +86,28 @@ export function BookReader() {
       window.removeEventListener('scroll', updateActivity, true);
     };
   }, [pdfPath, incrementReadingStats]);
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-
-
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redoDrawingAction();
+        } else {
+          undoDrawingAction();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redoDrawingAction();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undoDrawingAction, redoDrawingAction]);
   const handlePageChangeRequest = (newPage: number) => {
     if (newPage >= 1 && newPage <= pdfState.totalPages) {
       pdfState.setPage(newPage);
@@ -371,6 +395,108 @@ export function BookReader() {
           </button>
           
           <div style={{ width: '1px', height: '24px', background: 'var(--bs-border)' }}></div>
+          
+          {/* Drawing Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 8px', background: isDrawingMode ? 'var(--bs-surface-hover)' : 'transparent', borderRadius: '4px' }}>
+            <button
+              onClick={() => {
+                if (isDrawingMode && drawingTool === 'pen') {
+                  setIsDrawingMode(false);
+                } else {
+                  setIsDrawingMode(true);
+                  setDrawingTool('pen');
+                }
+              }}
+              style={{
+                background: isDrawingMode && drawingTool === 'pen' ? 'var(--bs-surface)' : 'transparent', 
+                border: 'none', cursor: 'pointer', borderRadius: '4px', padding: '4px',
+                color: isDrawingMode && drawingTool === 'pen' ? 'var(--bs-accent)' : 'var(--bs-text)',
+                display: 'flex', alignItems: 'center'
+              }}
+              title="Freehand Drawing (Pen)"
+            >
+              <PenTool size={18} />
+            </button>
+            <button
+              onClick={() => {
+                if (isDrawingMode && drawingTool === 'eraser') {
+                  setIsDrawingMode(false);
+                } else {
+                  setIsDrawingMode(true);
+                  setDrawingTool('eraser');
+                }
+              }}
+              style={{
+                background: isDrawingMode && drawingTool === 'eraser' ? 'var(--bs-surface)' : 'transparent', 
+                border: 'none', cursor: 'pointer', borderRadius: '4px', padding: '4px',
+                color: isDrawingMode && drawingTool === 'eraser' ? 'var(--bs-accent)' : 'var(--bs-text)',
+                display: 'flex', alignItems: 'center'
+              }}
+              title="Eraser"
+            >
+              <Eraser size={18} />
+            </button>
+            {isDrawingMode && (
+              <>
+                {drawingTool === 'pen' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '4px' }}>
+                    <input 
+                      type="color" 
+                      value={drawingColor} 
+                      onChange={(e) => setDrawingColor(e.target.value)}
+                      style={{ width: '24px', height: '24px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                      title="Pen Color"
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--bs-text-secondary)' }}>Size:</span>
+                      <input 
+                        type="range" min="1" max="10" step="1" 
+                        value={penSize} 
+                        onChange={(e) => setPenSize(Number(e.target.value))}
+                        style={{ width: '40px' }}
+                        title="Pen Size"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--bs-text-secondary)' }}>Size:</span>
+                    <input 
+                      type="range" min="5" max="50" step="5" 
+                      value={eraserSize} 
+                      onChange={(e) => setEraserSize(Number(e.target.value))}
+                      style={{ width: '60px' }}
+                    />
+                  </div>
+                )}
+                <div style={{ width: '1px', height: '16px', background: 'var(--bs-border)', margin: '0 4px' }}></div>
+                <button
+                  onClick={undoDrawingAction}
+                  disabled={undoStack.length === 0}
+                  style={{
+                    background: 'transparent', border: 'none', cursor: undoStack.length === 0 ? 'default' : 'pointer',
+                    color: undoStack.length === 0 ? 'var(--bs-text-secondary)' : 'var(--bs-text)', display: 'flex', alignItems: 'center', padding: '4px'
+                  }}
+                  title="Undo Last Action"
+                >
+                  <Undo size={18} />
+                </button>
+                <button
+                  onClick={redoDrawingAction}
+                  disabled={redoStack.length === 0}
+                  style={{
+                    background: 'transparent', border: 'none', cursor: redoStack.length === 0 ? 'default' : 'pointer',
+                    color: redoStack.length === 0 ? 'var(--bs-text-secondary)' : 'var(--bs-text)', display: 'flex', alignItems: 'center', padding: '4px'
+                  }}
+                  title="Redo Action"
+                >
+                  <Redo size={18} />
+                </button>
+              </>
+            )}
+          </div>
+          
+          <div style={{ width: '1px', height: '24px', background: 'var(--bs-border)' }}></div>
           <button 
             className="icon-btn" 
             onClick={() => window.dispatchEvent(new Event('open-search'))}
@@ -589,6 +715,166 @@ export function BookReader() {
           }} 
         />
       )}
+      
+      {/* Floating Action Button for Drawing */}
+      <div style={{
+        position: 'absolute',
+        bottom: '2rem',
+        right: '2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '0.5rem',
+        zIndex: 100
+      }}>
+        {isDrawingMode && (
+          <>
+            <div style={{
+              background: 'var(--bs-surface)',
+              border: '1px solid var(--bs-border)',
+              borderRadius: '24px',
+              padding: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              marginBottom: '8px'
+            }}>
+              <button
+                onClick={() => setDrawingTool('pen')}
+                style={{
+                  background: drawingTool === 'pen' ? 'var(--bs-surface-hover)' : 'transparent',
+                  border: 'none', borderRadius: '50%', width: '32px', height: '32px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  color: drawingTool === 'pen' ? 'var(--bs-accent)' : 'var(--bs-text)'
+                }}
+                title="Pen Tool"
+              >
+                <PenTool size={18} />
+              </button>
+              <button
+                onClick={() => setDrawingTool('eraser')}
+                style={{
+                  background: drawingTool === 'eraser' ? 'var(--bs-surface-hover)' : 'transparent',
+                  border: 'none', borderRadius: '50%', width: '32px', height: '32px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  color: drawingTool === 'eraser' ? 'var(--bs-accent)' : 'var(--bs-text)'
+                }}
+                title="Eraser Tool"
+              >
+                <Eraser size={18} />
+              </button>
+              
+              <div style={{ width: '24px', height: '1px', background: 'var(--bs-border)' }}></div>
+              
+              {drawingTool === 'pen' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <input 
+                    type="color" 
+                    value={drawingColor} 
+                    onChange={(e) => setDrawingColor(e.target.value)}
+                    style={{ width: '24px', height: '24px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                    title="Pen Color"
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--bs-text-secondary)' }}>{penSize}px</span>
+                    <input 
+                      type="range" min="1" max="10" step="1" 
+                      value={penSize} 
+                      onChange={(e) => setPenSize(Number(e.target.value))}
+                      style={{ width: '40px', transform: 'rotate(-90deg)', margin: '16px 0' }}
+                      title="Pen Size"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--bs-text-secondary)' }}>{eraserSize}px</span>
+                  <input 
+                    type="range" min="5" max="50" step="5" 
+                    value={eraserSize} 
+                    onChange={(e) => setEraserSize(Number(e.target.value))}
+                    style={{ width: '60px', transform: 'rotate(-90deg)', margin: '24px 0' }}
+                    title="Eraser Size"
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+              <button
+                onClick={redoDrawingAction}
+                disabled={redoStack.length === 0}
+                style={{
+                  background: 'var(--bs-surface)',
+                  border: '1px solid var(--bs-border)',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  cursor: redoStack.length === 0 ? 'default' : 'pointer',
+                  color: redoStack.length === 0 ? 'var(--bs-text-secondary)' : 'var(--bs-text)',
+                }}
+                title="Redo Action"
+              >
+                <Redo size={20} />
+              </button>
+              <button
+                onClick={undoDrawingAction}
+                disabled={undoStack.length === 0}
+                style={{
+                  background: 'var(--bs-surface)',
+                  border: '1px solid var(--bs-border)',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  cursor: undoStack.length === 0 ? 'default' : 'pointer',
+                  color: undoStack.length === 0 ? 'var(--bs-text-secondary)' : 'var(--bs-text)',
+                }}
+                title="Undo Last Action"
+              >
+                <Undo size={20} />
+              </button>
+            </div>
+          </>
+        )}
+        <button
+          onClick={() => {
+            if (isDrawingMode) {
+              setIsDrawingMode(false);
+            } else {
+              setIsDrawingMode(true);
+              setDrawingTool('pen');
+            }
+          }}
+          style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: isDrawingMode ? 'var(--bs-accent)' : 'var(--bs-surface)',
+            color: isDrawingMode ? 'white' : 'var(--bs-text)',
+            border: isDrawingMode ? 'none' : '1px solid var(--bs-border)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          title={isDrawingMode ? 'Exit Drawing Mode' : 'Enter Drawing Mode'}
+        >
+          {isDrawingMode && drawingTool === 'eraser' ? <Eraser size={24} /> : <PenTool size={24} />}
+        </button>
+      </div>
+
       </div>
     </PDFContext.Provider>
   );

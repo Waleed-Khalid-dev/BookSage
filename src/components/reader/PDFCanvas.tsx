@@ -3,6 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import 'pdfjs-dist/web/pdf_viewer.css';
 import { HighlightLayer } from './HighlightLayer';
 import { SearchHighlightLayer } from './SearchHighlightLayer';
+import { DrawingLayer } from './DrawingLayer';
 import { useBookStore } from '../../stores/bookStore';
 import { getHighlightsForBook } from '../../services/dbService';
 
@@ -119,7 +120,7 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
     };
   }, [pdfDocument, pageNumber, renderedScale]);
 
-  const { bookId } = useBookStore();
+  const { bookId, isDrawingMode } = useBookStore();
 
   if (isLoading) return <div className="pdf-status">Loading PDF...</div>;
   if (error) return <div className="pdf-status error">Error loading PDF: {error}</div>;
@@ -174,6 +175,12 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
         className="pdf-canvas" 
         style={{ width: '100%', height: '100%' }}
       />
+      <DrawingLayer 
+        pageNumber={pageNumber} 
+        scale={scale} 
+        width={pdfState.basePageSize?.width}
+        height={pdfState.basePageSize?.height}
+      />
       <SearchHighlightLayer pageNumber={pageNumber} scale={scale} />
       <HighlightLayer pageNumber={pageNumber} scale={scale} />
       <div 
@@ -188,9 +195,9 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
           right: 0, 
           bottom: 0, 
           overflow: 'hidden',
-          pointerEvents: 'auto',
-          userSelect: 'text',
-          WebkitUserSelect: 'text'
+          pointerEvents: isDrawingMode ? 'none' : 'auto',
+          userSelect: isDrawingMode ? 'none' : 'text',
+          WebkitUserSelect: isDrawingMode ? 'none' : 'text'
         }}
       />
     </div>

@@ -59,7 +59,7 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
   - [ ] Distraction-free / Focus mode — hide sidebar/toolbar, toggle with F11
   - [x] Bookmarks — star any page, save to `bookmarks` SQLite table
   - **🟡 HIGH — Annotations**
-  - [ ] Underline / Strikethrough markup modes
+  - [x] Underline / Strikethrough markup modes
   - [x] Sticky note / Pop-up comment on any highlight
   - [x] Annotation sidebar — all highlights listed by page, click to jump
   - [ ] Search within annotations sidebar
@@ -80,7 +80,7 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
   - [ ] Vim-style J/K navigation (optional toggle)
   - [ ] Customizable keyboard shortcuts settings tab
   - [ ] Adjustable TTS speed slider (0.5× – 2.5×)
-  - [ ] Freehand annotation / draw on canvas
+  - [x] Freehand annotation / draw on canvas
   - **Database migrations**
   - [ ] `ALTER TABLE books ADD COLUMN last_page INTEGER DEFAULT 1`
   - [ ] `ALTER TABLE books ADD COLUMN reading_time_secs INTEGER DEFAULT 0`

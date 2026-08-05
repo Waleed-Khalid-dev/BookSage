@@ -37,6 +37,17 @@ export interface HighlightRecord {
   text: string | null;
   rects: string;
   note?: string | null;
+  type?: string | null;
+  created_at: number;
+}
+
+export interface DrawingRecord {
+  id: string;
+  book_id: string;
+  page_num: number;
+  path_data: string;
+  color: string;
+  stroke_width: number;
   created_at: number;
 }
 
@@ -112,12 +123,26 @@ async function initDb(database: Database) {
     );
   `);
 
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS drawings (
+      id TEXT PRIMARY KEY,
+      book_id TEXT NOT NULL,
+      page_num INTEGER NOT NULL,
+      path_data TEXT NOT NULL,
+      color TEXT NOT NULL,
+      stroke_width REAL NOT NULL,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+    );
+  `);
+
   // Migrations for existing databases
   const migrations = [
     'ALTER TABLE books ADD COLUMN last_page INTEGER DEFAULT 1',
     'ALTER TABLE books ADD COLUMN reading_time_secs INTEGER DEFAULT 0',
     'ALTER TABLE books ADD COLUMN pages_read_total INTEGER DEFAULT 0',
-    'ALTER TABLE highlights ADD COLUMN note TEXT'
+    'ALTER TABLE highlights ADD COLUMN note TEXT',
+    'ALTER TABLE highlights ADD COLUMN type TEXT DEFAULT "highlight"'
   ];
 
   for (const query of migrations) {
@@ -192,13 +217,14 @@ export async function updateBookLastOpened(id: string): Promise<void> {
 export async function upsertHighlight(highlight: HighlightRecord): Promise<void> {
   const database = await getDb();
   await database.execute(
-    `INSERT INTO highlights (id, book_id, page_num, color, text, rects, note, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO highlights (id, book_id, page_num, color, text, rects, note, type, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT(id) DO UPDATE SET
      color=excluded.color,
      rects=excluded.rects,
-     note=excluded.note`,
-    [highlight.id, highlight.book_id, highlight.page_num, highlight.color, highlight.text, highlight.rects, highlight.note, highlight.created_at]
+     note=excluded.note,
+     type=excluded.type`,
+    [highlight.id, highlight.book_id, highlight.page_num, highlight.color, highlight.text, highlight.rects, highlight.note, highlight.type || 'highlight', highlight.created_at]
   );
 }
 
@@ -231,4 +257,36 @@ export async function getBookmarksForBook(bookId: string): Promise<BookmarkRecor
 export async function deleteBookmark(id: string): Promise<void> {
   const database = await getDb();
   await database.execute('DELETE FROM bookmarks WHERE id = $1', [id]);
+}
+
+export async function upsertDrawing(drawing: DrawingRecord): Promise<void> {
+  const database = await getDb();
+  await database.execute(
+    `INSERT INTO drawings (id, book_id, page_num, path_data, color, stroke_width, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT(id) DO UPDATE SET
+     path_data=excluded.path_data,
+     color=excluded.color,
+     stroke_width=excluded.stroke_width`,
+    [drawing.id, drawing.book_id, drawing.page_num, drawing.path_data, drawing.color, drawing.stroke_width, drawing.created_at]
+  );
+}
+
+export async function getDrawingsForBook(bookId: string): Promise<DrawingRecord[]> {
+  const database = await getDb();
+  return await database.select<DrawingRecord[]>('SELECT * FROM drawings WHERE book_id = $1 ORDER BY page_num ASC, created_at ASC', [bookId]);
+}
+
+export async function deleteDrawing(id: string): Promise<void> {
+  const database = await getDb();
+  await database.execute('DELETE FROM drawings WHERE id = $1', [id]);
+}
+
+export async function undoLastDrawing(bookId: string, pageNum: number): Promise<void> {
+  const database = await getDb();
+  // Get the most recent drawing ID for this page
+  const result = await database.select<{id: string}[]>('SELECT id FROM drawings WHERE book_id = $1 AND page_num = $2 ORDER BY created_at DESC LIMIT 1', [bookId, pageNum]);
+  if (result.length > 0) {
+    await database.execute('DELETE FROM drawings WHERE id = $1', [result[0].id]);
+  }
 }

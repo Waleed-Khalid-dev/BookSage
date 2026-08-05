@@ -19,6 +19,11 @@ export interface SearchMatch {
   rects: { top: number; left: number; width: number; height: number; matchIndex: number }[];
 }
 
+export interface DrawingAction {
+  type: 'ADD' | 'REMOVE';
+  drawing: any;
+}
+
 interface BookState {
   bookId: string | null;
   currentBookTitle: string;
@@ -30,6 +35,7 @@ interface BookState {
   readerTheme: 'dark' | 'light' | 'sepia' | 'night' | 'oled' | 'focus';
   highlightsRefreshCounter: number;
   bookmarksRefreshCounter: number;
+  drawingsRefreshCounter: number;
   lastPage: number;
   readingTimeSecs: number;
   pagesReadTotal: number;
@@ -40,6 +46,10 @@ interface BookState {
   currentSearchIndex: number;
   isSearching: boolean;
   totalSearchMatches: number;
+  
+  // Drawing State
+  isDrawingMode: boolean;
+  drawingColor: string;
   
   // Actions
   setApiKey: (key: string) => void;
@@ -53,6 +63,7 @@ interface BookState {
   setChapterStatus: (index: number, status: Chapter['status']) => void;
   triggerHighlightsRefresh: () => void;
   triggerBookmarksRefresh: () => void;
+  triggerDrawingsRefresh: () => void;
   deleteHighlightAction: (id: string) => Promise<void>;
   toggleBookmarkAction: (pageNum: number) => Promise<void>;
   setLastPage: (page: number) => Promise<void>;
@@ -64,6 +75,25 @@ interface BookState {
   nextSearchResult: () => void;
   prevSearchResult: () => void;
   clearSearch: () => void;
+  
+  // Drawing Actions
+  isDrawingMode: boolean;
+  drawingColor: string;
+  drawingTool: 'pen' | 'eraser';
+  penSize: number;
+  eraserSize: number;
+  undoStack: DrawingAction[];
+  redoStack: DrawingAction[];
+  setIsDrawingMode: (mode: boolean) => void;
+  setDrawingColor: (color: string) => void;
+  setDrawingTool: (tool: 'pen' | 'eraser') => void;
+  setPenSize: (size: number) => void;
+  setEraserSize: (size: number) => void;
+  
+  addDrawingAction: (drawing: any) => Promise<void>;
+  deleteDrawingAction: (drawing: any) => Promise<void>;
+  undoDrawingAction: () => Promise<void>;
+  redoDrawingAction: () => Promise<void>;
 }
 
 export const useBookStore = create<BookState>()(
@@ -79,6 +109,7 @@ export const useBookStore = create<BookState>()(
       readerTheme: 'dark',
       highlightsRefreshCounter: 0,
       bookmarksRefreshCounter: 0,
+      drawingsRefreshCounter: 0,
       lastPage: 1,
       readingTimeSecs: 0,
       pagesReadTotal: 0,
@@ -88,17 +119,91 @@ export const useBookStore = create<BookState>()(
       currentSearchIndex: -1,
       isSearching: false,
       totalSearchMatches: 0,
+      
+      isDrawingMode: false,
+      drawingColor: '#ff0000',
+      drawingTool: 'pen',
+      penSize: 2,
+      eraserSize: 10,
+      undoStack: [],
+      redoStack: [],
 
       triggerHighlightsRefresh: () => set(state => ({ highlightsRefreshCounter: state.highlightsRefreshCounter + 1 })),
       triggerBookmarksRefresh: () => set(state => ({ bookmarksRefreshCounter: state.bookmarksRefreshCounter + 1 })),
+      triggerDrawingsRefresh: () => set(state => ({ drawingsRefreshCounter: state.drawingsRefreshCounter + 1 })),
+      
+      setIsDrawingMode: (mode: boolean) => set({ isDrawingMode: mode }),
+      setDrawingColor: (color: string) => set({ drawingColor: color }),
+      setDrawingTool: (tool: 'pen' | 'eraser') => set({ drawingTool: tool }),
+      setPenSize: (size: number) => set({ penSize: size }),
+      setEraserSize: (size: number) => set({ eraserSize: size }),
       
       deleteHighlightAction: async (id: string) => {
-        try {
-          await deleteHighlight(id);
-          get().triggerHighlightsRefresh();
-        } catch (e) {
-          console.error("Failed to delete highlight:", e);
+        const { deleteHighlight } = await import('../services/dbService');
+        await deleteHighlight(id);
+        get().triggerHighlightsRefresh();
+      },
+
+      addDrawingAction: async (drawing: any) => {
+        const { upsertDrawing } = await import('../services/dbService');
+        await upsertDrawing(drawing);
+        set((state) => ({
+          undoStack: [...state.undoStack, { type: 'ADD', drawing }],
+          redoStack: []
+        }));
+        get().triggerDrawingsRefresh();
+      },
+
+      deleteDrawingAction: async (drawing: any) => {
+        const { deleteDrawing } = await import('../services/dbService');
+        await deleteDrawing(drawing.id);
+        set((state) => ({
+          undoStack: [...state.undoStack, { type: 'REMOVE', drawing }],
+          redoStack: []
+        }));
+        get().triggerDrawingsRefresh();
+      },
+
+      undoDrawingAction: async () => {
+        const { undoStack, redoStack } = get();
+        if (undoStack.length === 0) return;
+        
+        const lastAction = undoStack[undoStack.length - 1];
+        const newUndo = undoStack.slice(0, -1);
+        const { upsertDrawing, deleteDrawing } = await import('../services/dbService');
+        
+        if (lastAction.type === 'ADD') {
+          await deleteDrawing(lastAction.drawing.id);
+        } else {
+          await upsertDrawing(lastAction.drawing);
         }
+        
+        set({
+          undoStack: newUndo,
+          redoStack: [...redoStack, lastAction]
+        });
+        get().triggerDrawingsRefresh();
+      },
+
+      redoDrawingAction: async () => {
+        const { undoStack, redoStack } = get();
+        if (redoStack.length === 0) return;
+        
+        const nextAction = redoStack[redoStack.length - 1];
+        const newRedo = redoStack.slice(0, -1);
+        const { upsertDrawing, deleteDrawing } = await import('../services/dbService');
+        
+        if (nextAction.type === 'ADD') {
+          await upsertDrawing(nextAction.drawing);
+        } else {
+          await deleteDrawing(nextAction.drawing.id);
+        }
+        
+        set({
+          undoStack: [...undoStack, nextAction],
+          redoStack: newRedo
+        });
+        get().triggerDrawingsRefresh();
       },
 
       toggleBookmarkAction: async (pageNum: number) => {

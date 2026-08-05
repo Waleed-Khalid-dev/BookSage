@@ -49,18 +49,33 @@ export function HighlightLayer({ pageNumber, scale = 1.0 }: HighlightLayerProps)
         
         const hasNote = Boolean(hl.note && hl.note.trim() !== '');
         
-        return rects.map((rect, idx) => (
+        const isUnderline = hl.type === 'underline';
+        const isStrikethrough = hl.type === 'strikethrough';
+        
+        return rects.map((rect, idx) => {
+          let style: React.CSSProperties = {
+            position: 'absolute',
+            top: `${rect.top * scale}px`,
+            left: `${rect.left * scale}px`,
+            width: `${rect.width * scale}px`,
+            height: `${rect.height * scale}px`,
+          };
+
+          if (isUnderline) {
+            style.borderBottom = `2px solid ${hl.color || '#e05252'}`;
+          } else if (isStrikethrough) {
+            style.textDecoration = `line-through 2px ${hl.color || '#e05252'}`;
+            // To simulate strikethrough via div:
+            style.background = `linear-gradient(to bottom, transparent 45%, ${hl.color || '#e05252'} 45%, ${hl.color || '#e05252'} 55%, transparent 55%)`;
+          } else {
+            style.backgroundColor = hl.color;
+            style.mixBlendMode = 'multiply';
+          }
+
+          return (
           <div
             key={`${hl.id}-${idx}`}
-            style={{
-              position: 'absolute',
-              top: `${rect.top * scale}px`,
-              left: `${rect.left * scale}px`,
-              width: `${rect.width * scale}px`,
-              height: `${rect.height * scale}px`,
-              backgroundColor: hl.color,
-              mixBlendMode: 'multiply',
-            }}
+            style={style}
           >
             {idx === 0 && hasNote && (
               <div 
@@ -85,7 +100,8 @@ export function HighlightLayer({ pageNumber, scale = 1.0 }: HighlightLayerProps)
               </div>
             )}
           </div>
-        ));
+        );
+        });
       })}
     </div>
   );
