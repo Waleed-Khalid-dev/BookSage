@@ -34,7 +34,6 @@ export function AudioToolbar() {
     return () => {
       window.speechSynthesis.cancel();
     };
-    };
   }, []);
 
   // Edge TTS Tracking Loop
