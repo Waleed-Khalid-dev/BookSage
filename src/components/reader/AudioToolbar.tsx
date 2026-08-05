@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Loader } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Play, Pause, Square, Loader, Type } from 'lucide-react';
 import { invokePython } from '../../services/pythonService';
+import { useBookStore } from '../../stores/bookStore';
+import { getWordRange } from '../../utils/domUtils';
 
 const EDGE_VOICES = [
   { voiceURI: 'en-US-AriaNeural', name: 'Aria (Premium Female)', isEdge: true },
@@ -16,7 +19,47 @@ export function AudioToolbar() {
   const [voiceURI, setVoiceURI] = useState<string>('en-US-AriaNeural'); // Default to premium
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
   const [nativeVoices, setNativeVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [currentRange, setCurrentRange] = useState<Range | null>(null);
+  const [highlightRects, setHighlightRects] = useState<{ top: number; left: number; width: number; height: number }[]>([]);
+  
+  const isWordHighlightingEnabled = useBookStore(state => state.isWordHighlightingEnabled);
+  const setIsWordHighlightingEnabled = useBookStore(state => state.setIsWordHighlightingEnabled);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const activeWordRangeRef = useRef<Range | null>(null);
+  const rafRef = useRef<number>();
+  
+  // Continuous tracking loop
+  useEffect(() => {
+    const trackHighlight = () => {
+      if (activeWordRangeRef.current && isPlaying && isWordHighlightingEnabled) {
+        const rects = Array.from(activeWordRangeRef.current.getClientRects());
+        if (rects.length > 0) {
+          setHighlightRects(rects.map(r => ({ top: r.top, left: r.left, width: r.width, height: r.height })));
+          
+          // Auto-scroll logic
+          const viewer = document.querySelector('.pdf-viewer');
+          if (viewer) {
+            const firstRect = rects[0];
+            const viewerRect = viewer.getBoundingClientRect();
+            if (firstRect.top < viewerRect.top || firstRect.bottom > viewerRect.bottom) {
+               viewer.scrollBy({ top: firstRect.top - viewerRect.top - viewerRect.height / 2, behavior: 'smooth' });
+            }
+          }
+        } else {
+          setHighlightRects([]);
+        }
+      } else if (!activeWordRangeRef.current) {
+        setHighlightRects([]);
+      }
+      rafRef.current = requestAnimationFrame(trackHighlight);
+    };
+    rafRef.current = requestAnimationFrame(trackHighlight);
+    
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [isPlaying, isWordHighlightingEnabled]);
 
   useEffect(() => {
     const updateVoices = () => {
@@ -58,13 +101,20 @@ export function AudioToolbar() {
       return;
     }
 
-    const selection = window.getSelection()?.toString();
-    const textToRead = selection || "Please select some text to read aloud.";
+    let selectionRange: Range | null = currentRange;
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0 && selection.toString().trim().length > 0) {
+      selectionRange = selection.getRangeAt(0).cloneRange();
+      setCurrentRange(selectionRange);
+    }
     
-    if (isEdgeVoice) {
-      await startEdgeSpeech(textToRead);
+    const textToRead = selectionRange ? selectionRange.toString() : "Please select some text to read aloud.";
+    
+    // If Word Highlighting is enabled, we FORCE Native TTS, because Edge TTS doesn't provide word boundaries.
+    if (isWordHighlightingEnabled || !isEdgeVoice) {
+      startNativeSpeech(textToRead, selectionRange || undefined);
     } else {
-      startNativeSpeech(textToRead);
+      await startEdgeSpeech(textToRead);
     }
   };
 
@@ -104,7 +154,7 @@ export function AudioToolbar() {
     }
   };
 
-  const startNativeSpeech = (text: string) => {
+  const startNativeSpeech = (text: string, range?: Range) => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     
@@ -112,16 +162,24 @@ export function AudioToolbar() {
     if (selectedVoice) {
       utterance.voice = selectedVoice;
     } else {
-      // If Edge voice was selected but we fell back, just use a default english native voice
       const fallback = nativeVoices.find(v => v.lang.startsWith('en'));
       if (fallback) utterance.voice = fallback;
     }
     
     utterance.rate = playbackRate;
     
+    utterance.onboundary = (e) => {
+      if (e.name === 'word' && isWordHighlightingEnabled && range) {
+        const wordRange = getWordRange(range, e.charIndex, e.charLength);
+        activeWordRangeRef.current = wordRange;
+      }
+    };
+    
     utterance.onend = () => {
       setIsPlaying(false);
       setIsPaused(false);
+      activeWordRangeRef.current = null;
+      setHighlightRects([]);
     };
 
     window.speechSynthesis.speak(utterance);
@@ -148,6 +206,9 @@ export function AudioToolbar() {
     }
     setIsPlaying(false);
     setIsPaused(false);
+    setCurrentRange(null);
+    activeWordRangeRef.current = null;
+    setHighlightRects([]);
   };
 
   const cyclePlaybackRate = () => {
@@ -222,8 +283,42 @@ export function AudioToolbar() {
         <button onClick={speak} className="icon-btn" title="Read Aloud"><Play size={18} /></button>
       )}
       
+      <button 
+        onClick={() => setIsWordHighlightingEnabled(!isWordHighlightingEnabled)}
+        className="icon-btn" 
+        title={`Word Highlighting: ${isWordHighlightingEnabled ? 'ON' : 'OFF'} (Uses Native TTS)`}
+        style={{
+          background: isWordHighlightingEnabled ? 'var(--bs-primary)' : 'transparent',
+          color: isWordHighlightingEnabled ? 'white' : 'var(--bs-text)'
+        }}
+      >
+        <Type size={18} />
+      </button>
+
       {(isPlaying || isPaused) && (
         <button onClick={stop} className="icon-btn" title="Stop"><Square size={18} /></button>
+      )}
+      
+      {isWordHighlightingEnabled && isPlaying && typeof document !== 'undefined' && createPortal(
+        <div style={{ pointerEvents: 'none', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+          {highlightRects.map((rect, i) => (
+            <div 
+              key={i} 
+              style={{
+                position: 'absolute',
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height,
+                backgroundColor: 'rgba(255, 223, 0, 0.4)', // transparent yellow
+                mixBlendMode: 'multiply',
+                borderRadius: '3px',
+                transition: 'top 0.05s, left 0.05s, width 0.05s, height 0.05s'
+              }} 
+            />
+          ))}
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -111,9 +111,9 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Text-to-speech (TTS) | Kindle, Moon+, Readwise | 🟡 HIGH | Not done |
-| Adjustable TTS speed | Moon+, Kindle | 🟢 NICE | Not done |
-| Word highlighting during TTS | Readwise Audio | 🟡 HIGH | Not done |
+| Text-to-speech (TTS) | Kindle, Moon+, Readwise | 🟡 HIGH | Already done |
+| Adjustable TTS speed | Moon+, Kindle | 🟢 NICE | Already done |
+| Word highlighting during TTS | Readwise Audio | 🟡 HIGH | Already done |
 
 ---
 

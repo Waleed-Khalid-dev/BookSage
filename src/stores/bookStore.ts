@@ -60,6 +60,8 @@ interface BookState {
   // Drawing State
   isDrawingMode: boolean;
   drawingColor: string;
+  // TTS State
+  isWordHighlightingEnabled: boolean;
   
   // Actions
   setApiKey: (key: string) => void;
@@ -110,6 +112,9 @@ interface BookState {
   
   // Gamification Actions
   fetchGlobalStats: () => Promise<void>;
+  
+  // TTS Actions
+  setIsWordHighlightingEnabled: (enabled: boolean) => void;
 }
 
 export const useBookStore = create<BookState>()(
@@ -138,6 +143,8 @@ export const useBookStore = create<BookState>()(
       dailyPages: 0,
       weeklyPages: 0,
       currentStreak: 0,
+      
+      isWordHighlightingEnabled: false,
       
       searchQuery: '',
       searchResults: [],
@@ -328,6 +335,8 @@ export const useBookStore = create<BookState>()(
           console.error("Failed to fetch global stats", e);
         }
       },
+      
+      setIsWordHighlightingEnabled: (enabled) => set({ isWordHighlightingEnabled: enabled }),
 
       setApiKey: (key: string) => set({ apiKey: key }),
       setAiModel: (model: string) => set({ aiModel: model }),
