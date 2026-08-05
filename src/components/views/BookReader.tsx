@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useBookStore } from '../../stores/bookStore';
 import { usePDF, PDFContext } from '../../hooks/usePDF';
+import { useUiStore } from '../../stores/uiStore';
 import { useTextSelection, SelectionData } from '../../hooks/useTextSelection';
 import { PDFCanvas } from '../reader/PDFCanvas';
 import { PageControls } from '../reader/PageControls';
@@ -30,8 +31,9 @@ export function BookReader() {
     isDrawingMode, drawingColor, setIsDrawingMode, setDrawingColor, 
     undoDrawingAction, redoDrawingAction, undoStack, redoStack,
     drawingTool, setDrawingTool, eraserSize, setEraserSize, penSize, setPenSize,
-    pdfTintColor, pdfTextColor
+    pdfTintColor, pdfTextColor, isWordHighlightingEnabled
   } = useBookStore();
+  const { isTtsPlaying } = useUiStore();
   const pdfState = usePDF(pdfPath, lastPage);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('single');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -161,6 +163,11 @@ export function BookReader() {
   }, []);
 
   const handlePageChangeRequest = (newPage: number) => {
+    // Block pagination in single page mode if TTS and word highlighting are active
+    if (viewMode === 'single' && isTtsPlaying && isWordHighlightingEnabled) {
+      return;
+    }
+
     if (newPage >= 1 && newPage <= pdfState.totalPages) {
       pdfState.setPage(newPage);
       if (viewMode === 'continuous') {

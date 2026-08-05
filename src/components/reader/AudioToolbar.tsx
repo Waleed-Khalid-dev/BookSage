@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Play, Pause, Square, Loader, Type } from 'lucide-react';
 import { invokePython } from '../../services/pythonService';
 import { useBookStore } from '../../stores/bookStore';
+import { useUiStore } from '../../stores/uiStore';
 import { getWordRange } from '../../utils/domUtils';
 
 const EDGE_VOICES = [
@@ -13,7 +14,8 @@ const EDGE_VOICES = [
 ];
 
 export function AudioToolbar() {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const isPlaying = useUiStore(state => state.isTtsPlaying);
+  const setIsPlaying = useUiStore(state => state.setIsTtsPlaying);
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [voiceURI, setVoiceURI] = useState<string>('en-US-AriaNeural'); // Default to premium
@@ -341,8 +343,8 @@ export function AudioToolbar() {
         className="icon-btn" 
         title={`Word Highlighting: ${isWordHighlightingEnabled ? 'ON' : 'OFF'}`}
         style={{
-          background: isWordHighlightingEnabled ? 'var(--bs-primary)' : 'transparent',
-          color: isWordHighlightingEnabled ? 'white' : 'var(--bs-text)'
+          background: isWordHighlightingEnabled ? 'var(--bs-accent)' : 'transparent',
+          color: isWordHighlightingEnabled ? 'var(--bs-bg)' : 'var(--bs-text)'
         }}
       >
         <Type size={18} />
