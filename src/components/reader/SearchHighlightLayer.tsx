@@ -1,4 +1,3 @@
-import React from 'react';
 import { useBookStore } from '../../stores/bookStore';
 
 interface SearchHighlightLayerProps {

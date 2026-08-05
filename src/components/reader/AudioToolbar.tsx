@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Play, Pause, Square, Loader } from 'lucide-react';
-import { useBookStore } from '../../stores/bookStore';
+import { useState, useEffect, useRef } from 'react';
+import { Play, Pause, Square, Loader } from 'lucide-react';
 import { invokePython } from '../../services/pythonService';
 
 const EDGE_VOICES = [

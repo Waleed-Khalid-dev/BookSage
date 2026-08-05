@@ -39,8 +39,8 @@
 | True black mode (OLED) | Moon+ | 🟢 NICE | Already done |
 | Custom background color picker | Moon+ | 🟢 NICE | Already done |
 | Invert PDF colors (white-on-black) | Sumatra, Okular | 🟡 HIGH | Already done |
-| Font size control (for reflowed text) | Kindle, Readwise | 🟡 HIGH | Not done |
-| Line spacing & margin control | Moon+, Readwise | 🟢 NICE | Not done |
+| Font size control (for reflowed text) | Kindle, Readwise | 🟡 HIGH | Already done (Notes Viewer) |
+| Line spacing & margin control | Moon+, Readwise | 🟢 NICE | Already done (Margin Crop) |
 
 ---
 

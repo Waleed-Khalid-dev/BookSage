@@ -46,5 +46,7 @@
 - [reference] Phase 4.5 Reader Polish: COMPLETE & verified. PyMuPDF search, virtualized thumbnail strip, collapsible sidebar, and Two-Page Spread mode with 3D flip animations. → booksage-project.md
 - [reference] Phase 4.5 Finalized: Added Eraser, Freehand Drawing, Undo/Redo stack, and Keyboard Shortcuts. → booksage-project.md
 - [reference] Phase 4.5 Display Themes: Added Invert PDF Colors, custom Background and Text tinting via SVG Duotone filters. → booksage-project.md
+- [reference] Phase 4.5 Margin Crop: Implemented Smart Margin Cropping via CSS transforms. Deferred Font/Line controls to Notes Viewer. → booksage-project.md
 ## Skills
 - [skill] /checkpoint — saves memory + commits + pushes. Run at end of every phase → .agents/skills/checkpoint-save/SKILL.md
+- [reference] Phase 4.5 Stabilization: Fixed 0x0 Single Page rendering, restored offscreen double-buffering, and optimized Continuous Reader debounce/preloading. → booksage-project.md

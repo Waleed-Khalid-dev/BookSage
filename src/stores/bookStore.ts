@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invokePython } from '../services/pythonService';
-import { upsertBook, upsertChapter, getBook, getChaptersForBook, deleteHighlight } from '../services/dbService';
+import { upsertBook, upsertChapter, getBook, getChaptersForBook, getBookByPdfPath } from '../services/dbService';
 
 export interface Chapter {
   id?: string;
@@ -36,6 +36,8 @@ interface BookState {
   invertPdfColors: boolean;
   pdfTintColor: string;
   pdfTextColor: string;
+  pdfMarginCrop: number;
+  highlightOpacity: number;
   highlightsRefreshCounter: number;
   bookmarksRefreshCounter: number;
   drawingsRefreshCounter: number;
@@ -75,6 +77,8 @@ interface BookState {
   setInvertPdfColors: (invert: boolean) => void;
   setPdfTintColor: (color: string) => void;
   setPdfTextColor: (color: string) => void;
+  setPdfMarginCrop: (crop: number) => void;
+  setHighlightOpacity: (opacity: number) => void;
   
   // Search Actions
   performSearch: (query: string) => Promise<void>;
@@ -83,8 +87,6 @@ interface BookState {
   clearSearch: () => void;
   
   // Drawing Actions
-  isDrawingMode: boolean;
-  drawingColor: string;
   drawingTool: 'pen' | 'eraser';
   penSize: number;
   eraserSize: number;
@@ -116,6 +118,8 @@ export const useBookStore = create<BookState>()(
       invertPdfColors: false,
       pdfTintColor: '',
       pdfTextColor: '',
+      pdfMarginCrop: 0,
+      highlightOpacity: 0.4,
       highlightsRefreshCounter: 0,
       bookmarksRefreshCounter: 0,
       drawingsRefreshCounter: 0,
@@ -284,31 +288,47 @@ export const useBookStore = create<BookState>()(
 
       setPdfPath: async (path: string) => {
         const filename = path.split(/[/\\]/).pop() || 'Unknown Book';
-        const newBookId = crypto.randomUUID();
         
         try {
-          await upsertBook({
-            id: newBookId,
-            title: filename,
-            pdf_path: path,
-            data_dir: '', // Empty initially, updated by splitBook later
-            cover_path: null,
-            total_chapters: 0,
-            created_at: Date.now(),
-            last_opened: Date.now(),
-            last_page: 1,
-            reading_time_secs: 0,
-            pages_read_total: 0
-          });
-          set({ 
-            pdfPath: path, 
-            currentBookTitle: filename, 
-            chapters: [], 
-            bookId: newBookId,
-            lastPage: 1,
-            readingTimeSecs: 0,
-            pagesReadTotal: 0
-          });
+          // Check if this book already exists in our database by path
+          const existingBook = await getBookByPdfPath(path);
+          let targetBookId = '';
+          
+          if (existingBook) {
+            targetBookId = existingBook.id;
+            // Update last_opened
+            await upsertBook({
+              ...existingBook,
+              last_opened: Date.now()
+            });
+            // We can just load the book now to populate chapters, highlights, etc.
+            await get().loadBook(targetBookId);
+            return;
+          } else {
+            targetBookId = crypto.randomUUID();
+            await upsertBook({
+              id: targetBookId,
+              title: filename,
+              pdf_path: path,
+              data_dir: '', // Empty initially, updated by splitBook later
+              cover_path: null,
+              total_chapters: 0,
+              created_at: Date.now(),
+              last_opened: Date.now(),
+              last_page: 1,
+              reading_time_secs: 0,
+              pages_read_total: 0
+            });
+            set({ 
+              pdfPath: path, 
+              currentBookTitle: filename, 
+              chapters: [], 
+              bookId: targetBookId,
+              lastPage: 1,
+              readingTimeSecs: 0,
+              pagesReadTotal: 0
+            });
+          }
         } catch (e) {
           console.error("Failed to insert initial book record:", e);
           set({ pdfPath: path, currentBookTitle: filename, chapters: [], bookId: null });
@@ -635,6 +655,8 @@ export const useBookStore = create<BookState>()(
       setInvertPdfColors: (invert: boolean) => set({ invertPdfColors: invert }),
       setPdfTintColor: (color: string) => set({ pdfTintColor: color }),
       setPdfTextColor: (color: string) => set({ pdfTextColor: color }),
+      setPdfMarginCrop: (crop: number) => set({ pdfMarginCrop: crop }),
+      setHighlightOpacity: (opacity: number) => set({ highlightOpacity: opacity }),
 
       
       performSearch: async (query: string) => {
@@ -695,6 +717,7 @@ export const useBookStore = create<BookState>()(
         invertPdfColors: state.invertPdfColors,
         pdfTintColor: state.pdfTintColor,
         pdfTextColor: state.pdfTextColor,
+        pdfMarginCrop: state.pdfMarginCrop,
       }),
     }
   )

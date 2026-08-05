@@ -40,6 +40,9 @@ export function usePDF(pdfPath: string | null, initialPage: number = 1): UsePDFR
 
   useEffect(() => {
     let active = true;
+    let loadingTask: any = null;
+    let currentDoc: pdfjsLib.PDFDocumentProxy | null = null;
+
     if (!pdfPath) {
       setPdfDocument(null);
       setTotalPages(0);
@@ -50,23 +53,20 @@ export function usePDF(pdfPath: string | null, initialPage: number = 1): UsePDFR
       setIsLoading(true);
       setError(null);
       try {
-        // pdfPath might be a local file path, so we load it as an ArrayBuffer using Tauri's fs or Python sidecar.
-        // Wait, for Tauri v2, accessing local files can be done via convertFileSrc.
-        // We will need to convert the absolute path to a URL that the webview can access.
         const { convertFileSrc } = await import('@tauri-apps/api/core');
         const assetUrl = convertFileSrc(pdfPath);
         
-        const loadingTask = pdfjsLib.getDocument(assetUrl);
-        const doc = await loadingTask.promise;
+        loadingTask = pdfjsLib.getDocument(assetUrl);
+        currentDoc = await loadingTask.promise;
         
-        if (active) {
-          setPdfDocument(doc);
-          setTotalPages(doc.numPages);
+        if (active && currentDoc) {
+          setPdfDocument(currentDoc);
+          setTotalPages(currentDoc.numPages);
           setCurrentPage(initialPage); // Start at initial page
           
           // Pre-fetch page 1 to establish the global base size for all pages
           try {
-            const page1 = await doc.getPage(1);
+            const page1 = await currentDoc.getPage(1);
             const viewport = page1.getViewport({ scale: 1.0 });
             setBasePageSize({ width: viewport.width, height: viewport.height });
           } catch (e) {
@@ -85,6 +85,15 @@ export function usePDF(pdfPath: string | null, initialPage: number = 1): UsePDFR
 
     return () => {
       active = false;
+      try {
+        if (loadingTask && loadingTask.destroy) {
+          loadingTask.destroy();
+        } else if (currentDoc) {
+          currentDoc.destroy();
+        }
+      } catch (e) {
+        console.error('Error destroying PDF document:', e);
+      }
     };
   }, [pdfPath]);
 

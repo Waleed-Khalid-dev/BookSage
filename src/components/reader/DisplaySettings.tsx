@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useBookStore } from '../../stores/bookStore';
 import { Settings2 } from 'lucide-react';
 
@@ -11,7 +11,11 @@ export function DisplaySettings() {
     pdfTintColor,
     setPdfTintColor,
     pdfTextColor,
-    setPdfTextColor
+    setPdfTextColor,
+    pdfMarginCrop,
+    setPdfMarginCrop,
+    highlightOpacity,
+    setHighlightOpacity
   } = useBookStore();
 
   const themes = [
@@ -133,6 +137,34 @@ export function DisplaySettings() {
                   </button>
                 )}
               </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--bs-text)', fontSize: '0.9rem' }}>Margin Crop:</span>
+                <span style={{ color: 'var(--bs-text-muted)', fontSize: '0.8rem' }}>{pdfMarginCrop}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="0" max="25" step="1"
+                value={pdfMarginCrop}
+                onChange={(e) => setPdfMarginCrop(parseInt(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--bs-text)', fontSize: '0.9rem' }}>Highlight Opacity:</span>
+                <span style={{ color: 'var(--bs-text-muted)', fontSize: '0.8rem' }}>{Math.round(highlightOpacity * 100)}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="0.1" max="1.0" step="0.05"
+                value={highlightOpacity}
+                onChange={(e) => setHighlightOpacity(parseFloat(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer' }}
+              />
             </div>
           </div>
         </div>

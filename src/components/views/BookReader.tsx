@@ -147,6 +147,19 @@ export function BookReader() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undoDrawingAction, redoDrawingAction]);
+
+  // Handle open sidebar from events (like clicking a sticky note)
+  useEffect(() => {
+    const handleOpenSidebar = () => {
+      setIsSidebarOpen(true);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    };
+    window.addEventListener('booksage-open-sidebar', handleOpenSidebar);
+    return () => window.removeEventListener('booksage-open-sidebar', handleOpenSidebar);
+  }, []);
+
   const handlePageChangeRequest = (newPage: number) => {
     if (newPage >= 1 && newPage <= pdfState.totalPages) {
       pdfState.setPage(newPage);
@@ -218,15 +231,28 @@ export function BookReader() {
       }
     };
     
+    const handleBookSageJump = (e: any) => {
+      if (typeof e.detail === 'number') {
+        const page = e.detail;
+        if (viewMode === 'single') {
+          pdfState.setPage(page);
+        } else if (viewMode === 'continuous') {
+          window.dispatchEvent(new CustomEvent('continuous-jump', { detail: { page } }));
+        }
+      }
+    };
+    
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('click', handleClick);
     window.addEventListener('search-jump', handleSearchJump);
+    window.addEventListener('booksage-jump-page', handleBookSageJump);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('click', handleClick);
       window.removeEventListener('search-jump', handleSearchJump);
+      window.removeEventListener('booksage-jump-page', handleBookSageJump);
     };
-  }, [pdfState.currentPage, pdfState.totalPages, viewMode, pdfState.setScale]);
+  }, [pdfState.currentPage, pdfState.totalPages, viewMode, pdfState.setScale, pdfState.setPage]);
 
   // Keep references for event listeners without triggering re-renders
   const setScaleRef = useRef(pdfState.setScale);

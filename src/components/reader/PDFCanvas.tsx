@@ -25,6 +25,7 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
   // Track the scale at which the canvas was LAST actually rendered
   const [renderedScale, setRenderedScale] = useState(scale);
   const renderTimeout = useRef<number | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
 
   // Debounce the heavy PDF.js rendering by 250ms during active pinch/scroll
   useEffect(() => {
@@ -45,8 +46,9 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
     let renderTask: pdfjsLib.RenderTask | null = null;
     let active = true;
 
-    const renderPage = async () => {
+    const renderPage = async (retryCount = 0) => {
       try {
+        setRenderError(null);
         const page = await pdfDocument.getPage(pageNumber);
         const viewport = page.getViewport({ scale: renderedScale });
         
@@ -71,7 +73,12 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
         }
 
         renderTask = page.render(renderContext);
-        await renderTask.promise;
+        
+        // Timeout the render task if it hangs (fixes the blank canvas bug)
+        const renderPromise = renderTask.promise;
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Render timeout')), 3000));
+        
+        await Promise.race([renderPromise, timeoutPromise]);
 
         // Copy rendered frame to the visible canvas instantaneously
         if (active && canvasRef.current) {
@@ -105,23 +112,38 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
         if (err.name === 'RenderingCancelledException') {
           // Normal cancellation
         } else {
-          console.error('Render error:', err);
+          console.error(`Render error on page ${pageNumber}:`, err);
+          if (active && retryCount < 2) {
+            console.log(`Retrying render for page ${pageNumber}...`);
+            setTimeout(() => { if (active) renderPage(retryCount + 1); }, 200);
+          } else if (active) {
+            setRenderError(err.message || String(err));
+          }
         }
       }
     };
 
-    renderPage();
+    let renderTimeoutId: ReturnType<typeof setTimeout>;
+
+    // Wait 25ms before starting the render. This prevents rapid scrolling 
+    // from choking the PDF.js worker queue with pages that are instantly skipped.
+    renderTimeoutId = setTimeout(() => {
+      if (active) renderPage();
+    }, 25);
 
     return () => {
       active = false;
-      if (renderTask) {
-        renderTask.cancel();
-      }
+      clearTimeout(renderTimeoutId);
+      // We explicitly DO NOT call renderTask.cancel() here.
+      // In many versions of PDF.js, cancelling a render task corrupts the internal 
+      // operator list stream for that specific page. If the user scrolls back to this 
+      // page later, the page will render completely blank because its stream was aborted.
+      // Letting it finish in the background is safer. (We check `active` after it resolves).
     };
-  }, [pdfDocument, pageNumber, renderedScale]);
+  }, [pdfDocument, pageNumber, renderedScale, pdfState.basePageSize]);
 
   const { 
-    bookId, isDrawingMode, invertPdfColors, pdfTintColor, pdfTextColor 
+    bookId, isDrawingMode, invertPdfColors, pdfTintColor, pdfTextColor, pdfMarginCrop 
   } = useBookStore();
 
   if (isLoading) return <div className="pdf-status">Loading PDF...</div>;
@@ -135,7 +157,8 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
     if (!bookId || !onContextMenuRequest) return;
     const rect = e.currentTarget.getBoundingClientRect();
     // Hitbox detection must account for the CSS transform ratio as well
-    const visualScale = scale; 
+    const cropScale = 1 + (pdfMarginCrop || 0) / 100;
+    const visualScale = scale * cropScale; 
     const x = (e.clientX - rect.left) / visualScale;
     const y = (e.clientY - rect.top) / visualScale;
 
@@ -170,20 +193,40 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
         display: 'inline-block',
         flexShrink: 0,
         overflow: 'hidden',
-        width: pdfState.basePageSize ? `${pdfState.basePageSize.width * scale}px` : undefined,
-        height: pdfState.basePageSize ? `${pdfState.basePageSize.height * scale}px` : undefined,
+        width: `${(pdfState.basePageSize?.width || 800) * scale}px`,
+        height: `${(pdfState.basePageSize?.height || 1100) * scale}px`,
+        backgroundColor: invertPdfColors ? '#000000' : (pdfTintColor || 'white'),
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         filter: hasDuotone ? 'url(#pdf-duotone)' : (invertPdfColors ? 'invert(1) hue-rotate(180deg)' : 'none'),
       }}
     >
-      <canvas 
-        ref={canvasRef} 
-        className="pdf-canvas" 
-        style={{ 
-          display: 'block',
-          width: '100%', 
-          height: '100%'
+      {renderError && (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          background: 'rgba(255,0,0,0.8)', color: 'white', padding: '1rem', borderRadius: '8px', zIndex: 1000,
+          maxWidth: '80%', textAlign: 'center', wordBreak: 'break-all'
+        }}>
+          <b>Render Error (Page {pageNumber})</b><br/>{renderError}
+        </div>
+      )}
+      <div 
+        className="pdf-crop-wrapper" 
+        style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          transform: `scale(${1 + (pdfMarginCrop || 0) / 100})`,
+          transformOrigin: 'center center'
         }}
-      />
+      >
+        <canvas 
+          ref={canvasRef} 
+          className="pdf-canvas" 
+          style={{ 
+            display: 'block',
+            width: '100%', 
+            height: '100%'
+          }}
+        />
       {pdfTintColor && !hasDuotone && (
         <div 
           style={{
@@ -203,24 +246,25 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
         height={pdfState.basePageSize?.height}
       />
       <SearchHighlightLayer pageNumber={pageNumber} scale={scale} />
-      <HighlightLayer pageNumber={pageNumber} scale={scale} />
-      <div 
-        ref={textLayerRef} 
-        className="textLayer" 
-        onContextMenu={handleContextMenu}
-        data-page-number={pageNumber}
-        style={{ 
-          position: 'absolute', 
-          left: 0, 
-          top: 0, 
-          right: 0, 
-          bottom: 0, 
-          overflow: 'hidden',
-          pointerEvents: isDrawingMode ? 'none' : 'auto',
-          userSelect: isDrawingMode ? 'none' : 'text',
-          WebkitUserSelect: isDrawingMode ? 'none' : 'text'
-        }}
-      />
+        <div 
+          ref={textLayerRef} 
+          className="textLayer" 
+          onContextMenu={handleContextMenu}
+          data-page-number={pageNumber}
+          style={{ 
+            position: 'absolute', 
+            left: 0, 
+            top: 0, 
+            right: 0, 
+            bottom: 0, 
+            overflow: 'hidden',
+            pointerEvents: isDrawingMode ? 'none' : 'auto',
+            userSelect: isDrawingMode ? 'none' : 'text',
+            WebkitUserSelect: isDrawingMode ? 'none' : 'text'
+          }}
+        />
+        <HighlightLayer pageNumber={pageNumber} scale={scale} />
+      </div>
     </div>
   );
 }

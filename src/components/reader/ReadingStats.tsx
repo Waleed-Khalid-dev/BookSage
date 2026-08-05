@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useBookStore } from '../../stores/bookStore';
 import { BarChart2, X } from 'lucide-react';
 import { usePDFContext } from '../../hooks/usePDF';

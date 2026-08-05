@@ -59,6 +59,10 @@ export interface BookmarkRecord {
   created_at: number;
 }
 
+export interface SearchResult extends HighlightRecord {
+  book_title: string;
+}
+
 export async function getDb(): Promise<Database> {
   if (!db) {
     db = await Database.load('sqlite:booksage.db');
@@ -198,6 +202,61 @@ export async function getBook(id: string): Promise<BookRecord | null> {
   return result.length > 0 ? result[0] : null;
 }
 
+export async function mergeDuplicateBooks(pdfPath: string): Promise<void> {
+  const database = await getDb();
+  
+  const books = await database.select<BookRecord[]>(`
+    SELECT b.*
+    FROM books b
+    WHERE b.pdf_path = $1
+    ORDER BY (
+      (SELECT COUNT(*) FROM highlights WHERE book_id = b.id) + 
+      (SELECT COUNT(*) FROM bookmarks WHERE book_id = b.id) + 
+      (SELECT COUNT(*) FROM chapters WHERE book_id = b.id AND status = 'done')
+    ) DESC, b.last_opened DESC
+  `, [pdfPath]);
+
+  if (books.length <= 1) return;
+
+  const primary = books[0];
+  const duplicates = books.slice(1);
+
+  for (const dup of duplicates) {
+    // 1. Move annotations
+    await database.execute('UPDATE highlights SET book_id = $1 WHERE book_id = $2', [primary.id, dup.id]);
+    await database.execute('UPDATE bookmarks SET book_id = $1 WHERE book_id = $2', [primary.id, dup.id]);
+    await database.execute('UPDATE drawings SET book_id = $1 WHERE book_id = $2', [primary.id, dup.id]);
+
+    // 2. Merge chapters
+    const primaryChapters = await database.select<ChapterRecord[]>('SELECT * FROM chapters WHERE book_id = $1', [primary.id]);
+    const dupChapters = await database.select<ChapterRecord[]>('SELECT * FROM chapters WHERE book_id = $1', [dup.id]);
+
+    for (const dupChap of dupChapters) {
+      if (dupChap.status === 'done' || dupChap.status === 'process') {
+        const primChap = primaryChapters.find(c => c.num === dupChap.num);
+        if (primChap && primChap.status !== 'done') {
+          await database.execute(
+            'UPDATE chapters SET status = $1, txt_path = $2, json_path = $3, error_msg = $4, updated_at = $5 WHERE id = $6',
+            [dupChap.status, dupChap.txt_path, dupChap.json_path, dupChap.error_msg, dupChap.updated_at, primChap.id]
+          );
+        }
+      }
+    }
+
+    // 3. Delete duplicate chapters and book
+    await database.execute('DELETE FROM chapters WHERE book_id = $1', [dup.id]);
+    await database.execute('DELETE FROM books WHERE id = $1', [dup.id]);
+  }
+}
+
+export async function getBookByPdfPath(pdfPath: string): Promise<BookRecord | null> {
+  await mergeDuplicateBooks(pdfPath); // Automatically fix any duplicate bugs
+
+  const database = await getDb();
+  const result = await database.select<BookRecord[]>('SELECT * FROM books WHERE pdf_path = $1 LIMIT 1', [pdfPath]);
+  return result.length > 0 ? result[0] : null;
+}
+
 export async function getChaptersForBook(bookId: string): Promise<ChapterRecord[]> {
   const database = await getDb();
   return await database.select<ChapterRecord[]>('SELECT * FROM chapters WHERE book_id = $1 ORDER BY num ASC', [bookId]);
@@ -238,6 +297,24 @@ export async function deleteHighlight(id: string): Promise<void> {
   await database.execute('DELETE FROM highlights WHERE id = $1', [id]);
 }
 
+export async function deleteBookmark(id: string): Promise<void> {
+  const database = await getDb();
+  await database.execute('DELETE FROM bookmarks WHERE id = $1', [id]);
+}
+
+export async function searchAnnotations(query: string): Promise<SearchResult[]> {
+  const database = await getDb();
+  const wildcardQuery = `%${query}%`;
+  return await database.select<SearchResult[]>(
+    `SELECT h.*, b.title as book_title 
+     FROM highlights h 
+     JOIN books b ON h.book_id = b.id 
+     WHERE h.text LIKE $1 OR h.note LIKE $1 
+     ORDER BY h.created_at DESC`, 
+    [wildcardQuery]
+  );
+}
+
 export async function upsertBookmark(bookmark: BookmarkRecord): Promise<void> {
   const database = await getDb();
   await database.execute(
@@ -254,10 +331,6 @@ export async function getBookmarksForBook(bookId: string): Promise<BookmarkRecor
   return await database.select<BookmarkRecord[]>('SELECT * FROM bookmarks WHERE book_id = $1 ORDER BY page_num ASC', [bookId]);
 }
 
-export async function deleteBookmark(id: string): Promise<void> {
-  const database = await getDb();
-  await database.execute('DELETE FROM bookmarks WHERE id = $1', [id]);
-}
 
 export async function upsertDrawing(drawing: DrawingRecord): Promise<void> {
   const database = await getDb();

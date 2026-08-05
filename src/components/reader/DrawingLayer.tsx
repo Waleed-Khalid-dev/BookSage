@@ -15,7 +15,7 @@ interface Point {
 }
 
 export function DrawingLayer({ pageNumber, scale, width, height }: DrawingLayerProps) {
-  const { bookId, isDrawingMode, drawingColor, drawingTool, penSize, eraserSize, addDrawingAction, deleteDrawingAction, triggerDrawingsRefresh } = useBookStore();
+  const { bookId, isDrawingMode, drawingColor, drawingTool, penSize, eraserSize, addDrawingAction, deleteDrawingAction } = useBookStore();
   
   // Actually we need to listen to drawingsRefreshCounter but Zustand store doesn't expose it individually if we don't select it.
   const drawingsRefreshCounter = useBookStore(s => (s as any).drawingsRefreshCounter || 0);

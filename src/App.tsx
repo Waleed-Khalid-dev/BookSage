@@ -6,6 +6,7 @@ import { BookReader } from "./components/views/BookReader";
 import { NotesViewer } from "./components/views/NotesViewer";
 import { PipelineView } from "./components/views/PipelineView";
 import { AIChatView } from "./components/views/AIChatView";
+import { GlobalSearchModal } from "./components/shared/GlobalSearchModal";
 import "pdfjs-dist/web/pdf_viewer.css";
 import "./App.css";
 
@@ -33,6 +34,7 @@ function App() {
       <main className="main-content">
         {renderView()}
       </main>
+      <GlobalSearchModal />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useBookStore } from '../../stores/bookStore';
-import { upsertHighlight } from '../../services/dbService';
+
 import { SelectionData } from '../../hooks/useTextSelection';
 import { Sparkles, Underline, Strikethrough } from 'lucide-react';
 
@@ -101,10 +101,10 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
   };
 
   const colors = [
-    { name: 'yellow', value: 'rgba(255, 255, 0, 0.3)' },
-    { name: 'green', value: 'rgba(0, 255, 0, 0.3)' },
-    { name: 'blue', value: 'rgba(0, 200, 255, 0.3)' },
-    { name: 'pink', value: 'rgba(255, 105, 180, 0.3)' }
+    { name: 'yellow', value: '#ffff00' },
+    { name: 'green', value: '#00ff00' },
+    { name: 'blue', value: '#00c8ff' },
+    { name: 'pink', value: '#ff69b4' }
   ];
 
   const handleCopilotAction = (action: string) => {

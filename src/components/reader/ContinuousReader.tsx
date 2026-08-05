@@ -10,7 +10,9 @@ interface LazyPDFPageProps {
 }
 
 const LazyPDFPage = React.memo(function LazyPDFPage({ pageNum, onContextMenuRequest, onPageVisible }: LazyPDFPageProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const { currentPage } = usePDFContext();
+  // Pre-render the active page and its immediate neighbors to prevent blank screens on initial load
+  const [isVisible, setIsVisible] = useState(() => Math.abs(pageNum - currentPage) <= 3);
   const containerRef = useRef<HTMLDivElement>(null);
   const { invertPdfColors, pdfTintColor } = useBookStore();
 
@@ -23,7 +25,7 @@ const LazyPDFPage = React.memo(function LazyPDFPage({ pageNum, onContextMenuRequ
           setIsVisible(false);
         }
       },
-      { rootMargin: '400% 0px' } // Load 4 viewports above and below to prevent loading flashes
+      { rootMargin: '800% 0px' } // Load 8 viewports above and below to significantly reduce blank loading pages
     );
 
     if (containerRef.current) {

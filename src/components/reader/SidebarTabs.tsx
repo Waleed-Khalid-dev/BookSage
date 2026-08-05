@@ -1,16 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useBookStore } from '../../stores/bookStore';
 import { usePDFContext } from '../../hooks/usePDF';
-import { getBookmarksForBook, getHighlightsForBook, BookmarkRecord, HighlightRecord } from '../../services/dbService';
+import { getBookmarksForBook, getHighlightsForBook, deleteBookmark, deleteHighlight, BookmarkRecord, HighlightRecord } from '../../services/dbService';
 import { ThumbnailList } from './ThumbnailList';
-
+import { copyExportToClipboard, saveExportToFile } from '../../services/exportService';
+import { Download, Copy, Check, Search, Trash2 } from 'lucide-react';
+import { useSearchStore } from '../../stores/searchStore';
 export function SidebarTabs() {
   const [activeTab, setActiveTab] = useState<'toc' | 'thumbnails' | 'annotations'>('toc');
   const { chapters, bookId, highlightsRefreshCounter, bookmarksRefreshCounter } = useBookStore();
+  const { setSearchModalOpen } = useSearchStore();
   const pdfState = usePDFContext();
   
   const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
   const [highlights, setHighlights] = useState<HighlightRecord[]>([]);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'annotations' && bookId) {
@@ -18,6 +23,33 @@ export function SidebarTabs() {
       getHighlightsForBook(bookId).then(setHighlights);
     }
   }, [activeTab, bookId, highlightsRefreshCounter, bookmarksRefreshCounter]);
+
+  useEffect(() => {
+    const handleOpenNote = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      setActiveTab('annotations');
+      
+      // Delay scrolling to allow the annotations tab to render and fetch data
+      setTimeout(() => {
+        const annotationId = customEvent.detail;
+        if (annotationId) {
+          const el = document.getElementById(`annotation-${annotationId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Highlight the element briefly
+            el.style.transition = 'background-color 0.5s';
+            el.style.backgroundColor = 'var(--bs-primary-light)';
+            setTimeout(() => {
+              el.style.backgroundColor = 'var(--bs-panel)';
+            }, 1000);
+          }
+        }
+      }, 300);
+    };
+    
+    window.addEventListener('booksage-open-sidebar', handleOpenNote);
+    return () => window.removeEventListener('booksage-open-sidebar', handleOpenNote);
+  }, []);
 
   const handlePageJump = (page: number) => {
     if (pdfState) {
@@ -29,6 +61,24 @@ export function SidebarTabs() {
         el.scrollIntoView({ behavior: 'smooth' });
       }
     }
+  };
+
+  const handleCopy = async () => {
+    if (!bookId) return;
+    setIsExporting(true);
+    const success = await copyExportToClipboard(bookId);
+    setIsExporting(false);
+    if (success) {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!bookId) return;
+    setIsExporting(true);
+    await saveExportToFile(bookId);
+    setIsExporting(false);
   };
 
   return (
@@ -114,6 +164,50 @@ export function SidebarTabs() {
         {activeTab === 'annotations' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             
+            {/* Export Toolbar */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <button 
+                onClick={handleCopy}
+                disabled={isExporting}
+                title="Copy all notes to clipboard (Markdown)"
+                style={{
+                  flex: 1, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer',
+                  background: 'var(--bs-panel)', border: '1px solid var(--bs-border)',
+                  color: 'var(--bs-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                }}
+              >
+                {isCopied ? <Check size={16} color="green" /> : <Copy size={16} />}
+                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{isCopied ? 'Copied!' : 'Copy'}</span>
+              </button>
+              
+              <button 
+                onClick={handleDownload}
+                disabled={isExporting}
+                title="Export as Markdown file"
+                style={{
+                  flex: 1, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer',
+                  background: 'var(--bs-panel)', border: '1px solid var(--bs-border)',
+                  color: 'var(--bs-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                }}
+              >
+                <Download size={16} />
+                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Export MD</span>
+              </button>
+
+              <button 
+                onClick={() => setSearchModalOpen(true)}
+                title="Search all annotations"
+                style={{
+                  flex: 1, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer',
+                  background: 'var(--bs-panel)', border: '1px solid var(--bs-border)',
+                  color: 'var(--bs-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                }}
+              >
+                <Search size={16} />
+                <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Search</span>
+              </button>
+            </div>
+            
             {/* Bookmarks Section */}
             <div>
               <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--bs-heading)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Bookmarks</h4>
@@ -122,19 +216,33 @@ export function SidebarTabs() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   {bookmarks.map(b => (
-                    <button
-                      key={b.id}
-                      onClick={() => handlePageJump(b.page_num)}
-                      style={{
-                        textAlign: 'left', padding: '0.5rem',
-                        background: 'var(--bs-panel)', border: '1px solid var(--bs-border)',
-                        borderRadius: '4px', color: 'var(--bs-text)', cursor: 'pointer',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.85rem' }}>{b.label || `Page ${b.page_num}`}</span>
-                      <span style={{ color: 'var(--bs-accent)' }}>🔖</span>
-                    </button>
+                    <div key={b.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <button
+                        onClick={() => handlePageJump(b.page_num)}
+                        style={{
+                          flex: 1, textAlign: 'left', padding: '0.5rem',
+                          background: 'var(--bs-panel)', border: '1px solid var(--bs-border)',
+                          borderRadius: '4px', color: 'var(--bs-text)', cursor: 'pointer',
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        }}
+                      >
+                        <span style={{ fontSize: '0.85rem' }}>{b.label || `Page ${b.page_num}`}</span>
+                        <span style={{ color: 'var(--bs-accent)' }}>🔖</span>
+                      </button>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await deleteBookmark(b.id);
+                          useBookStore.getState().triggerBookmarksRefresh();
+                        }}
+                        style={{
+                          padding: '0.5rem', background: 'transparent', border: 'none', color: 'var(--bs-danger, #ef4444)', cursor: 'pointer'
+                        }}
+                        title="Delete Bookmark"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -150,33 +258,47 @@ export function SidebarTabs() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {highlights.map(h => (
-                    <button
-                      key={h.id}
-                      onClick={() => handlePageJump(h.page_num)}
-                      style={{
-                        textAlign: 'left', padding: '0.5rem',
-                        background: 'var(--bs-panel)', border: '1px solid var(--bs-border)',
-                        borderLeft: `4px solid ${h.color}`,
-                        borderRadius: '4px', color: 'var(--bs-text)', cursor: 'pointer',
-                        display: 'flex', flexDirection: 'column', gap: '0.25rem'
-                      }}
-                    >
-                      {h.note && h.note.trim() !== '' && (
-                        <div style={{ 
-                          background: '#fef3c7', 
-                          padding: '0.5rem', 
-                          borderRadius: '4px', 
-                          color: '#92400e',
-                          fontSize: '0.85rem',
-                          marginBottom: '0.25rem',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                        }}>
-                          <strong>Note:</strong> {h.note}
-                        </div>
-                      )}
-                      <span style={{ fontSize: '0.85rem', fontStyle: 'italic', opacity: 0.9 }}>"{h.text}"</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--bs-muted)', alignSelf: 'flex-end' }}>p.{h.page_num}</span>
-                    </button>
+                    <div id={`annotation-${h.id}`} key={h.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                      <button
+                        onClick={() => handlePageJump(h.page_num)}
+                        style={{
+                          flex: 1, textAlign: 'left', padding: '0.5rem',
+                          background: 'var(--bs-panel)', border: '1px solid var(--bs-border)',
+                          borderLeft: `4px solid ${h.color}`,
+                          borderRadius: '4px', color: 'var(--bs-text)', cursor: 'pointer',
+                          display: 'flex', flexDirection: 'column', gap: '0.25rem'
+                        }}
+                      >
+                        {h.note && h.note.trim() !== '' && (
+                          <div style={{ 
+                            background: '#fef3c7', 
+                            padding: '0.5rem', 
+                            borderRadius: '4px', 
+                            color: '#92400e',
+                            fontSize: '0.85rem',
+                            marginBottom: '0.25rem',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                          }}>
+                            <strong>Note:</strong> {h.note}
+                          </div>
+                        )}
+                        <span style={{ fontSize: '0.85rem', fontStyle: 'italic', opacity: 0.9 }}>"{h.text}"</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--bs-muted)', alignSelf: 'flex-end' }}>p.{h.page_num}</span>
+                      </button>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await deleteHighlight(h.id);
+                          useBookStore.getState().triggerHighlightsRefresh();
+                        }}
+                        style={{
+                          padding: '0.5rem', background: 'transparent', border: 'none', color: 'var(--bs-danger, #ef4444)', cursor: 'pointer'
+                        }}
+                        title="Delete Highlight"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
