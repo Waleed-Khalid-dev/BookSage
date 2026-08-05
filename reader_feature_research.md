@@ -16,17 +16,17 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Smooth page rendering (canvas) | All | 🔴 CORE | Already done with pdfjs-dist |
-| Single page / Two-page spread view | Adobe, Foxit | 🔴 CORE | Side-by-side reading mode |
-| Continuous scroll mode | Adobe, Readwise | 🔴 CORE | Scroll through all pages like a webpage |
+| Smooth page rendering (canvas) | All | 🔴 CORE | Already done |
+| Single page / Two-page spread view | Adobe, Foxit | 🔴 CORE | Already done |
+| Continuous scroll mode | Adobe, Readwise | 🔴 CORE | Already done |
 | Zoom in/out + fit-to-width | All | 🔴 CORE | Already done |
 | Page jump input (go to page X) | All | 🔴 CORE | Already done |
-| Keyboard shortcuts (Arrow keys, PgUp/Dn) | Sumatra, Foxit | 🔴 CORE | Fast navigation without mouse |
-| Table of Contents sidebar | Adobe, Foxit, Okular | 🔴 CORE | Jump directly to chapters from TOC |
-| Thumbnail strip / page preview | Adobe, Foxit | 🟡 HIGH | Small previews of all pages |
-| Remember last read position | Kindle, Readwise | 🔴 CORE | Reopen book at the exact page you left |
-| Reading progress bar | Kindle, Moon+ | 🔴 CORE | % progress shown at bottom |
-| Distraction-free / Focus mode | Readwise, Moon+ | 🟡 HIGH | Hide all UI, only show the text |
+| Keyboard shortcuts (Arrow keys, PgUp/Dn) | Sumatra, Foxit | 🔴 CORE | Already done |
+| Table of Contents sidebar | Adobe, Foxit, Okular | 🔴 CORE | Already done |
+| Thumbnail strip / page preview | Adobe, Foxit | 🟡 HIGH | Already done |
+| Remember last read position | Kindle, Readwise | 🔴 CORE | Already done |
+| Reading progress bar | Kindle, Moon+ | 🔴 CORE | Already done |
+| Distraction-free / Focus mode | Readwise, Moon+ | 🟡 HIGH | Already done |
 
 ---
 
@@ -34,13 +34,13 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Dark mode / Night mode | All | 🔴 CORE | Already using dark theme — great |
-| Sepia / Warm tone mode | Kindle, Moon+ | 🟡 HIGH | Eye-friendly warm color filter |
-| True black mode (OLED) | Moon+ | 🟢 NICE | Pure black background |
-| Custom background color picker | Moon+ | 🟢 NICE | User-defined reading background |
-| Invert PDF colors (white-on-black) | Sumatra, Okular | 🟡 HIGH | Makes scanned PDFs readable at night |
-| Font size control (for reflowed text) | Kindle, Readwise | 🟡 HIGH | For EPUBs / clean view mode |
-| Line spacing & margin control | Moon+, Readwise | 🟢 NICE | Readability fine-tuning |
+| Dark mode / Night mode | All | 🔴 CORE | Already done |
+| Sepia / Warm tone mode | Kindle, Moon+ | 🟡 HIGH | Already done |
+| True black mode (OLED) | Moon+ | 🟢 NICE | Already done |
+| Custom background color picker | Moon+ | 🟢 NICE | Already done |
+| Invert PDF colors (white-on-black) | Sumatra, Okular | 🟡 HIGH | Already done |
+| Font size control (for reflowed text) | Kindle, Readwise | 🟡 HIGH | Not done |
+| Line spacing & margin control | Moon+, Readwise | 🟢 NICE | Not done |
 
 ---
 
@@ -48,14 +48,14 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Highlight text in multiple colors | Adobe, Readwise, Kindle | 🔴 CORE | Select text → choose highlight color |
-| Underline / Strikethrough text | Adobe, Foxit | 🟡 HIGH | Additional markup modes |
-| Sticky note / Pop-up comment on highlight | Adobe, Foxit, Xodo | 🟡 HIGH | Add a private note to any highlight |
-| Draw / freehand annotation | Drawboard, Adobe | 🟢 NICE | Stylus/mouse drawing on the PDF |
-| Annotation sidebar / list | Adobe, Readwise | 🟡 HIGH | See all highlights in one panel |
-| Export annotations to Markdown | Readwise | 🔴 CORE | This is BookSage's killer feature! |
-| Search within annotations | Readwise, Adobe | 🟡 HIGH | Find a specific note you made |
-| Highlight sync across sessions | Readwise, Kindle | 🔴 CORE | Persist highlights in SQLite DB |
+| Highlight text in multiple colors | Adobe, Readwise, Kindle | 🔴 CORE | Already done |
+| Underline / Strikethrough text | Adobe, Foxit | 🟡 HIGH | Already done |
+| Sticky note / Pop-up comment on highlight | Adobe, Foxit, Xodo | 🟡 HIGH | Already done |
+| Draw / freehand annotation | Drawboard, Adobe | 🟢 NICE | Already done (with undo/redo/eraser) |
+| Annotation sidebar / list | Adobe, Readwise | 🟡 HIGH | Already done |
+| Export annotations to Markdown | Readwise | 🔴 CORE | Not done |
+| Search within annotations | Readwise, Adobe | 🟡 HIGH | Not done |
+| Highlight sync across sessions | Readwise, Kindle | 🔴 CORE | Already done |
 
 ---
 
@@ -63,14 +63,14 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Select text → AI explain/summarize | Readwise Ghostreader | 🔴 CORE | Phase 6 Copilot — already planned |
-| Select text → Simplify language | Readwise | 🔴 CORE | "Explain like I'm 5" button |
-| Select text → Translate | Readwise, Adobe | 🟡 HIGH | Multi-language support |
-| Chat with the document | Readwise, Adobe AI | 🔴 CORE | Ask questions grounded in the book |
-| AI-generated chapter summary | Readwise | 🔴 CORE | Already building this in pipeline view! |
-| AI-generated "Story So Far" recap | Kindle AI | 🟡 HIGH | Resumption summary after a break |
-| AI themed highlights (find connections) | Readwise | 🟢 NICE | "Show me all highlights about leadership" |
-| Inline word definition on long-press | Kindle, Readwise | 🟡 HIGH | Tap a word → dictionary + AI explain |
+| Select text → AI explain/summarize | Readwise Ghostreader | 🔴 CORE | Not done (Phase 6 Copilot) |
+| Select text → Simplify language | Readwise | 🔴 CORE | Not done (Phase 6 Copilot) |
+| Select text → Translate | Readwise, Adobe | 🟡 HIGH | Not done (Phase 6 Copilot) |
+| Chat with the document | Readwise, Adobe AI | 🔴 CORE | Not done (Backend done, UI pending Phase 6) |
+| AI-generated chapter summary | Readwise | 🔴 CORE | Already done |
+| AI-generated "Story So Far" recap | Kindle AI | 🟡 HIGH | Not done |
+| AI themed highlights (find connections) | Readwise | 🟢 NICE | Not done |
+| Inline word definition on long-press | Kindle, Readwise | 🟡 HIGH | Not done |
 
 ---
 
@@ -78,9 +78,9 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Full-text search within current PDF | All | 🔴 CORE | Ctrl+F to find any word on any page |
-| Search with highlight & jump | Adobe, Foxit | 🔴 CORE | Navigate matches with arrow keys |
-| Search across all books in library | Readwise | 🟡 HIGH | "Find passages about X in any book" |
+| Full-text search within current PDF | All | 🔴 CORE | Already done |
+| Search with highlight & jump | Adobe, Foxit | 🔴 CORE | Already done |
+| Search across all books in library | Readwise | 🟡 HIGH | Not done |
 
 ---
 
@@ -88,11 +88,11 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Split view (Book + Notes side-by-side) | iPad Reader apps | 🔴 CORE | Already in BookSage architecture! |
-| Bookmarks (mark a specific page) | Adobe, Kindle, Foxit | 🟡 HIGH | Star/flag important pages |
-| Bookmark sidebar | Adobe, Foxit | 🟡 HIGH | List of all saved bookmarks |
-| Chapter overview panel | Adobe, Readwise | 🔴 CORE | Left sidebar with TOC chapters |
-| Minimap scroll indicator | PDF-XChange | 🟢 NICE | Tiny preview of full doc as you scroll |
+| Split view (Book + Notes side-by-side) | iPad Reader apps | 🔴 CORE | Not done (Pending Phase 5) |
+| Bookmarks (mark a specific page) | Adobe, Kindle, Foxit | 🟡 HIGH | Already done |
+| Bookmark sidebar | Adobe, Foxit | 🟡 HIGH | Already done |
+| Chapter overview panel | Adobe, Readwise | 🔴 CORE | Already done |
+| Minimap scroll indicator | PDF-XChange | 🟢 NICE | Not done |
 
 ---
 
@@ -100,10 +100,10 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Reading time estimate ("X min left") | Kindle, Readwise | 🟡 HIGH | "32 minutes left in this chapter" |
-| Total pages read today/this week | Kindle | 🟡 HIGH | Reading streak & habit tracking |
-| Reading streak counter | Kindle | 🟢 NICE | Motivational daily habit tracking |
-| Time spent reading per book | Moon+ | 🟢 NICE | Reading journal stats |
+| Reading time estimate ("X min left") | Kindle, Readwise | 🟡 HIGH | Not done |
+| Total pages read today/this week | Kindle | 🟡 HIGH | Not done |
+| Reading streak counter | Kindle | 🟢 NICE | Not done |
+| Time spent reading per book | Moon+ | 🟢 NICE | Not done |
 
 ---
 
@@ -111,9 +111,9 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Text-to-speech (TTS) | Kindle, Moon+, Readwise | 🟡 HIGH | Listen to any page being read aloud |
-| Adjustable TTS speed | Moon+, Kindle | 🟢 NICE | 0.5x to 2.5x playback |
-| Word highlighting during TTS | Readwise Audio | 🟡 HIGH | Word lights up as it's spoken |
+| Text-to-speech (TTS) | Kindle, Moon+, Readwise | 🟡 HIGH | Not done |
+| Adjustable TTS speed | Moon+, Kindle | 🟢 NICE | Not done |
+| Word highlighting during TTS | Readwise Audio | 🟡 HIGH | Not done |
 
 ---
 
@@ -121,12 +121,13 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Vim-style keybindings (J/K navigation) | Sumatra | 🟢 NICE | Power user mode |
-| Customizable keyboard shortcuts | PDF-XChange | 🟢 NICE | User remaps any key |
-| Arrow key / scroll wheel page turn | All | 🔴 CORE | Standard expected behavior |
-| `Ctrl+F` full-text search | All | 🔴 CORE | Universal shortcut |
-| `Ctrl++/-` zoom | All | 🔴 CORE | Standard zoom shortcut |
-| Space bar for next page | Sumatra, Foxit | 🟡 HIGH | One-hand reading |
+| Vim-style keybindings (J/K navigation) | Sumatra | 🟢 NICE | Not done |
+| Customizable keyboard shortcuts | PDF-XChange | 🟢 NICE | Not done |
+| Arrow key / scroll wheel page turn | All | 🔴 CORE | Already done |
+| `Ctrl+F` full-text search | All | 🔴 CORE | Already done |
+| `Ctrl++/-` zoom | All | 🔴 CORE | Already done |
+| Space bar for next page | Sumatra, Foxit | 🟡 HIGH | Already done |
+| `Ctrl+Z/Y` Undo/Redo | BookSage | 🔴 CORE | Already done |
 
 ---
 

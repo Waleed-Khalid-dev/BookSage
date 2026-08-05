@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { usePDFContext } from '../../hooks/usePDF';
 import { PDFCanvas } from './PDFCanvas';
+import { useBookStore } from '../../stores/bookStore';
 
 interface LazyPDFPageProps {
   pageNum: number;
@@ -11,6 +12,7 @@ interface LazyPDFPageProps {
 const LazyPDFPage = React.memo(function LazyPDFPage({ pageNum, onContextMenuRequest, onPageVisible }: LazyPDFPageProps) {
   const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { invertPdfColors, pdfTintColor } = useBookStore();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -83,7 +85,7 @@ const LazyPDFPage = React.memo(function LazyPDFPage({ pageNum, onContextMenuRequ
       ) : (
         <div style={{ 
           height: '100%', 
-          background: 'white', 
+          backgroundColor: invertPdfColors ? '#000000' : (pdfTintColor || 'white'), 
           width: 'calc(var(--pdf-base-width, 800px) * var(--pdf-scale, 1.2))',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
         }} />

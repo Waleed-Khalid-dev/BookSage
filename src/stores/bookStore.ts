@@ -33,6 +33,9 @@ interface BookState {
   apiKey: string;
   aiModel: string;
   readerTheme: 'dark' | 'light' | 'sepia' | 'night' | 'oled' | 'focus';
+  invertPdfColors: boolean;
+  pdfTintColor: string;
+  pdfTextColor: string;
   highlightsRefreshCounter: number;
   bookmarksRefreshCounter: number;
   drawingsRefreshCounter: number;
@@ -69,6 +72,9 @@ interface BookState {
   setLastPage: (page: number) => Promise<void>;
   incrementReadingStats: (timeSecs: number, newPagesCount: number) => Promise<void>;
   setReaderTheme: (theme: BookState['readerTheme']) => void;
+  setInvertPdfColors: (invert: boolean) => void;
+  setPdfTintColor: (color: string) => void;
+  setPdfTextColor: (color: string) => void;
   
   // Search Actions
   performSearch: (query: string) => Promise<void>;
@@ -107,6 +113,9 @@ export const useBookStore = create<BookState>()(
       apiKey: '',
       aiModel: 'gemini-3.6-flash',
       readerTheme: 'dark',
+      invertPdfColors: false,
+      pdfTintColor: '',
+      pdfTextColor: '',
       highlightsRefreshCounter: 0,
       bookmarksRefreshCounter: 0,
       drawingsRefreshCounter: 0,
@@ -623,6 +632,9 @@ export const useBookStore = create<BookState>()(
       },
 
       setReaderTheme: (theme: BookState['readerTheme']) => set({ readerTheme: theme }),
+      setInvertPdfColors: (invert: boolean) => set({ invertPdfColors: invert }),
+      setPdfTintColor: (color: string) => set({ pdfTintColor: color }),
+      setPdfTextColor: (color: string) => set({ pdfTextColor: color }),
 
       
       performSearch: async (query: string) => {
@@ -680,6 +692,9 @@ export const useBookStore = create<BookState>()(
         apiKey: state.apiKey,
         aiModel: state.aiModel,
         readerTheme: state.readerTheme,
+        invertPdfColors: state.invertPdfColors,
+        pdfTintColor: state.pdfTintColor,
+        pdfTextColor: state.pdfTextColor,
       }),
     }
   )

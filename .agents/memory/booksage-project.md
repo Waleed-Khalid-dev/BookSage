@@ -157,4 +157,5 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - **Collapsible Sidebar:** Maximized reading focus with a fully collapsible sidebar, utilizing smooth width transitions and a floating toggle button.
   - **Drawing Tools:** Added freehand Pen tool, dynamic Eraser tool with hit-detection, and customizable pen/eraser size sliders.
   - **Undo/Redo System:** Implemented a robust in-memory stack for tracking drawing/erasing actions with UI buttons and keyboard shortcuts (Ctrl+Z / Ctrl+Y).
+  - **Display Themes:** Added Invert PDF Colors toggle, and custom PDF Background and Text Tint color pickers utilizing CSS mix-blend-mode and dynamic SVG Duotone filters for perfect color mapping without losing image fidelity.
 - **Next:** Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).

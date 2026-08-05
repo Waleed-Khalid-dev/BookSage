@@ -13,18 +13,29 @@ import { DisplaySettings } from '../reader/DisplaySettings';
 import { AudioToolbar } from '../reader/AudioToolbar';
 import { SearchBar } from '../reader/SearchBar';
 import { ReadingStats } from '../reader/ReadingStats';
-import { Search, ChevronRight, PenTool, Undo, Redo, Eraser } from 'lucide-react';
+import { Search, ChevronRight, PenTool, Undo, Redo, Eraser, Maximize, Minimize } from 'lucide-react';
+
+const hexToRgbNormalized = (hex: string) => {
+  const h = hex.replace('#', '');
+  if (h.length !== 6) return { r: 1, g: 1, b: 1 };
+  const r = parseInt(h.substring(0, 2), 16) / 255;
+  const g = parseInt(h.substring(2, 4), 16) / 255;
+  const b = parseInt(h.substring(4, 6), 16) / 255;
+  return { r, g, b };
+};
 
 export function BookReader() {
   const { 
     pdfPath, currentBookTitle, lastPage, setLastPage, incrementReadingStats,
     isDrawingMode, drawingColor, setIsDrawingMode, setDrawingColor, 
     undoDrawingAction, redoDrawingAction, undoStack, redoStack,
-    drawingTool, setDrawingTool, eraserSize, setEraserSize, penSize, setPenSize
+    drawingTool, setDrawingTool, eraserSize, setEraserSize, penSize, setPenSize,
+    pdfTintColor, pdfTextColor
   } = useBookStore();
   const pdfState = usePDF(pdfPath, lastPage);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('single');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const [selection, setSelection] = useState<SelectionData | null>(null);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -86,13 +97,41 @@ export function BookReader() {
       window.removeEventListener('scroll', updateActivity, true);
     };
   }, [pdfPath, incrementReadingStats]);
+  // Focus Mode Handlers
+  const toggleFocusMode = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(e => {
+        console.error("Error attempting to enable full-screen mode:", e);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFullscreen = !!document.fullscreenElement;
+      setIsFocusMode(isFullscreen);
+      if (isFullscreen) {
+        setIsSidebarOpen(false); // Force sidebar closed on enter
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFocusMode();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) {
           redoDrawingAction();
@@ -365,11 +404,25 @@ export function BookReader() {
 
   return (
     <PDFContext.Provider value={pdfState}>
+      {pdfTintColor && pdfTextColor && (
+        <svg width="0" height="0" style={{ position: 'absolute' }}>
+          <filter id="pdf-duotone">
+            <feColorMatrix type="matrix" values={`
+              ${(hexToRgbNormalized(pdfTintColor).r - hexToRgbNormalized(pdfTextColor).r) * 0.2126} ${(hexToRgbNormalized(pdfTintColor).r - hexToRgbNormalized(pdfTextColor).r) * 0.7152} ${(hexToRgbNormalized(pdfTintColor).r - hexToRgbNormalized(pdfTextColor).r) * 0.0722} 0 ${hexToRgbNormalized(pdfTextColor).r}
+              ${(hexToRgbNormalized(pdfTintColor).g - hexToRgbNormalized(pdfTextColor).g) * 0.2126} ${(hexToRgbNormalized(pdfTintColor).g - hexToRgbNormalized(pdfTextColor).g) * 0.7152} ${(hexToRgbNormalized(pdfTintColor).g - hexToRgbNormalized(pdfTextColor).g) * 0.0722} 0 ${hexToRgbNormalized(pdfTextColor).g}
+              ${(hexToRgbNormalized(pdfTintColor).b - hexToRgbNormalized(pdfTextColor).b) * 0.2126} ${(hexToRgbNormalized(pdfTintColor).b - hexToRgbNormalized(pdfTextColor).b) * 0.7152} ${(hexToRgbNormalized(pdfTintColor).b - hexToRgbNormalized(pdfTextColor).b) * 0.0722} 0 ${hexToRgbNormalized(pdfTextColor).b}
+              0 0 0 1 0
+            `} />
+          </filter>
+        </svg>
+      )}
+      
       <div className="view-container book-reader" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
         <SearchBar />
       
-      <header className="view-header" style={{ padding: '1rem', borderBottom: '1px solid var(--bs-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ color: 'var(--bs-heading)', margin: 0 }}>{currentBookTitle}</h2>
+      {!isFocusMode && (
+        <header className="view-header" style={{ padding: '1rem', borderBottom: '1px solid var(--bs-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ color: 'var(--bs-heading)', margin: 0 }}>{currentBookTitle}</h2>
         
         <div className="view-toggles" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button 
@@ -504,11 +557,19 @@ export function BookReader() {
           >
             <Search size={20} />
           </button>
+          <button 
+            className="icon-btn" 
+            onClick={toggleFocusMode}
+            title="Focus Mode (F11)"
+          >
+            <Maximize size={20} />
+          </button>
           <ReadingStats />
           <AudioToolbar />
           <DisplaySettings />
         </div>
       </header>
+      )}
       
       <PageControls 
         pdfState={pdfState} 
@@ -532,7 +593,7 @@ export function BookReader() {
             <SidebarTabs />
           </div>
 
-          {!isSidebarOpen && (
+          {!isSidebarOpen && !isFocusMode && (
             <button
               onClick={() => setIsSidebarOpen(true)}
               style={{
@@ -714,6 +775,41 @@ export function BookReader() {
             background: 'rgba(0,0,0,0.5)', zIndex: 10000
           }} 
         />
+      )}
+
+      {isFocusMode && (
+        <button
+          onClick={toggleFocusMode}
+          style={{
+            position: 'absolute',
+            top: '1rem',
+            right: '1rem',
+            background: 'var(--bs-surface)',
+            border: '1px solid var(--bs-border)',
+            borderRadius: '50%',
+            padding: '8px',
+            color: 'var(--bs-text)',
+            cursor: 'pointer',
+            zIndex: 1000,
+            opacity: 0.3,
+            transition: 'opacity 0.2s, background-color 0.2s',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '1';
+            e.currentTarget.style.backgroundColor = 'var(--bs-surface-hover)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '0.3';
+            e.currentTarget.style.backgroundColor = 'var(--bs-surface)';
+          }}
+          title="Exit Focus Mode (F11 or Esc)"
+        >
+          <Minimize size={20} />
+        </button>
       )}
       
       {/* Floating Action Button for Drawing */}

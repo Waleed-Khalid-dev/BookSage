@@ -45,5 +45,6 @@
 - [reference] Phase 4 Book Reader: COMPLETE & verified. Continuous/Single reading, highlight context menu, trackpad zoom. Next step is Phase 5 (Notes Viewer) or 6 (Copilot). → booksage-project.md
 - [reference] Phase 4.5 Reader Polish: COMPLETE & verified. PyMuPDF search, virtualized thumbnail strip, collapsible sidebar, and Two-Page Spread mode with 3D flip animations. → booksage-project.md
 - [reference] Phase 4.5 Finalized: Added Eraser, Freehand Drawing, Undo/Redo stack, and Keyboard Shortcuts. → booksage-project.md
+- [reference] Phase 4.5 Display Themes: Added Invert PDF Colors, custom Background and Text tinting via SVG Duotone filters. → booksage-project.md
 ## Skills
 - [skill] /checkpoint — saves memory + commits + pushes. Run at end of every phase → .agents/skills/checkpoint-save/SKILL.md

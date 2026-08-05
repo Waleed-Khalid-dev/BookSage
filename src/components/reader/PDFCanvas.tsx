@@ -120,7 +120,9 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
     };
   }, [pdfDocument, pageNumber, renderedScale]);
 
-  const { bookId, isDrawingMode } = useBookStore();
+  const { 
+    bookId, isDrawingMode, invertPdfColors, pdfTintColor, pdfTextColor 
+  } = useBookStore();
 
   if (isLoading) return <div className="pdf-status">Loading PDF...</div>;
   if (error) return <div className="pdf-status error">Error loading PDF: {error}</div>;
@@ -157,6 +159,8 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
     }
   };
 
+  const hasDuotone = pdfTintColor && pdfTextColor;
+
   return (
     <div 
       ref={containerRef}
@@ -167,14 +171,31 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
         flexShrink: 0,
         overflow: 'hidden',
         width: pdfState.basePageSize ? `${pdfState.basePageSize.width * scale}px` : undefined,
-        height: pdfState.basePageSize ? `${pdfState.basePageSize.height * scale}px` : undefined
+        height: pdfState.basePageSize ? `${pdfState.basePageSize.height * scale}px` : undefined,
+        filter: hasDuotone ? 'url(#pdf-duotone)' : (invertPdfColors ? 'invert(1) hue-rotate(180deg)' : 'none'),
       }}
     >
       <canvas 
         ref={canvasRef} 
         className="pdf-canvas" 
-        style={{ width: '100%', height: '100%' }}
+        style={{ 
+          display: 'block',
+          width: '100%', 
+          height: '100%'
+        }}
       />
+      {pdfTintColor && !hasDuotone && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: pdfTintColor,
+            mixBlendMode: invertPdfColors ? 'screen' : 'multiply',
+            pointerEvents: 'none',
+            zIndex: 1
+          }}
+        />
+      )}
       <DrawingLayer 
         pageNumber={pageNumber} 
         scale={scale} 

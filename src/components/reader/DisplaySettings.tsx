@@ -4,7 +4,15 @@ import { Settings2 } from 'lucide-react';
 
 export function DisplaySettings() {
   const [isOpen, setIsOpen] = useState(false);
-  const { readerTheme, setReaderTheme } = useBookStore();
+  const { 
+    readerTheme,    setReaderTheme,
+    invertPdfColors,
+    setInvertPdfColors,
+    pdfTintColor,
+    setPdfTintColor,
+    pdfTextColor,
+    setPdfTextColor
+  } = useBookStore();
 
   const themes = [
     { id: 'dark', label: 'Dark (Default)' },
@@ -69,6 +77,63 @@ export function DisplaySettings() {
                 {t.label}
               </button>
             ))}
+          </div>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--bs-border)', margin: '1rem 0' }} />
+
+          <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--bs-heading)' }}>PDF Rendering</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--bs-text)' }}>
+              <input 
+                type="checkbox" 
+                checked={invertPdfColors}
+                onChange={(e) => setInvertPdfColors(e.target.checked)}
+                style={{ cursor: 'pointer' }}
+              />
+              Invert PDF Colors
+            </label>
+            
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem' }}>
+              <span style={{ color: 'var(--bs-text)', fontSize: '0.9rem' }}>PDF BG Tint:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input 
+                  type="color" 
+                  value={pdfTintColor || '#ffffff'}
+                  onChange={(e) => setPdfTintColor(e.target.value)}
+                  style={{ width: '24px', height: '24px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                  title="Choose PDF BG Tint"
+                />
+                {pdfTintColor && (
+                  <button 
+                    onClick={() => setPdfTintColor('')}
+                    style={{ background: 'transparent', border: '1px solid var(--bs-border)', color: 'var(--bs-text-muted)', fontSize: '10px', padding: '2px 4px', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem' }}>
+              <span style={{ color: 'var(--bs-text)', fontSize: '0.9rem' }}>PDF Text Tint:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input 
+                  type="color" 
+                  value={pdfTextColor || '#000000'}
+                  onChange={(e) => setPdfTextColor(e.target.value)}
+                  style={{ width: '24px', height: '24px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                  title="Choose PDF Text Tint"
+                />
+                {pdfTextColor && (
+                  <button 
+                    onClick={() => setPdfTextColor('')}
+                    style={{ background: 'transparent', border: '1px solid var(--bs-border)', color: 'var(--bs-text-muted)', fontSize: '10px', padding: '2px 4px', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
