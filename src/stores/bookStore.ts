@@ -45,6 +45,11 @@ interface BookState {
   readingTimeSecs: number;
   pagesReadTotal: number;
   
+  // Gamification State
+  dailyPages: number;
+  weeklyPages: number;
+  currentStreak: number;
+  
   // Search State
   searchQuery: string;
   searchResults: SearchMatch[];
@@ -102,6 +107,9 @@ interface BookState {
   deleteDrawingAction: (drawing: any) => Promise<void>;
   undoDrawingAction: () => Promise<void>;
   redoDrawingAction: () => Promise<void>;
+  
+  // Gamification Actions
+  fetchGlobalStats: () => Promise<void>;
 }
 
 export const useBookStore = create<BookState>()(
@@ -126,6 +134,10 @@ export const useBookStore = create<BookState>()(
       lastPage: 1,
       readingTimeSecs: 0,
       pagesReadTotal: 0,
+      
+      dailyPages: 0,
+      weeklyPages: 0,
+      currentStreak: 0,
       
       searchQuery: '',
       searchResults: [],
@@ -270,6 +282,8 @@ export const useBookStore = create<BookState>()(
         set({ readingTimeSecs: newTime, pagesReadTotal: newPages });
         
         try {
+          // Import DB service lazily to avoid top-level issues if needed, but we can import at top.
+          const { getBook, upsertBook, recordReadingSession } = await import('../services/dbService');
           const book = await getBook(bookId);
           if (book) {
             await upsertBook({ 
@@ -278,8 +292,40 @@ export const useBookStore = create<BookState>()(
               pages_read_total: newPages
             });
           }
+          
+          // Gamification: Record session
+          const dateStr = new Date().toISOString().split('T')[0];
+          await recordReadingSession(bookId, dateStr, newPagesCount, timeSecs);
+          
+          // Update global stats
+          get().fetchGlobalStats();
         } catch (e) {
           console.error("Failed to save reading stats to DB", e);
+        }
+      },
+
+      fetchGlobalStats: async () => {
+        try {
+          const { getDailyStats, getWeeklyStats, getReadingStreak } = await import('../services/dbService');
+          
+          const today = new Date();
+          const todayStr = today.toISOString().split('T')[0];
+          
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          const weekAgoStr = weekAgo.toISOString().split('T')[0];
+          
+          const daily = await getDailyStats(todayStr);
+          const weekly = await getWeeklyStats(weekAgoStr, todayStr);
+          const streak = await getReadingStreak(todayStr);
+          
+          set({
+            dailyPages: daily.pages,
+            weeklyPages: weekly.pages,
+            currentStreak: streak
+          });
+        } catch (e) {
+          console.error("Failed to fetch global stats", e);
         }
       },
 

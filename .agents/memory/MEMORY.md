@@ -50,3 +50,5 @@
 ## Skills
 - [skill] /checkpoint — saves memory + commits + pushes. Run at end of every phase → .agents/skills/checkpoint-save/SKILL.md
 - [reference] Phase 4.5 Stabilization: Fixed 0x0 Single Page rendering, restored offscreen double-buffering, and optimized Continuous Reader debounce/preloading. → booksage-project.md
+- [reference] Phase 4.5 Annotations & Focus Mode: Added Focus Mode, global search (Cmd+K), and Markdown annotation export via Tauri fs. → booksage-project.md
+- [reference] Phase 4.5 Gamification & Stats: Added daily/weekly stats, reading streak badge, and dynamic "Time Remaining" via SQLite `reading_sessions`. → booksage-project.md

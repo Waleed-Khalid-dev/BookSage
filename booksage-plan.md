@@ -68,15 +68,15 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
   - [ ] "Story So Far" AI recap button on book open (if `last_page > 1`)
   - [ ] Inline word definition on `Ctrl+click`
   - **🟡 HIGH — Stats**
-  - [ ] Reading time estimate (`"~X min left"`) in status bar
-  - [ ] Pages read today / this week tracker in SQLite
+  - [x] Reading time estimate (`"~X min left"`) in status bar
+  - [x] Pages read today / this week tracker in SQLite
   - [ ] TTS stub button in toolbar (wire to `SpeechSynthesis`)
   - **🟢 NICE — Power-user extras**
   - [ ] True black / OLED mode CSS variant
   - [ ] Custom background color picker in display settings
   - [ ] Minimap scroll indicator in scrollbar gutter
-  - [ ] Reading streak counter on Library home screen
-  - [ ] Time spent reading per book (SQLite session tracking)
+  - [x] Reading streak counter on Library home screen
+  - [x] Time spent reading per book (SQLite session tracking)
   - [ ] Vim-style J/K navigation (optional toggle)
   - [ ] Customizable keyboard shortcuts settings tab
   - [ ] Adjustable TTS speed slider (0.5× – 2.5×)

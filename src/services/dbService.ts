@@ -59,6 +59,15 @@ export interface BookmarkRecord {
   created_at: number;
 }
 
+export interface ReadingSessionRecord {
+  id: string;
+  book_id: string;
+  date_str: string;
+  pages_read: number;
+  time_secs: number;
+  created_at: number;
+}
+
 export interface SearchResult extends HighlightRecord {
   book_title: string;
 }
@@ -137,6 +146,19 @@ async function initDb(database: Database) {
       stroke_width REAL NOT NULL,
       created_at INTEGER NOT NULL,
       FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+    );
+  `);
+
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS reading_sessions (
+      id TEXT PRIMARY KEY,
+      book_id TEXT NOT NULL,
+      date_str TEXT NOT NULL,
+      pages_read INTEGER DEFAULT 0,
+      time_secs INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+      UNIQUE(book_id, date_str)
     );
   `);
 
@@ -362,4 +384,89 @@ export async function undoLastDrawing(bookId: string, pageNum: number): Promise<
   if (result.length > 0) {
     await database.execute('DELETE FROM drawings WHERE id = $1', [result[0].id]);
   }
+}
+
+// --- GAMIFICATION / READING STATS ---
+
+export async function recordReadingSession(bookId: string, dateStr: string, addedPages: number, addedTime: number): Promise<void> {
+  const database = await getDb();
+  const id = crypto.randomUUID();
+  const createdAt = Date.now();
+  
+  await database.execute(
+    `INSERT INTO reading_sessions (id, book_id, date_str, pages_read, time_secs, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT(book_id, date_str) DO UPDATE SET
+     pages_read = pages_read + excluded.pages_read,
+     time_secs = time_secs + excluded.time_secs`,
+    [id, bookId, dateStr, addedPages, addedTime, createdAt]
+  );
+}
+
+export async function getDailyStats(dateStr: string): Promise<{ pages: number, time: number }> {
+  const database = await getDb();
+  const result = await database.select<any[]>(
+    `SELECT SUM(pages_read) as total_pages, SUM(time_secs) as total_time FROM reading_sessions WHERE date_str = $1`,
+    [dateStr]
+  );
+  return {
+    pages: result[0]?.total_pages || 0,
+    time: result[0]?.total_time || 0
+  };
+}
+
+export async function getWeeklyStats(startDateStr: string, endDateStr: string): Promise<{ pages: number, time: number }> {
+  const database = await getDb();
+  const result = await database.select<any[]>(
+    `SELECT SUM(pages_read) as total_pages, SUM(time_secs) as total_time FROM reading_sessions WHERE date_str >= $1 AND date_str <= $2`,
+    [startDateStr, endDateStr]
+  );
+  return {
+    pages: result[0]?.total_pages || 0,
+    time: result[0]?.total_time || 0
+  };
+}
+
+export async function getReadingStreak(currentDateStr: string): Promise<number> {
+  const database = await getDb();
+  
+  // Get all unique dates where user read at least 1 page
+  const result = await database.select<{date_str: string}[]>(
+    `SELECT DISTINCT date_str FROM reading_sessions WHERE pages_read > 0 ORDER BY date_str DESC`
+  );
+  
+  if (!result || result.length === 0) return 0;
+  
+  const dates = result.map(r => r.date_str);
+  let streak = 0;
+  
+  // Parse current date
+  let currDate = new Date(currentDateStr);
+  
+  // Check if today is in the list. If not, check if yesterday is in the list.
+  // If neither, streak is 0.
+  let todayStr = currDate.toISOString().split('T')[0];
+  
+  let yesterday = new Date(currDate);
+  yesterday.setDate(yesterday.getDate() - 1);
+  let yesterdayStr = yesterday.toISOString().split('T')[0];
+  
+  if (!dates.includes(todayStr) && !dates.includes(yesterdayStr)) {
+    return 0;
+  }
+  
+  // Count consecutive days backward starting from the most recent reading day (today or yesterday)
+  let checkDate = dates.includes(todayStr) ? new Date(currDate) : new Date(yesterday);
+  
+  while (true) {
+    let checkStr = checkDate.toISOString().split('T')[0];
+    if (dates.includes(checkStr)) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1); // move back one day
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
 }

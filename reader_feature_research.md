@@ -53,8 +53,8 @@
 | Sticky note / Pop-up comment on highlight | Adobe, Foxit, Xodo | 🟡 HIGH | Already done |
 | Draw / freehand annotation | Drawboard, Adobe | 🟢 NICE | Already done (with undo/redo/eraser) |
 | Annotation sidebar / list | Adobe, Readwise | 🟡 HIGH | Already done |
-| Export annotations to Markdown | Readwise | 🔴 CORE | Not done |
-| Search within annotations | Readwise, Adobe | 🟡 HIGH | Not done |
+| Export annotations to Markdown | Readwise | 🔴 CORE | Already done |
+| Search within annotations | Readwise, Adobe | 🟡 HIGH | Already done |
 | Highlight sync across sessions | Readwise, Kindle | 🔴 CORE | Already done |
 
 ---
@@ -100,10 +100,10 @@
 
 | Feature | Source App | Priority | Notes |
 |---------|-----------|----------|-------|
-| Reading time estimate ("X min left") | Kindle, Readwise | 🟡 HIGH | Not done |
-| Total pages read today/this week | Kindle | 🟡 HIGH | Not done |
-| Reading streak counter | Kindle | 🟢 NICE | Not done |
-| Time spent reading per book | Moon+ | 🟢 NICE | Not done |
+| Reading time estimate ("X min left") | Kindle, Readwise | 🟡 HIGH | Already done |
+| Total pages read today/this week | Kindle | 🟡 HIGH | Already done |
+| Reading streak counter | Kindle | 🟢 NICE | Already done |
+| Time spent reading per book | Moon+ | 🟢 NICE | Already done |
 
 ---
 
