@@ -109,9 +109,9 @@ def handle_command(cmd_data):
             return {"status": "error", "message": "Missing 'text' argument."}
             
         from tts_engine import generate_audio_b64
-        b64_data = generate_audio_b64(text, voice)
-        if b64_data:
-            return {"status": "success", "audio_b64": b64_data}
+        tts_result = generate_audio_b64(text, voice)
+        if tts_result and tts_result.get("audio_b64"):
+            return {"status": "success", "audio_b64": tts_result["audio_b64"], "word_timings": tts_result.get("word_timings", [])}
         else:
             return {"status": "error", "message": "Failed to generate TTS audio."}
             
