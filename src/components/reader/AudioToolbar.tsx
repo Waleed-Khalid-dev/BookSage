@@ -26,40 +26,13 @@ export function AudioToolbar() {
   const setIsWordHighlightingEnabled = useBookStore(state => state.setIsWordHighlightingEnabled);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const activeWordRangeRef = useRef<Range | null>(null);
-  const rafRef = useRef<number>();
   
-  // Continuous tracking loop
+  // Clean up on unmount
   useEffect(() => {
-    const trackHighlight = () => {
-      if (activeWordRangeRef.current && isPlaying && isWordHighlightingEnabled) {
-        const rects = Array.from(activeWordRangeRef.current.getClientRects());
-        if (rects.length > 0) {
-          setHighlightRects(rects.map(r => ({ top: r.top, left: r.left, width: r.width, height: r.height })));
-          
-          // Auto-scroll logic
-          const viewer = document.querySelector('.pdf-viewer');
-          if (viewer) {
-            const firstRect = rects[0];
-            const viewerRect = viewer.getBoundingClientRect();
-            if (firstRect.top < viewerRect.top || firstRect.bottom > viewerRect.bottom) {
-               viewer.scrollBy({ top: firstRect.top - viewerRect.top - viewerRect.height / 2, behavior: 'smooth' });
-            }
-          }
-        } else {
-          setHighlightRects([]);
-        }
-      } else if (!activeWordRangeRef.current) {
-        setHighlightRects([]);
-      }
-      rafRef.current = requestAnimationFrame(trackHighlight);
-    };
-    rafRef.current = requestAnimationFrame(trackHighlight);
-    
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.speechSynthesis.cancel();
     };
-  }, [isPlaying, isWordHighlightingEnabled]);
+  }, []);
 
   useEffect(() => {
     const updateVoices = () => {
@@ -171,14 +144,36 @@ export function AudioToolbar() {
     utterance.onboundary = (e) => {
       if (e.name === 'word' && isWordHighlightingEnabled && range) {
         const wordRange = getWordRange(range, e.charIndex, e.charLength);
-        activeWordRangeRef.current = wordRange;
+        if (wordRange) {
+          const rects = Array.from(wordRange.getClientRects());
+          const viewer = document.querySelector('.pdf-viewer');
+          
+          if (viewer && rects.length > 0) {
+            const viewerRect = viewer.getBoundingClientRect();
+            
+            // Calculate absolute positions within the scrolling viewer
+            const absoluteRects = rects.map(r => ({
+              top: r.top - viewerRect.top + viewer.scrollTop,
+              left: r.left - viewerRect.left + viewer.scrollLeft,
+              width: r.width,
+              height: r.height
+            }));
+            
+            setHighlightRects(absoluteRects);
+            
+            // Auto-scroll if the word just went out of view bounds
+            const firstRect = rects[0];
+            if (firstRect.top < viewerRect.top || firstRect.bottom > viewerRect.bottom) {
+              viewer.scrollBy({ top: firstRect.top - viewerRect.top - viewerRect.height / 2, behavior: 'smooth' });
+            }
+          }
+        }
       }
     };
     
     utterance.onend = () => {
       setIsPlaying(false);
       setIsPaused(false);
-      activeWordRangeRef.current = null;
       setHighlightRects([]);
     };
 
@@ -207,7 +202,6 @@ export function AudioToolbar() {
     setIsPlaying(false);
     setIsPaused(false);
     setCurrentRange(null);
-    activeWordRangeRef.current = null;
     setHighlightRects([]);
   };
 
@@ -284,7 +278,12 @@ export function AudioToolbar() {
       )}
       
       <button 
-        onClick={() => setIsWordHighlightingEnabled(!isWordHighlightingEnabled)}
+        onClick={() => {
+          if (!isWordHighlightingEnabled && isEdgeVoice) {
+            alert("Microsoft Edge TTS has deprecated word-level timings.\n\nTo enable Word Highlighting, the app will automatically fallback to high-quality Native Browser TTS.");
+          }
+          setIsWordHighlightingEnabled(!isWordHighlightingEnabled);
+        }}
         className="icon-btn" 
         title={`Word Highlighting: ${isWordHighlightingEnabled ? 'ON' : 'OFF'} (Uses Native TTS)`}
         style={{
@@ -299,8 +298,8 @@ export function AudioToolbar() {
         <button onClick={stop} className="icon-btn" title="Stop"><Square size={18} /></button>
       )}
       
-      {isWordHighlightingEnabled && isPlaying && typeof document !== 'undefined' && createPortal(
-        <div style={{ pointerEvents: 'none', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+      {isWordHighlightingEnabled && isPlaying && typeof document !== 'undefined' && document.querySelector('.pdf-viewer') && createPortal(
+        <div style={{ pointerEvents: 'none', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
           {highlightRects.map((rect, i) => (
             <div 
               key={i} 
@@ -313,12 +312,12 @@ export function AudioToolbar() {
                 backgroundColor: 'rgba(255, 223, 0, 0.4)', // transparent yellow
                 mixBlendMode: 'multiply',
                 borderRadius: '3px',
-                transition: 'top 0.05s, left 0.05s, width 0.05s, height 0.05s'
+                transition: 'top 0.1s, left 0.1s, width 0.1s, height 0.1s'
               }} 
             />
           ))}
         </div>,
-        document.body
+        document.querySelector('.pdf-viewer')!
       )}
     </div>
   );
