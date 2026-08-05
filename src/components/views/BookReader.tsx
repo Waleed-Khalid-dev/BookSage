@@ -650,7 +650,7 @@ export function BookReader() {
             ref={scrollContainerRef}
             className="pdf-scroll-container" 
             onWheel={handleWheel}
-            style={{ flex: 1, overflow: 'auto', padding: '1rem', background: 'var(--bs-bg)', overflowAnchor: 'none' }}
+            style={{ flex: 1, overflow: 'auto', padding: '1rem', background: 'var(--bs-bg)', overflowAnchor: 'none', position: 'relative' }}
           >
             <div 
               className="zoom-target" 

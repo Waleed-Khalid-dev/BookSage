@@ -38,7 +38,7 @@ export function AudioToolbar() {
 
   // Edge TTS Tracking Loop
   useEffect(() => {
-    const isEdgeVoice = voiceURI.includes('-'); // Rough heuristic for Edge voices vs native
+    const isEdgeVoice = EDGE_VOICES.some(v => v.voiceURI === voiceURI);
 
     const trackEdgeHighlight = () => {
       if (audioRef.current && isPlaying && isWordHighlightingEnabled && isEdgeVoice && currentRange) {
@@ -139,8 +139,8 @@ export function AudioToolbar() {
     
     const textToRead = selectionRange ? selectionRange.toString() : "Please select some text to read aloud.";
     
-    // If Word Highlighting is enabled, we FORCE Native TTS, because Edge TTS doesn't provide word boundaries.
-    if (isWordHighlightingEnabled || !isEdgeVoice) {
+    // Use Native TTS if it's a native voice. Otherwise use Edge TTS.
+    if (!isEdgeVoice) {
       startNativeSpeech(textToRead, selectionRange || undefined);
     } else {
       await startEdgeSpeech(textToRead);
