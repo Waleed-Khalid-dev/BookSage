@@ -230,7 +230,7 @@ export function BookReader() {
     const handleSearchJump = (e: any) => {
       if (e.detail && e.detail.page) {
         if (viewMode === 'single') {
-          pdfState.setPage(e.detail.page);
+          handlePageChangeRequest(e.detail.page);
         } else if (viewMode === 'continuous') {
           // For continuous, we trigger the native scroll event handled by ContinuousReader
           window.dispatchEvent(new CustomEvent('continuous-jump', { detail: { page: e.detail.page } }));
@@ -242,7 +242,7 @@ export function BookReader() {
       if (typeof e.detail === 'number') {
         const page = e.detail;
         if (viewMode === 'single') {
-          pdfState.setPage(page);
+          handlePageChangeRequest(page);
         } else if (viewMode === 'continuous') {
           window.dispatchEvent(new CustomEvent('continuous-jump', { detail: { page } }));
         }
@@ -259,7 +259,7 @@ export function BookReader() {
       window.removeEventListener('search-jump', handleSearchJump);
       window.removeEventListener('booksage-jump-page', handleBookSageJump);
     };
-  }, [pdfState.currentPage, pdfState.totalPages, viewMode, pdfState.setScale, pdfState.setPage]);
+  }, [pdfState.currentPage, pdfState.totalPages, viewMode, pdfState.setScale, pdfState.setPage, isTtsPlaying, isWordHighlightingEnabled]);
 
   // Keep references for event listeners without triggering re-renders
   const setScaleRef = useRef(pdfState.setScale);
@@ -353,6 +353,11 @@ export function BookReader() {
 
     // Single page mode scroll to turn pages
     if (viewMode === 'single') {
+      // Block scrolling to other pages if TTS word highlighting is active
+      if (isTtsPlaying && isWordHighlightingEnabled) {
+        return;
+      }
+
       const container = e.currentTarget;
       // Allow 2px tolerance for float precision
       const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;

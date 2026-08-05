@@ -52,15 +52,7 @@ export function SidebarTabs() {
   }, []);
 
   const handlePageJump = (page: number) => {
-    if (pdfState) {
-      pdfState.setPage(page);
-      
-      // Attempt to scroll continuous view if active
-      const el = document.getElementById(`pdf-page-${page}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+    window.dispatchEvent(new CustomEvent('booksage-jump-page', { detail: page }));
   };
 
   const handleCopy = async () => {
