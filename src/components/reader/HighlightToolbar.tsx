@@ -1,5 +1,5 @@
 import { useBookStore } from '../../stores/bookStore';
-
+import React, { useState, useEffect } from 'react';
 import { SelectionData } from '../../hooks/useTextSelection';
 import { Sparkles, Underline, Strikethrough } from 'lucide-react';
 
@@ -10,6 +10,39 @@ interface HighlightToolbarProps {
 
 export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolbarProps) {
   const { bookId, triggerHighlightsRefresh } = useBookStore();
+  const [pos, setPos] = useState({ top: -9999, left: -9999, visible: false });
+
+  useEffect(() => {
+    if (!selection || selection.pageNum === null || selection.rects.length === 0) {
+      setPos({ top: -9999, left: -9999, visible: false });
+      return;
+    }
+
+    let raf: number;
+    const updatePos = () => {
+      const textLayer = document.querySelector(`.textLayer[data-page-number="${selection.pageNum}"]`) as HTMLElement;
+      if (textLayer) {
+        const textLayerRect = textLayer.getBoundingClientRect();
+        const scaleAttr = textLayer.style.getPropertyValue('--scale-factor');
+        const scale = scaleAttr ? parseFloat(scaleAttr) : 1.0;
+        
+        const firstRect = selection.rects[0];
+        
+        // Calculate absolute position on screen using the currently visible text layer size and position
+        const top = textLayerRect.top + (firstRect.top * scale) - 45;
+        const left = textLayerRect.left + (firstRect.left * scale) + ((firstRect.width * scale) / 2) - 80;
+        
+        setPos({ top, left, visible: true });
+      } else {
+        // If the text layer is temporarily missing (e.g. during a zoom re-render), hide the toolbar
+        setPos(prev => ({ ...prev, visible: false }));
+      }
+      raf = requestAnimationFrame(updatePos);
+    };
+
+    updatePos();
+    return () => cancelAnimationFrame(raf);
+  }, [selection]);
 
   if (!selection || !selection.viewportRect || selection.pageNum === null || selection.rects.length === 0) {
     return null;
@@ -117,8 +150,10 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
   return (
     <div style={{
       position: 'fixed',
-      top: selection.viewportRect.top - 45,
-      left: selection.viewportRect.left + (selection.viewportRect.width / 2) - 80,
+      top: pos.top,
+      left: pos.left,
+      opacity: pos.visible ? 1 : 0,
+      pointerEvents: pos.visible ? 'auto' : 'none',
       background: 'var(--bs-surface)',
       border: '1px solid var(--bs-border)',
       borderRadius: '8px',
@@ -126,7 +161,8 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
       display: 'flex',
       gap: '8px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      zIndex: 9999
+      zIndex: 9999,
+      transition: 'opacity 0.2s ease-in-out'
     }}>
       {colors.map(c => (
         <button

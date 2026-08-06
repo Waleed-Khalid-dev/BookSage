@@ -1,62 +1,95 @@
-export function getWordRange(selectionRange: Range, charIndex: number, charLength: number): Range | null {
-  const treeWalker = document.createTreeWalker(
-    selectionRange.commonAncestorContainer,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: (node) => {
-        if (!selectionRange.intersectsNode(node)) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
+// Count non-whitespace characters in a string
+function countNonWs(str: string): number {
+  return str.replace(/\s/g, '').length;
+}
+
+// Get the non-whitespace character offset of a specific DOM node/offset relative to its textLayer
+export function getNonWsOffset(textLayer: HTMLElement, targetNode: Node, targetOffset: number): number {
+  // Normalize element nodes to text nodes
+  let resolvedNode = targetNode;
+  let resolvedOffset = targetOffset;
+  
+  if (resolvedNode.nodeType !== Node.TEXT_NODE) {
+    if (resolvedOffset < resolvedNode.childNodes.length) {
+      const child = resolvedNode.childNodes[resolvedOffset];
+      const walker = document.createTreeWalker(child, NodeFilter.SHOW_TEXT, null);
+      const firstText = walker.nextNode();
+      if (firstText) {
+        resolvedNode = firstText;
+        resolvedOffset = 0;
       }
     }
-  );
+  }
 
-  let currentLength = 0;
+  const treeWalker = document.createTreeWalker(textLayer, NodeFilter.SHOW_TEXT, null);
+  let count = 0;
   let currentNode = treeWalker.nextNode();
-
+  
   while (currentNode) {
-    let nodeStartOffset = 0;
-    let nodeEndOffset = currentNode.textContent?.length || 0;
-
-    if (currentNode === selectionRange.startContainer) {
-      nodeStartOffset = selectionRange.startOffset;
+    // Check against both the resolved text node and the original target
+    if (currentNode === resolvedNode || currentNode === targetNode) {
+      const textBefore = (currentNode.textContent || '').substring(0, resolvedOffset);
+      return count + countNonWs(textBefore);
     }
-    if (currentNode === selectionRange.endContainer) {
-      nodeEndOffset = selectionRange.endOffset;
-    }
-
-    const nodeLength = nodeEndOffset - nodeStartOffset;
-
-    // Check if the target charIndex starts in this node or spans it
-    if (charIndex >= currentLength && charIndex < currentLength + nodeLength) {
-      const startOffsetInNode = nodeStartOffset + (charIndex - currentLength);
-      
-      const newRange = document.createRange();
-      newRange.setStart(currentNode, startOffsetInNode);
-      
-      let charsRemaining = charLength;
-      let charsInThisNode = nodeEndOffset - startOffsetInNode;
-      
-      if (charsRemaining <= charsInThisNode) {
-        newRange.setEnd(currentNode, startOffsetInNode + charsRemaining);
-        return newRange;
-      } else {
-        // Handle spanning multiple text nodes
-        // For simplicity, we just highlight to the end of this node.
-        // PDF.js words rarely cross span boundaries unless hyphenated.
-        newRange.setEnd(currentNode, nodeEndOffset);
-        return newRange;
-      }
-    }
-
-    currentLength += nodeLength;
-    // PDF.js often has physical space gaps between spans that the browser's Selection.toString() turns into spaces or newlines.
-    // If the browser adds a newline for block elements, we should increment currentLength.
-    // We will assume 1 extra character for span breaks as a heuristic to keep in sync.
-    // However, exact synchronization is hard without fully mocking toString().
-    
-    // We'll skip the heuristic for now and rely on exact match if possible.
+    count += countNonWs(currentNode.textContent || '');
     currentNode = treeWalker.nextNode();
   }
+  return count;
+}
+
+// Find a DOM Range in the textLayer based on a global non-whitespace offset and length
+export function getRangeByNonWs(textLayer: HTMLElement, startNonWs: number, lengthNonWs: number): Range | null {
+  if (lengthNonWs <= 0) return null;
   
+  const treeWalker = document.createTreeWalker(textLayer, NodeFilter.SHOW_TEXT, null);
+  
+  let currentNonWs = 0;
+  let currentNode = treeWalker.nextNode();
+  
+  let startNode: Node | null = null;
+  let startOffset = 0;
+  let endNode: Node | null = null;
+  let endOffset = 0;
+
+  while (currentNode) {
+    const nodeText = currentNode.textContent || '';
+    
+    for (let i = 0; i < nodeText.length; i++) {
+      if (!/\s/.test(nodeText[i])) {
+        // If we hit the start non-ws index
+        if (!startNode && currentNonWs === startNonWs) {
+          startNode = currentNode;
+          startOffset = i;
+        }
+        
+        currentNonWs++;
+        
+        // If we hit the end non-ws index
+        if (startNode && currentNonWs === startNonWs + lengthNonWs) {
+          endNode = currentNode;
+          endOffset = i + 1; // Include this character
+          break;
+        }
+      }
+    }
+    
+    if (endNode) break;
+    currentNode = treeWalker.nextNode();
+  }
+
+  // If we found the start but hit the end of the text layer before finding the end,
+  // just cap it at the very last character we processed.
+  if (startNode && !endNode && currentNonWs > startNonWs) {
+     endNode = currentNode || startNode; // Fallback to last known node
+     endOffset = (endNode.textContent || '').length;
+  }
+
+  if (startNode && endNode) {
+    const range = document.createRange();
+    range.setStart(startNode, startOffset);
+    range.setEnd(endNode, endOffset);
+    return range;
+  }
+
   return null;
 }

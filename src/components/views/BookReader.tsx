@@ -33,7 +33,7 @@ export function BookReader() {
     drawingTool, setDrawingTool, eraserSize, setEraserSize, penSize, setPenSize,
     pdfTintColor, pdfTextColor, isWordHighlightingEnabled
   } = useBookStore();
-  const { isTtsPlaying } = useUiStore();
+  const { isTtsPlaying, setActiveSelection } = useUiStore();
   const pdfState = usePDF(pdfPath, lastPage);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('single');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -53,6 +53,7 @@ export function BookReader() {
 
   useTextSelection((sel) => {
     setSelection(sel);
+    setActiveSelection(sel);
     if (sel) {
       // In Phase 6, we'll trigger Copilot popup here alongside highlights
     }

@@ -12,6 +12,8 @@ export interface SelectionData {
   rects: RelativeRect[];
   viewportRect: DOMRect | null;
   pageNum: number | null;
+  startNonWs?: number;
+  lengthNonWs?: number;
 }
 
 export function useTextSelection(onSelection: (data: SelectionData | null) => void) {
@@ -49,12 +51,20 @@ export function useTextSelection(onSelection: (data: SelectionData | null) => vo
           const pageNumAttr = textLayer.getAttribute('data-page-number');
           const pageNum = pageNumAttr ? parseInt(pageNumAttr, 10) : null;
 
-          onSelection({ 
-            text, 
-            rects: relativeRects, 
-            viewportRect: range.getBoundingClientRect(),
-            pageNum
+          import('../utils/domUtils').then(({ getNonWsOffset }) => {
+            const startNonWs = getNonWsOffset(textLayer, range.startContainer, range.startOffset);
+            const lengthNonWs = text.replace(/\s/g, '').length;
+            
+            onSelection({ 
+              text, 
+              rects: relativeRects, 
+              viewportRect: range.getBoundingClientRect(),
+              pageNum,
+              startNonWs,
+              lengthNonWs
+            });
           });
+          
           return;
         }
         
