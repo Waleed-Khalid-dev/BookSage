@@ -98,6 +98,10 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 
 ### Session 2026-08-06 Notes
 - Added CSS transform-based zoom stability for highlighting and TTS
+- Implemented persistent customizable text selection color and opacity
+- Refined annotation toolbar: added underline and strikethrough color picker
+- Fixed strikethrough alignment to center on lowercase letters
+- Separated layer blending to fix opacity of lines vs highlight blocks
 - Refactored AudioToolbar to use DOM-independent tracking offsets
 - Re-architected TTSHighlightLayer scaling to prevent CSS transition fighting
 - Updated reader_feature_research to mark completed UI/UX improvements
