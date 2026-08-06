@@ -12,7 +12,7 @@ import "./App.css";
 
 function App() {
   const { activeView, theme } = useUiStore();
-  const { readerTheme } = useBookStore();
+  const { readerTheme, textSelectionColor } = useBookStore();
 
   const renderView = () => {
     switch (activeView) {
@@ -30,6 +30,15 @@ function App() {
       className={`booksage-theme ${theme === "light" ? "booksage-light" : ""} app-container`}
       data-reader-theme={readerTheme}
     >
+      {textSelectionColor && (
+        <style>
+          {`
+            ::selection {
+              background-color: ${textSelectionColor}66 !important;
+            }
+          `}
+        </style>
+      )}
       <IconSidebar />
       <main className="main-content">
         {renderView()}
