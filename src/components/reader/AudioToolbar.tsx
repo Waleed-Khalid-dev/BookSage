@@ -4,7 +4,7 @@ import { Play, Pause, Square, Loader, Type } from 'lucide-react';
 import { invokePython } from '../../services/pythonService';
 import { useBookStore } from '../../stores/bookStore';
 import { useUiStore } from '../../stores/uiStore';
-import { getWordRange } from '../../utils/domUtils';
+import { getNonWsOffset, getRangeByNonWs } from '../../utils/domUtils';
 
 const EDGE_VOICES = [
   { voiceURI: 'en-US-AriaNeural', name: 'Aria (Premium Female)', isEdge: true },
@@ -16,13 +16,16 @@ const EDGE_VOICES = [
 export function AudioToolbar() {
   const isPlaying = useUiStore(state => state.isTtsPlaying);
   const setIsPlaying = useUiStore(state => state.setIsTtsPlaying);
+  const setTtsHighlight = useUiStore(state => state.setTtsHighlight);
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [voiceURI, setVoiceURI] = useState<string>('en-US-AriaNeural'); // Default to premium
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
   const [nativeVoices, setNativeVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [currentRange, setCurrentRange] = useState<Range | null>(null);
-  const [highlightRects, setHighlightRects] = useState<{ top: number; left: number; width: number; height: number }[]>([]);
+  const [startNonWs, setStartNonWs] = useState<number | null>(null);
+  const [activePageNum, setActivePageNum] = useState<number | null>(null);
+  const [fullTextToRead, setFullTextToRead] = useState<string>('');
   
   const isWordHighlightingEnabled = useBookStore(state => state.isWordHighlightingEnabled);
   const setIsWordHighlightingEnabled = useBookStore(state => state.setIsWordHighlightingEnabled);
@@ -30,6 +33,7 @@ export function AudioToolbar() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const edgeTimingsRef = useRef<any[]>([]);
   const rafRef = useRef<number>();
+  const lastWordRef = useRef<number | null>(null);
   
   // Clean up on unmount
   useEffect(() => {
@@ -43,38 +47,65 @@ export function AudioToolbar() {
     const isEdgeVoice = EDGE_VOICES.some(v => v.voiceURI === voiceURI);
 
     const trackEdgeHighlight = () => {
-      if (audioRef.current && isPlaying && isWordHighlightingEnabled && isEdgeVoice && currentRange) {
+      if (audioRef.current && isPlaying && isEdgeVoice && fullTextToRead) {
         const currentTime = audioRef.current.currentTime;
         
         // Find current word
         const currentWord = edgeTimingsRef.current.find(w => currentTime >= w.time_start && currentTime <= w.time_end);
         
-        if (currentWord) {
-          const wordRange = getWordRange(currentRange, currentWord.char_start, currentWord.char_end - currentWord.char_start);
-          if (wordRange) {
-            const rects = Array.from(wordRange.getClientRects());
-            const viewer = document.querySelector('.pdf-scroll-container');
-            
-            if (viewer && rects.length > 0) {
-              const viewerRect = viewer.getBoundingClientRect();
-              
-              const absoluteRects = rects.map(r => ({
-                top: r.top - viewerRect.top + viewer.scrollTop,
-                left: r.left - viewerRect.left + viewer.scrollLeft,
-                width: r.width,
-                height: r.height
-              }));
-              
-              setHighlightRects(absoluteRects);
-              
-              const firstRect = rects[0];
-              if (firstRect.top < viewerRect.top || firstRect.bottom > viewerRect.bottom) {
-                viewer.scrollBy({ top: firstRect.top - viewerRect.top - viewerRect.height / 2, behavior: 'smooth' });
+        // Edge TTS tracking logic using DOM-independent non-whitespace offsets
+        if (isWordHighlightingEnabled && startNonWs !== null && activePageNum !== null) {
+          if (currentWord) {
+            // Performance optimization & zoom stability: 
+            // Don't recalculate DOM rects 60 times a second if the word hasn't changed!
+            if (lastWordRef.current !== currentWord.char_start) {
+              lastWordRef.current = currentWord.char_start;
+              const textLayer = document.querySelector(`.textLayer[data-page-number="${activePageNum}"]`) as HTMLElement;
+              if (textLayer) {
+                // Find how many non-ws chars were spoken before this word
+                const textBefore = fullTextToRead.substring(0, currentWord.char_start);
+                const nonWsBefore = textBefore.replace(/\s/g, '').length;
+                
+                const wordText = fullTextToRead.substring(currentWord.char_start, currentWord.char_end);
+                const nonWsLength = wordText.replace(/\s/g, '').length;
+                
+                const wordRange = getRangeByNonWs(textLayer, startNonWs + nonWsBefore, nonWsLength);
+                
+                if (wordRange) {
+                  const rects = Array.from(wordRange.getClientRects());
+                  const viewer = document.querySelector('.pdf-scroll-container');
+                  
+                  if (viewer && rects.length > 0) {
+                    const viewerRect = viewer.getBoundingClientRect();
+                    const textLayerRect = textLayer.getBoundingClientRect();
+                    const scaleAttr = parseFloat(textLayer.style.getPropertyValue('--scale-factor') || '1.0');
+                    const trueVisualScale = textLayerRect.width / textLayer.offsetWidth;
+                    const fullScale = trueVisualScale * scaleAttr;
+                    
+                    const relativeRects = rects.map(r => ({
+                      top: (r.top - textLayerRect.top) / fullScale,
+                      left: (r.left - textLayerRect.left) / fullScale,
+                      width: r.width / fullScale,
+                      height: r.height / fullScale
+                    }));
+                    
+                    setTtsHighlight({ pageNum: activePageNum, rects: relativeRects });
+                    
+                    const firstRect = rects[0];
+                    if (firstRect.top < viewerRect.top || firstRect.bottom > viewerRect.bottom) {
+                      viewer.scrollBy({ top: firstRect.top - viewerRect.top - viewerRect.height / 2, behavior: 'smooth' });
+                    }
+                  }
+                }
               }
             }
+            // If wordRange fails (e.g. during zoom DOM teardown), do NOT clear it so it doesn't flicker
+          } else {
+            if (lastWordRef.current !== null) {
+              setTtsHighlight(null); // Clear if between words
+              lastWordRef.current = null;
+            }
           }
-        } else {
-          setHighlightRects([]); // Clear if between words
         }
       }
       
@@ -90,7 +121,7 @@ export function AudioToolbar() {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isPlaying, isWordHighlightingEnabled, voiceURI, currentRange]);
+  }, [isPlaying, isWordHighlightingEnabled, voiceURI, fullTextToRead, startNonWs, activePageNum]);
 
   useEffect(() => {
     const updateVoices = () => {
@@ -132,14 +163,23 @@ export function AudioToolbar() {
       return;
     }
 
-    let selectionRange: Range | null = currentRange;
     const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0 && selection.toString().trim().length > 0) {
-      selectionRange = selection.getRangeAt(0).cloneRange();
-      setCurrentRange(selectionRange);
+    if (!selection || selection.toString().trim().length === 0) return;
+    const range = selection.getRangeAt(0);
+    
+    let container = range.startContainer as HTMLElement;
+    if (container.nodeType === 3) container = container.parentElement as HTMLElement;
+    const textLayer = container.closest('.textLayer') as HTMLElement;
+    
+    if (textLayer) {
+      const pageNum = parseInt(textLayer.getAttribute('data-page-number') || '0', 10);
+      const offset = getNonWsOffset(textLayer, range.startContainer, range.startOffset);
+      setStartNonWs(offset);
+      setActivePageNum(pageNum);
     }
     
-    const textToRead = selectionRange ? selectionRange.toString() : "Please select some text to read aloud.";
+    const textToRead = selection.toString();
+    setFullTextToRead(textToRead);
     
     // Use Native TTS if it's a native voice. Otherwise use Edge TTS.
     if (!isEdgeVoice) {
@@ -200,30 +240,44 @@ export function AudioToolbar() {
     
     utterance.rate = playbackRate;
     
+    const fullText = utterance.text;
+    
     utterance.onboundary = (e) => {
-      if (e.name === 'word' && isWordHighlightingEnabled && range) {
-        const wordRange = getWordRange(range, e.charIndex, e.charLength);
-        if (wordRange) {
-          const rects = Array.from(wordRange.getClientRects());
-          const viewer = document.querySelector('.pdf-scroll-container');
+      if (e.name === 'word' && isWordHighlightingEnabled && startNonWs !== null && activePageNum !== null) {
+        const textLayer = document.querySelector(`.textLayer[data-page-number="${activePageNum}"]`) as HTMLElement;
+        if (textLayer) {
+          const textBefore = fullText.substring(0, e.charIndex);
+          const nonWsBefore = textBefore.replace(/\s/g, '').length;
           
-          if (viewer && rects.length > 0) {
-            const viewerRect = viewer.getBoundingClientRect();
+          const wordText = fullText.substring(e.charIndex, e.charIndex + e.charLength);
+          const nonWsLength = wordText.replace(/\s/g, '').length;
+          
+          const wordRange = getRangeByNonWs(textLayer, startNonWs + nonWsBefore, nonWsLength);
+          
+          if (wordRange) {
+            const rects = Array.from(wordRange.getClientRects());
+            const viewer = document.querySelector('.pdf-scroll-container');
             
-            // Calculate absolute positions within the scrolling viewer
-            const absoluteRects = rects.map(r => ({
-              top: r.top - viewerRect.top + viewer.scrollTop,
-              left: r.left - viewerRect.left + viewer.scrollLeft,
-              width: r.width,
-              height: r.height
-            }));
-            
-            setHighlightRects(absoluteRects);
-            
-            // Auto-scroll if the word just went out of view bounds
-            const firstRect = rects[0];
-            if (firstRect.top < viewerRect.top || firstRect.bottom > viewerRect.bottom) {
-              viewer.scrollBy({ top: firstRect.top - viewerRect.top - viewerRect.height / 2, behavior: 'smooth' });
+            if (viewer && rects.length > 0) {
+              const viewerRect = viewer.getBoundingClientRect();
+              const textLayerRect = textLayer.getBoundingClientRect();
+              const scaleAttr = textLayer.style.getPropertyValue('--scale-factor');
+              const scale = scaleAttr ? parseFloat(scaleAttr) : 1.0;
+              
+              const relativeRects = rects.map(r => ({
+                top: (r.top - textLayerRect.top) / scale,
+                left: (r.left - textLayerRect.left) / scale,
+                width: r.width / scale,
+                height: r.height / scale
+              }));
+              
+              setTtsHighlight({ pageNum: activePageNum, rects: relativeRects });
+              
+              // Auto-scroll if the word just went out of view bounds
+              const firstRect = rects[0];
+              if (firstRect.top < viewerRect.top || firstRect.bottom > viewerRect.bottom) {
+                viewer.scrollBy({ top: firstRect.top - viewerRect.top - viewerRect.height / 2, behavior: 'smooth' });
+              }
             }
           }
         }
@@ -233,7 +287,7 @@ export function AudioToolbar() {
     utterance.onend = () => {
       setIsPlaying(false);
       setIsPaused(false);
-      setHighlightRects([]);
+      setTtsHighlight(null);
     };
 
     window.speechSynthesis.speak(utterance);
@@ -261,7 +315,9 @@ export function AudioToolbar() {
     setIsPlaying(false);
     setIsPaused(false);
     setCurrentRange(null);
-    setHighlightRects([]);
+    setStartNonWs(null);
+    setActivePageNum(null);
+    setTtsHighlight(null);
   };
 
   const cyclePlaybackRate = () => {
@@ -352,28 +408,6 @@ export function AudioToolbar() {
 
       {(isPlaying || isPaused) && (
         <button onClick={stop} className="icon-btn" title="Stop"><Square size={18} /></button>
-      )}
-      
-      {isWordHighlightingEnabled && isPlaying && typeof document !== 'undefined' && document.querySelector('.pdf-scroll-container') && createPortal(
-        <div style={{ pointerEvents: 'none', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
-          {highlightRects.map((rect, i) => (
-            <div 
-              key={i} 
-              style={{
-                position: 'absolute',
-                top: rect.top,
-                left: rect.left,
-                width: rect.width,
-                height: rect.height,
-                backgroundColor: 'rgba(255, 223, 0, 0.4)', // transparent yellow
-                mixBlendMode: 'multiply',
-                borderRadius: '3px',
-                transition: 'top 0.1s, left 0.1s, width 0.1s, height 0.1s'
-              }} 
-            />
-          ))}
-        </div>,
-        document.querySelector('.pdf-scroll-container')!
       )}
     </div>
   );
