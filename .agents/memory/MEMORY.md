@@ -52,3 +52,4 @@
 - [reference] Phase 4.5 Stabilization: Fixed 0x0 Single Page rendering, restored offscreen double-buffering, and optimized Continuous Reader debounce/preloading. → booksage-project.md
 - [reference] Phase 4.5 Annotations & Focus Mode: Added Focus Mode, global search (Cmd+K), and Markdown annotation export via Tauri fs. → booksage-project.md
 - [reference] Phase 4.5 Gamification & Stats: Added daily/weekly stats, reading streak badge, and dynamic "Time Remaining" via SQLite `reading_sessions`. → booksage-project.md
+- [reference] Phase 4.5 TTS Zoom Stability: Refactored AudioToolbar TTS tracking for DOM-independence and used CSS transforms on TTSHighlightLayer to fix zooming jitter. → booksage-project.md

@@ -85,8 +85,9 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 1 | PDF Engine | ✅ Done |
 | 2 | AI Extractor | ✅ Done |
 | 3 | Pipeline View | ✅ Done |
-| 4 | Book Reader | ✅ Done |
 | 3.5 | SQLite Persistence | ✅ Done |
+| 4 | Book Reader | ✅ Done |
+| 4.5 | Reader Polish | ✅ Done |
 | 5 | Notes Viewer | ⏳ Not started |
 | 6 | AI Copilot | ⏳ Not started |
 | 7 | Library View | ⏳ Not started |
@@ -94,6 +95,12 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 9 | Packaging | ⏳ Not started |
 
 **Current status: Phase 4.5 complete (Reader Polish). Next action = Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).**
+
+### Session 2026-08-06 Notes
+- Added CSS transform-based zoom stability for highlighting and TTS
+- Refactored AudioToolbar to use DOM-independent tracking offsets
+- Re-architected TTSHighlightLayer scaling to prevent CSS transition fighting
+- Updated reader_feature_research to mark completed UI/UX improvements
 
 ## Key Files
 - `RoadMap.md` — v3, full technical blueprint
