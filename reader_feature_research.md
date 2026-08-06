@@ -136,22 +136,18 @@
 ### Phase 4.5 (Finish Reader — Immediate Wins)
 These are `🔴 CORE` features not yet done that will make the reader actually usable:
 
-1. **`Ctrl+F` full-text search** — Search within the current PDF
-2. **TOC sidebar** — Use the book's parsed chapter list to jump to pages
-3. **Remember last page** — Save page number to SQLite, restore on open
-4. **Progress bar** — Show % completion at the bottom of the reader
-5. **Continuous scroll mode** — Scroll through all pages without clicking next
-6. **Multi-color highlights** — Let users select and highlight text in 4 colors, saved to DB
-7. **Keyboard shortcuts** — Arrow keys, Space, PgUp/PgDn, Ctrl+F
+1. **`Ctrl+F` full-text search** — Search within the current PDF (✅ Done)
+2. **TOC sidebar** — Use the book's parsed chapter list to jump to pages (✅ Done)
+3. **Remember last page** — Save page number to SQLite, restore on open (✅ Done)
+4. **Progress bar** — Show % completion at the bottom of the reader (✅ Done)
+5. **Continuous scroll mode** — Scroll through all pages without clicking next (✅ Done)
+6. **Multi-color highlights** — Let users select and highlight text in 4 colors, saved to DB (✅ Done)
+7. **Keyboard shortcuts** — Arrow keys, Space, PgUp/PgDn, Ctrl+F (✅ Done)
 
 ### Phase 5 (Notes) + Phase 6 (Copilot) — Already Planned ✅
 The AI Copilot + Chat with Document features are exactly what Readwise Ghostreader does, and BookSage already has the architecture for it.
 
 ### Future Phases
-- Reading stats & streaks
-- Text-to-speech with word highlighting
-- Bookmark sidebar
-- Sepia/warm theme
 - Library-wide search across all books
 
 ---
