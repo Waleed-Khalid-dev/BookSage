@@ -4,6 +4,7 @@ import 'pdfjs-dist/web/pdf_viewer.css';
 import { HighlightLayer } from './HighlightLayer';
 import { SearchHighlightLayer } from './SearchHighlightLayer';
 import { DrawingLayer } from './DrawingLayer';
+import { TTSHighlightLayer } from './TTSHighlightLayer';
 import { useBookStore } from '../../stores/bookStore';
 import { getHighlightsForBook } from '../../services/dbService';
 
@@ -38,6 +39,21 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
     return () => {
       if (renderTimeout.current) clearTimeout(renderTimeout.current);
     };
+  }, [scale, renderedScale]);
+
+  // Smoothly scale the text layer during zoom before PDF.js finishes rendering the new DOM.
+  // This visually scales the native browser text selection so it perfectly tracks the canvas.
+  useEffect(() => {
+    if (textLayerRef.current) {
+      const currentTextLayerScale = parseFloat(textLayerRef.current.style.getPropertyValue('--scale-factor') || String(renderedScale));
+      if (currentTextLayerScale > 0) {
+        const ratio = scale / currentTextLayerScale;
+        if (ratio !== 1) {
+          textLayerRef.current.style.transform = `scale(${ratio})`;
+          textLayerRef.current.style.transformOrigin = 'top left';
+        }
+      }
+    }
   }, [scale, renderedScale]);
 
   useEffect(() => {
@@ -101,12 +117,38 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
           textLayerDiv.style.transform = `none`;
           textLayerDiv.style.setProperty('--scale-factor', viewport.scale.toString());
 
-          pdfjsLib.renderTextLayer({
+          const textLayerTask = pdfjsLib.renderTextLayer({
             textContentSource: textContent,
             container: textLayerDiv,
             viewport: viewport,
             textDivs: []
           });
+
+          const restoreSelection = () => {
+            import('../../stores/uiStore').then(({ useUiStore }) => {
+              const activeSelection = useUiStore.getState().activeSelection;
+              if (activeSelection && activeSelection.pageNum === pageNumber && activeSelection.startNonWs !== undefined && activeSelection.lengthNonWs !== undefined) {
+                import('../../utils/domUtils').then(({ getRangeByNonWs }) => {
+                  const range = getRangeByNonWs(textLayerDiv, activeSelection.startNonWs!, activeSelection.lengthNonWs!);
+                  if (range) {
+                    const sel = window.getSelection();
+                    sel?.removeAllRanges();
+                    sel?.addRange(range);
+                  }
+                });
+              }
+            });
+          };
+
+          if (textLayerTask && textLayerTask.promise) {
+            textLayerTask.promise.then(() => {
+              if (active) restoreSelection();
+            });
+          } else {
+            setTimeout(() => {
+              if (active) restoreSelection();
+            }, 100);
+          }
         }
       } catch (err: any) {
         if (err.name === 'RenderingCancelledException') {
@@ -264,6 +306,7 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
           }}
         />
         <HighlightLayer pageNumber={pageNumber} scale={scale} />
+        <TTSHighlightLayer pageNumber={pageNumber} scale={scale} />
       </div>
     </div>
   );
