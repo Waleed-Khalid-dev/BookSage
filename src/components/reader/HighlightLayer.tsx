@@ -10,7 +10,7 @@ interface HighlightLayerProps {
 }
 
 export function HighlightLayer({ pageNumber, scale = 1.0 }: HighlightLayerProps) {
-  const { bookId, highlightsRefreshCounter, highlightOpacity } = useBookStore();
+  const { bookId, highlightsRefreshCounter, highlightOpacity, penOpacity, penThickness } = useBookStore();
   const [highlights, setHighlights] = useState<HighlightRecord[]>([]);
 
   useEffect(() => {
@@ -37,9 +37,12 @@ export function HighlightLayer({ pageNumber, scale = 1.0 }: HighlightLayerProps)
 
   if (highlights.length === 0) return null;
 
+  const standardHighlights = highlights.filter(h => h.type !== 'underline' && h.type !== 'strikethrough');
+  const lineHighlights = highlights.filter(h => h.type === 'underline' || h.type === 'strikethrough');
+
   return (
     <>
-      {/* Highlights Container (Multiplies with canvas) */}
+      {/* Highlights Container (Multiplies with canvas, uses user opacity) */}
       <div 
         className="highlight-rects-layer" 
         style={{ 
@@ -49,7 +52,7 @@ export function HighlightLayer({ pageNumber, scale = 1.0 }: HighlightLayerProps)
           opacity: highlightOpacity
         }}
       >
-        {highlights.map(hl => {
+        {standardHighlights.map(hl => {
           let rects: RelativeRect[] = [];
           try {
             rects = JSON.parse(hl.rects);
@@ -80,11 +83,61 @@ export function HighlightLayer({ pageNumber, scale = 1.0 }: HighlightLayerProps)
                 if (isUnderline) {
                   style.borderBottom = `2px solid ${displayColor}`;
                 } else if (isStrikethrough) {
-                  style.textDecoration = `line-through 2px ${displayColor}`;
-                  style.background = `linear-gradient(to bottom, transparent 45%, ${displayColor} 45%, ${displayColor} 55%, transparent 55%)`;
+                  style.height = `${rect.height * scale * 0.6}px`;
+                  style.borderBottom = `2px solid ${displayColor}`;
                 } else {
                   style.backgroundColor = displayColor;
                   // Mix blend mode is on the parent container, so opaque colors multiply smoothly
+                }
+
+                return <div key={`${hl.id}-${idx}`} style={style} />;
+              })}
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Lines Container (Underline/Strikethrough - Full opacity, normal blending) */}
+      <div 
+        className="highlight-lines-layer" 
+        style={{ 
+          position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, 
+          pointerEvents: 'none', 
+          opacity: penOpacity
+        }}
+      >
+        {lineHighlights.map(hl => {
+          let rects: RelativeRect[] = [];
+          try {
+            rects = JSON.parse(hl.rects);
+          } catch (e) {
+            console.error('Failed to parse highlight rects', e);
+          }
+          
+          const isUnderline = hl.type === 'underline';
+          const isStrikethrough = hl.type === 'strikethrough';
+          
+          return (
+            <React.Fragment key={`rects-${hl.id}`}>
+              {rects.map((rect, idx) => {
+                let style: React.CSSProperties = {
+                  position: 'absolute',
+                  top: `${rect.top * scale}px`,
+                  left: `${rect.left * scale}px`,
+                  width: `${rect.width * scale}px`,
+                  height: `${rect.height * scale}px`,
+                };
+
+                let displayColor = hl.color || '#e05252';
+                if (displayColor.includes('rgba') && displayColor.includes('0.3')) {
+                  displayColor = displayColor.replace(/,\s*0\.3\s*\)/, ', 1)');
+                }
+
+                if (isUnderline) {
+                  style.borderBottom = `${penThickness}px solid ${displayColor}`;
+                } else if (isStrikethrough) {
+                  style.height = `${rect.height * scale * 0.6}px`;
+                  style.borderBottom = `${penThickness}px solid ${displayColor}`;
                 }
 
                 return <div key={`${hl.id}-${idx}`} style={style} />;
