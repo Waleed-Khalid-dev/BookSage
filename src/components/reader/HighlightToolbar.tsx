@@ -9,7 +9,7 @@ interface HighlightToolbarProps {
 }
 
 export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolbarProps) {
-  const { bookId, triggerHighlightsRefresh } = useBookStore();
+  const { bookId, triggerHighlightsRefresh, penColor, setPenColor } = useBookStore();
   const [pos, setPos] = useState({ top: -9999, left: -9999, visible: false });
 
   useEffect(() => {
@@ -181,15 +181,32 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
         />
       ))}
       <div style={{ width: '1px', height: '24px', background: 'var(--bs-border)' }}></div>
+      
+      <input 
+        type="color" 
+        value={penColor || '#e05252'} 
+        onChange={(e) => setPenColor(e.target.value)} 
+        style={{ 
+          width: '20px', 
+          height: '24px', 
+          padding: 0, 
+          border: 'none', 
+          background: 'transparent', 
+          cursor: 'pointer',
+          alignSelf: 'center'
+        }}
+        title="Pen Color"
+      />
+      
       <button
-        onClick={() => handleHighlight('#e05252', 'underline')}
+        onClick={() => handleHighlight(penColor || '#e05252', 'underline')}
         style={{ background: 'transparent', border: 'none', color: 'var(--bs-text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0 4px' }}
         title="Underline"
       >
         <Underline size={16} />
       </button>
       <button
-        onClick={() => handleHighlight('#e05252', 'strikethrough')}
+        onClick={() => handleHighlight(penColor || '#e05252', 'strikethrough')}
         style={{ background: 'transparent', border: 'none', color: 'var(--bs-text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0 4px' }}
         title="Strikethrough"
       >

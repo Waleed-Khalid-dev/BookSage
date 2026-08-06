@@ -15,7 +15,13 @@ export function DisplaySettings() {
     pdfMarginCrop,
     setPdfMarginCrop,
     highlightOpacity,
-    setHighlightOpacity
+    setHighlightOpacity,
+    textSelectionColor,
+    setTextSelectionColor,
+    penOpacity,
+    setPenOpacity,
+    penThickness,
+    setPenThickness
   } = useBookStore();
 
   const themes = [
@@ -139,6 +145,48 @@ export function DisplaySettings() {
               </div>
             </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--bs-text)', fontSize: '0.9rem' }}>Selection Color:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input 
+                    type="color" 
+                    value={textSelectionColor || '#b4d5fe'}
+                    onChange={(e) => setTextSelectionColor(e.target.value)}
+                    style={{ width: '24px', height: '24px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                    title="Choose Text Selection Color"
+                  />
+                  {textSelectionColor && (
+                    <button 
+                      onClick={() => setTextSelectionColor('')}
+                      style={{ background: 'transparent', border: '1px solid var(--bs-border)', color: 'var(--bs-text-muted)', fontSize: '10px', padding: '2px 4px', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', paddingBottom: '0.25rem' }}>
+                {['#ffff00', '#00ff00', '#00ffff', '#ff00ff', '#ff9900'].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => setTextSelectionColor(color)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      backgroundColor: color,
+                      border: textSelectionColor === color ? '2px solid var(--bs-primary)' : '1px solid var(--bs-border)',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                    title={`Set color to ${color}`}
+                  />
+                ))}
+              </div>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--bs-text)', fontSize: '0.9rem' }}>Margin Crop:</span>
@@ -163,6 +211,34 @@ export function DisplaySettings() {
                 min="0.1" max="1.0" step="0.05"
                 value={highlightOpacity}
                 onChange={(e) => setHighlightOpacity(parseFloat(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--bs-text)', fontSize: '0.9rem' }}>Pen Opacity:</span>
+                <span style={{ color: 'var(--bs-text-muted)', fontSize: '0.8rem' }}>{Math.round(penOpacity * 100)}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="0.1" max="1.0" step="0.05"
+                value={penOpacity}
+                onChange={(e) => setPenOpacity(parseFloat(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--bs-text)', fontSize: '0.9rem' }}>Pen Thickness:</span>
+                <span style={{ color: 'var(--bs-text-muted)', fontSize: '0.8rem' }}>{penThickness}px</span>
+              </div>
+              <input 
+                type="range" 
+                min="1" max="5" step="1"
+                value={penThickness}
+                onChange={(e) => setPenThickness(parseInt(e.target.value))}
                 style={{ width: '100%', cursor: 'pointer' }}
               />
             </div>
