@@ -42,6 +42,22 @@ export function AudioToolbar() {
     };
   }, []);
 
+  // Global Keyboard Shortcut Listener
+  useEffect(() => {
+    const handleGlobalShortcut = (e: CustomEvent) => {
+      if (e.detail.action === 'tts-play-pause') {
+        if (isPlaying) {
+          pause();
+        } else {
+          speak();
+        }
+      }
+    };
+    
+    window.addEventListener('shortcut-triggered', handleGlobalShortcut as EventListener);
+    return () => window.removeEventListener('shortcut-triggered', handleGlobalShortcut as EventListener);
+  }, [isPlaying, isPaused, voiceURI, playbackRate]); // Dependencies for speak/pause
+
   // Edge TTS Tracking Loop
   useEffect(() => {
     const isEdgeVoice = EDGE_VOICES.some(v => v.voiceURI === voiceURI);

@@ -96,6 +96,11 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 
 **Current status: Phase 4.5 complete (Reader Polish). Next action = Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).**
 
+### Session 2026-08-07 Notes
+- Implemented global Keyboard Shortcuts with persistent Zustand store.
+- Added "Shortcuts" Settings modal for assigning custom bindings (TTS, highlight, drawing, undo/redo).
+- Updated Unified Undo/Redo stack to support Highlights, Underlines, and Strikethroughs smoothly.
+
 ### Session 2026-08-06 Notes
 - Added CSS transform-based zoom stability for highlighting and TTS
 - Implemented persistent customizable text selection color and opacity

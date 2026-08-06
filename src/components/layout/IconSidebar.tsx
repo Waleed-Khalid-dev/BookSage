@@ -32,7 +32,7 @@ export function IconSidebar() {
         })}
       </div>
       <div className="icon-sidebar-bottom">
-        <button className="nav-button" title="Settings">
+        <button className="nav-button" title="Settings" onClick={() => useUiStore.getState().setIsSettingsOpen(true)}>
           <Settings size={24} />
         </button>
       </div>

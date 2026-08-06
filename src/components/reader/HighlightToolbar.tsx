@@ -44,6 +44,22 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
     return () => cancelAnimationFrame(raf);
   }, [selection]);
 
+  useEffect(() => {
+    const handleGlobalShortcut = (e: CustomEvent) => {
+      const action = e.detail.action;
+      if (action === 'highlight') {
+        handleHighlight(penColor, 'highlight');
+      } else if (action === 'underline') {
+        handleHighlight(penColor, 'underline');
+      } else if (action === 'strikethrough') {
+        handleHighlight(penColor, 'strikethrough');
+      }
+    };
+    
+    window.addEventListener('shortcut-triggered', handleGlobalShortcut as EventListener);
+    return () => window.removeEventListener('shortcut-triggered', handleGlobalShortcut as EventListener);
+  }, [penColor, selection, bookId]); // dependencies for handleHighlight
+
   if (!selection || !selection.viewportRect || selection.pageNum === null || selection.rects.length === 0) {
     return null;
   }
@@ -100,9 +116,14 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
 
       if (isFullyCovered) {
         // Toggle OFF: Delete all highlights that are contributing to this cover.
-        for (const hl of [...swallowedHighlights, ...overlappingHighlights]) {
+        const removed = [...swallowedHighlights, ...overlappingHighlights];
+        for (const hl of removed) {
           await deleteHighlight(hl.id);
         }
+        useBookStore.getState().pushUndoAction({
+          type: 'REMOVE_HIGHLIGHT',
+          highlights: removed
+        });
       } else {
         // Toggle ON / Expand:
         // First delete any highlights that are completely swallowed to avoid duplicates/overlap
@@ -110,7 +131,7 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
           await deleteHighlight(hl.id);
         }
         // Create the new highlight covering the whole selection
-        await upsertHighlight({
+        const newHighlight = {
           id: crypto.randomUUID(),
           book_id: bookId,
           page_num: selection.pageNum,
@@ -119,6 +140,13 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
           rects: JSON.stringify(selection.rects),
           type,
           created_at: Date.now()
+        };
+        await upsertHighlight(newHighlight);
+        
+        useBookStore.getState().pushUndoAction({
+          type: 'ADD_HIGHLIGHT',
+          highlight: newHighlight,
+          highlights: swallowedHighlights // save swallowed highlights for undo restoration
         });
       }
       

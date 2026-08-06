@@ -7,12 +7,17 @@ import { NotesViewer } from "./components/views/NotesViewer";
 import { PipelineView } from "./components/views/PipelineView";
 import { AIChatView } from "./components/views/AIChatView";
 import { GlobalSearchModal } from "./components/shared/GlobalSearchModal";
+import { SettingsDialog } from "./components/shared/SettingsDialog";
+import { useShortcuts } from "./hooks/useShortcuts";
 import "pdfjs-dist/web/pdf_viewer.css";
 import "./App.css";
 
 function App() {
   const { activeView, theme } = useUiStore();
   const { readerTheme, textSelectionColor } = useBookStore();
+  
+  // Initialize global keyboard shortcuts
+  useShortcuts();
 
   const renderView = () => {
     switch (activeView) {
@@ -44,6 +49,7 @@ function App() {
         {renderView()}
       </main>
       <GlobalSearchModal />
+      <SettingsDialog />
     </div>
   );
 }

@@ -19,9 +19,11 @@ export interface SearchMatch {
   rects: { top: number; left: number; width: number; height: number; matchIndex: number }[];
 }
 
-export interface DrawingAction {
-  type: 'ADD' | 'REMOVE';
-  drawing: any;
+export interface UndoAction {
+  type: 'ADD' | 'REMOVE' | 'ADD_HIGHLIGHT' | 'REMOVE_HIGHLIGHT';
+  drawing?: any;
+  highlight?: any;
+  highlights?: any[];
 }
 
 interface BookState {
@@ -101,12 +103,12 @@ interface BookState {
   prevSearchResult: () => void;
   clearSearch: () => void;
   
-  // Drawing Actions
+  // Drawing & Highlight Undo Actions
   drawingTool: 'pen' | 'eraser';
   penSize: number;
   eraserSize: number;
-  undoStack: DrawingAction[];
-  redoStack: DrawingAction[];
+  undoStack: UndoAction[];
+  redoStack: UndoAction[];
   setIsDrawingMode: (mode: boolean) => void;
   setDrawingColor: (color: string) => void;
   setDrawingTool: (tool: 'pen' | 'eraser') => void;
@@ -117,6 +119,7 @@ interface BookState {
   deleteDrawingAction: (drawing: any) => Promise<void>;
   undoDrawingAction: () => Promise<void>;
   redoDrawingAction: () => Promise<void>;
+  pushUndoAction: (action: UndoAction) => void;
   
   // Gamification Actions
   fetchGlobalStats: () => Promise<void>;
@@ -208,25 +211,52 @@ export const useBookStore = create<BookState>()(
         get().triggerDrawingsRefresh();
       },
 
+      pushUndoAction: (action: UndoAction) => {
+        set((state) => ({
+          undoStack: [...state.undoStack, action],
+          redoStack: []
+        }));
+      },
+
       undoDrawingAction: async () => {
         const { undoStack, redoStack } = get();
         if (undoStack.length === 0) return;
         
         const lastAction = undoStack[undoStack.length - 1];
         const newUndo = undoStack.slice(0, -1);
-        const { upsertDrawing, deleteDrawing } = await import('../services/dbService');
+        const { upsertDrawing, deleteDrawing, upsertHighlight, deleteHighlight } = await import('../services/dbService');
         
         if (lastAction.type === 'ADD') {
           await deleteDrawing(lastAction.drawing.id);
-        } else {
+        } else if (lastAction.type === 'REMOVE') {
           await upsertDrawing(lastAction.drawing);
+        } else if (lastAction.type === 'ADD_HIGHLIGHT') {
+          await deleteHighlight(lastAction.highlight.id);
+          if (lastAction.highlights) {
+            for (const hl of lastAction.highlights) {
+              await upsertHighlight(hl);
+            }
+          }
+        } else if (lastAction.type === 'REMOVE_HIGHLIGHT') {
+          if (lastAction.highlights) {
+            for (const hl of lastAction.highlights) {
+              await upsertHighlight(hl);
+            }
+          } else if (lastAction.highlight) {
+            await upsertHighlight(lastAction.highlight);
+          }
         }
         
         set({
           undoStack: newUndo,
           redoStack: [...redoStack, lastAction]
         });
-        get().triggerDrawingsRefresh();
+        
+        if (lastAction.type.includes('HIGHLIGHT')) {
+          get().triggerHighlightsRefresh();
+        } else {
+          get().triggerDrawingsRefresh();
+        }
       },
 
       redoDrawingAction: async () => {
@@ -235,19 +265,39 @@ export const useBookStore = create<BookState>()(
         
         const nextAction = redoStack[redoStack.length - 1];
         const newRedo = redoStack.slice(0, -1);
-        const { upsertDrawing, deleteDrawing } = await import('../services/dbService');
+        const { upsertDrawing, deleteDrawing, upsertHighlight, deleteHighlight } = await import('../services/dbService');
         
         if (nextAction.type === 'ADD') {
           await upsertDrawing(nextAction.drawing);
-        } else {
+        } else if (nextAction.type === 'REMOVE') {
           await deleteDrawing(nextAction.drawing.id);
+        } else if (nextAction.type === 'ADD_HIGHLIGHT') {
+          await upsertHighlight(nextAction.highlight);
+          if (nextAction.highlights) {
+            for (const hl of nextAction.highlights) {
+              await deleteHighlight(hl.id);
+            }
+          }
+        } else if (nextAction.type === 'REMOVE_HIGHLIGHT') {
+          if (nextAction.highlights) {
+            for (const hl of nextAction.highlights) {
+              await deleteHighlight(hl.id);
+            }
+          } else if (nextAction.highlight) {
+            await deleteHighlight(nextAction.highlight.id);
+          }
         }
         
         set({
           undoStack: [...undoStack, nextAction],
           redoStack: newRedo
         });
-        get().triggerDrawingsRefresh();
+        
+        if (nextAction.type.includes('HIGHLIGHT')) {
+          get().triggerHighlightsRefresh();
+        } else {
+          get().triggerDrawingsRefresh();
+        }
       },
 
       toggleBookmarkAction: async (pageNum: number) => {

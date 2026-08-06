@@ -128,28 +128,46 @@ export function BookReader() {
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === 'F11') {
         e.preventDefault();
         toggleFocusMode();
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        if (e.shiftKey) {
-          redoDrawingAction();
-        } else {
-          undoDrawingAction();
-        }
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
-        e.preventDefault();
-        redoDrawingAction();
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undoDrawingAction, redoDrawingAction]);
+  }, []);
+
+  // Global Customizable Shortcuts
+  useEffect(() => {
+    const handleGlobalShortcut = (e: CustomEvent) => {
+      const action = e.detail.action;
+      if (action === 'undo') {
+        undoDrawingAction();
+      } else if (action === 'redo') {
+        redoDrawingAction();
+      } else if (action === 'freehand') {
+        if (!isDrawingMode || drawingTool === 'eraser') {
+          setIsDrawingMode(true);
+          setDrawingTool('pen');
+        } else {
+          setIsDrawingMode(false);
+        }
+      } else if (action === 'eraser') {
+        if (!isDrawingMode || drawingTool === 'pen') {
+          setIsDrawingMode(true);
+          setDrawingTool('eraser');
+        } else {
+          setIsDrawingMode(false);
+        }
+      }
+    };
+    
+    window.addEventListener('shortcut-triggered', handleGlobalShortcut as EventListener);
+    return () => window.removeEventListener('shortcut-triggered', handleGlobalShortcut as EventListener);
+  }, [undoDrawingAction, redoDrawingAction, isDrawingMode, drawingTool, setIsDrawingMode, setDrawingTool]);
 
   // Handle open sidebar from events (like clicking a sticky note)
   useEffect(() => {

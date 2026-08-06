@@ -44,7 +44,7 @@
 - [reference] Phase 3.5 SQLite Persistence Layer: COMPLETE & verified. Fixed Rust cache build issues. Strictly following roadmap: Next step is Phase 4 (Book Reader). → booksage-project.md
 - [reference] Phase 4 Book Reader: COMPLETE & verified. Continuous/Single reading, highlight context menu, trackpad zoom. Next step is Phase 5 (Notes Viewer) or 6 (Copilot). → booksage-project.md
 - [reference] Phase 4.5 Reader Polish: COMPLETE & verified. PyMuPDF search, virtualized thumbnail strip, collapsible sidebar, and Two-Page Spread mode with 3D flip animations. → booksage-project.md
-- [reference] Phase 4.5 Finalized: Added Eraser, Freehand Drawing, Undo/Redo stack, and Keyboard Shortcuts. → booksage-project.md
+- [reference] Phase 4.5 Finalized: Added Eraser, Freehand Drawing, Undo/Redo stack, and Keyboard Shortcuts for all tools (including unified undo for highlights). → booksage-project.md
 - [reference] Phase 4.5 Display Themes: Added Invert PDF Colors, custom Background and Text tinting via SVG Duotone filters. → booksage-project.md
 - [reference] Phase 4.5 Margin Crop: Implemented Smart Margin Cropping via CSS transforms. Deferred Font/Line controls to Notes Viewer. → booksage-project.md
 - [reference] Phase 4.5 Annotations Polish: Added customizable underline, strikethrough (opacity/thickness/color) and text selection colors. → booksage-project.md
