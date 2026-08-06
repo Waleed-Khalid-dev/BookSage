@@ -38,6 +38,10 @@ interface BookState {
   pdfTextColor: string;
   pdfMarginCrop: number;
   highlightOpacity: number;
+  textSelectionColor: string;
+  penColor: string;
+  penOpacity: number;
+  penThickness: number;
   highlightsRefreshCounter: number;
   bookmarksRefreshCounter: number;
   drawingsRefreshCounter: number;
@@ -86,6 +90,10 @@ interface BookState {
   setPdfTextColor: (color: string) => void;
   setPdfMarginCrop: (crop: number) => void;
   setHighlightOpacity: (opacity: number) => void;
+  setTextSelectionColor: (color: string) => void;
+  setPenColor: (color: string) => void;
+  setPenOpacity: (opacity: number) => void;
+  setPenThickness: (thickness: number) => void;
   
   // Search Actions
   performSearch: (query: string) => Promise<void>;
@@ -133,6 +141,10 @@ export const useBookStore = create<BookState>()(
       pdfTextColor: '',
       pdfMarginCrop: 0,
       highlightOpacity: 0.4,
+      textSelectionColor: '',
+      penColor: '#e05252',
+      penOpacity: 1.0,
+      penThickness: 2,
       highlightsRefreshCounter: 0,
       bookmarksRefreshCounter: 0,
       drawingsRefreshCounter: 0,
@@ -712,7 +724,10 @@ export const useBookStore = create<BookState>()(
       setPdfTextColor: (color: string) => set({ pdfTextColor: color }),
       setPdfMarginCrop: (crop: number) => set({ pdfMarginCrop: crop }),
       setHighlightOpacity: (opacity: number) => set({ highlightOpacity: opacity }),
-
+      setTextSelectionColor: (color: string) => set({ textSelectionColor: color }),
+      setPenColor: (color: string) => set({ penColor: color }),
+      setPenOpacity: (opacity: number) => set({ penOpacity: opacity }),
+      setPenThickness: (thickness: number) => set({ penThickness: thickness }),
       
       performSearch: async (query: string) => {
         const { pdfPath } = get();
