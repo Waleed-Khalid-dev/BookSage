@@ -88,7 +88,7 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 3.5 | SQLite Persistence | ✅ Done |
 | 4 | Book Reader | ✅ Done |
 | 4.5 | Reader Polish | ✅ Done |
-| 5 | Notes Viewer | ⏳ Not started |
+| 5 | Notes Viewer | ✅ Done |
 | 6 | AI Copilot | ⏳ Not started |
 | 7 | Library View | ⏳ Not started |
 | 8 | Settings & Polish | ⏳ Not started |
@@ -101,7 +101,15 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - Added "Shortcuts" Settings modal for assigning custom bindings (TTS, highlight, drawing, undo/redo).
 - Updated Unified Undo/Redo stack to support Highlights, Underlines, and Strikethroughs smoothly.
 
-### Session 2026-08-06 Notes
+### Session 2026-08-07 Notes (Phase 5)
+- **Completed Phase 5 (Notes Viewer):**
+  - Built an interactive, Obsidian-inspired UI rendered dynamically from AI-extracted JSON.
+  - Implemented 'Key Insights' (global list) and 'Flashcard' (active recall) view modes.
+  - Resolved Tauri FS ACL errors by using `invokePython` to fetch local files securely.
+  - Handled varying JSON array-wrapping edge cases for robust parsing.
+  - Persisted user notes, studied status, and implementation steps progress to SQLite.
+
+### Session 2026-08-07 Notes
 - Added CSS transform-based zoom stability for highlighting and TTS
 - Implemented persistent customizable text selection color and opacity
 - Refined annotation toolbar: added underline and strikethrough color picker
