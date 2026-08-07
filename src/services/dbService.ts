@@ -168,7 +168,11 @@ async function initDb(database: Database) {
     'ALTER TABLE books ADD COLUMN reading_time_secs INTEGER DEFAULT 0',
     'ALTER TABLE books ADD COLUMN pages_read_total INTEGER DEFAULT 0',
     'ALTER TABLE highlights ADD COLUMN note TEXT',
-    'ALTER TABLE highlights ADD COLUMN type TEXT DEFAULT "highlight"'
+    'ALTER TABLE highlights ADD COLUMN type TEXT DEFAULT "highlight"',
+    // Phase 5 -- Notes Viewer columns
+    'ALTER TABLE chapters ADD COLUMN user_notes TEXT',
+    'ALTER TABLE chapters ADD COLUMN studied INTEGER DEFAULT 0',
+    'ALTER TABLE chapters ADD COLUMN steps_progress TEXT'
   ];
 
   for (const query of migrations) {
@@ -469,4 +473,64 @@ export async function getReadingStreak(currentDateStr: string): Promise<number> 
   }
   
   return streak;
+}
+
+// --- NOTES VIEWER USER DATA ---
+
+export async function getChapterUserData(chapterId: string): Promise<ChapterUserData> {
+  const database = await getDb();
+  const result = await database.select<any[]>(
+    'SELECT user_notes, studied, steps_progress FROM chapters WHERE id = $1',
+    [chapterId]
+  );
+  if (!result || result.length === 0) {
+    return { chapter_id: chapterId, user_notes: '', studied: false, steps_progress: [] };
+  }
+  const row = result[0];
+  return {
+    chapter_id: chapterId,
+    user_notes: row.user_notes || '',
+    studied: (row.studied ?? 0) === 1,
+    steps_progress: row.steps_progress ? JSON.parse(row.steps_progress) : []
+  };
+}
+
+export async function saveChapterUserData(chapterId: string, data: Partial<ChapterUserData>): Promise<void> {
+  const database = await getDb();
+  const fields: string[] = [];
+  const values: any[] = [];
+  let paramIdx = 1;
+
+  if (data.user_notes !== undefined) {
+    fields.push(`user_notes = $${paramIdx++}`);
+    values.push(data.user_notes);
+  }
+  if (data.studied !== undefined) {
+    fields.push(`studied = $${paramIdx++}`);
+    values.push(data.studied ? 1 : 0);
+  }
+  if (data.steps_progress !== undefined) {
+    fields.push(`steps_progress = $${paramIdx++}`);
+    values.push(JSON.stringify(data.steps_progress));
+  }
+
+  if (fields.length === 0) return;
+  values.push(chapterId);
+  await database.execute(
+    `UPDATE chapters SET ${fields.join(', ')} WHERE id = $${paramIdx}`,
+    values
+  );
+}
+
+export async function getStudiedCountForBook(bookId: string): Promise<{ studied: number; total: number }> {
+  const database = await getDb();
+  const result = await database.select<any[]>(
+    'SELECT COUNT(*) as total, SUM(CASE WHEN studied = 1 THEN 1 ELSE 0 END) as studied FROM chapters WHERE book_id = $1 AND status = "done"',
+    [bookId]
+  );
+  if (!result || result.length === 0) return { studied: 0, total: 0 };
+  return {
+    studied: result[0].studied || 0,
+    total: result[0].total || 0
+  };
 }
