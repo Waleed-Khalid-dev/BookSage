@@ -24,6 +24,7 @@ export function AudioToolbar() {
 
   const setTtsHighlight = useUiStore(state => state.setTtsHighlight);
   const setIsUiTtsPlaying = useUiStore(state => state.setIsTtsPlaying); // Sync global playing state for app UI if needed
+  const activeView = useUiStore(state => state.activeView);
   const [isLoading, setIsLoading] = useState(false);
   const [nativeVoices, setNativeVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [currentRange, setCurrentRange] = useState<Range | null>(null);
@@ -55,32 +56,30 @@ export function AudioToolbar() {
 
   // Edge TTS Tracking Loop
   useEffect(() => {
-    const isEdgeVoice = EDGE_VOICES.some(v => v.voiceURI === voiceURI);
-
     const trackEdgeHighlight = () => {
-      if (audioElement && isPlaying && isEdgeVoice && fullTextToRead) {
-        const currentTime = audioElement.currentTime;
+      const state = useTtsStore.getState();
+      const isEdgeVoice = EDGE_VOICES.some(v => v.voiceURI === state.voiceURI);
+
+      if (state.audioElement && state.isPlaying && isEdgeVoice && state.fullTextToRead) {
+        const currentTime = state.audioElement.currentTime;
         
         // Find current word
-        const currentWord = edgeTimings.find(w => currentTime >= w.time_start && currentTime <= w.time_end);
+        const currentWord = state.edgeTimings.find(w => currentTime >= w.time_start && currentTime <= w.time_end);
         
         // Edge TTS tracking logic using DOM-independent non-whitespace offsets
-        if (isWordHighlightingEnabled && startNonWs !== null && activePageNum !== null) {
+        if (isWordHighlightingEnabled && state.startNonWs !== null && state.activePageNum !== null) {
           if (currentWord) {
-            // Performance optimization & zoom stability: 
-            // Don't recalculate DOM rects 60 times a second if the word hasn't changed!
             if (lastWordRef.current !== currentWord.char_start) {
               lastWordRef.current = currentWord.char_start;
-              const textLayer = document.querySelector(`.textLayer[data-page-number="${activePageNum}"]`) as HTMLElement;
+              const textLayer = document.querySelector(`.textLayer[data-page-number="${state.activePageNum}"]`) as HTMLElement;
               if (textLayer) {
-                // Find how many non-ws chars were spoken before this word
-                const textBefore = fullTextToRead.substring(0, currentWord.char_start);
+                const textBefore = state.fullTextToRead.substring(0, currentWord.char_start);
                 const nonWsBefore = textBefore.replace(/\s/g, '').length;
                 
-                const wordText = fullTextToRead.substring(currentWord.char_start, currentWord.char_end);
+                const wordText = state.fullTextToRead.substring(currentWord.char_start, currentWord.char_end);
                 const nonWsLength = wordText.replace(/\s/g, '').length;
                 
-                const wordRange = getRangeByNonWs(textLayer, startNonWs + nonWsBefore, nonWsLength);
+                const wordRange = getRangeByNonWs(textLayer, state.startNonWs + nonWsBefore, nonWsLength);
                 
                 if (wordRange) {
                   const rects = Array.from(wordRange.getClientRects());
@@ -100,7 +99,7 @@ export function AudioToolbar() {
                       height: r.height / fullScale
                     }));
                     
-                    setTtsHighlight({ pageNum: activePageNum, rects: relativeRects });
+                    setTtsHighlight({ pageNum: state.activePageNum, rects: relativeRects });
                     
                     const firstRect = rects[0];
                     if (firstRect.top < viewerRect.top || firstRect.bottom > viewerRect.bottom) {
@@ -110,10 +109,9 @@ export function AudioToolbar() {
                 }
               }
             }
-            // If wordRange fails (e.g. during zoom DOM teardown), do NOT clear it so it doesn't flicker
           } else {
             if (lastWordRef.current !== null) {
-              setTtsHighlight(null); // Clear if between words
+              setTtsHighlight(null);
               lastWordRef.current = null;
             }
           }
@@ -123,16 +121,12 @@ export function AudioToolbar() {
       rafRef.current = requestAnimationFrame(trackEdgeHighlight);
     };
 
-    if (isPlaying && isWordHighlightingEnabled && isEdgeVoice) {
-      rafRef.current = requestAnimationFrame(trackEdgeHighlight);
-    } else {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    }
+    rafRef.current = requestAnimationFrame(trackEdgeHighlight);
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isPlaying, isWordHighlightingEnabled, voiceURI, fullTextToRead, startNonWs, activePageNum]);
+  }, [isWordHighlightingEnabled, setTtsHighlight]);
 
   useEffect(() => {
     const updateVoices = () => {
@@ -191,7 +185,10 @@ export function AudioToolbar() {
       setActivePageNum(null);
     }
     
-    const textToRead = selection.toString();
+    // Sanitize PDF line breaks: replace single newlines (visual wraps) with spaces to prevent artificial TTS pauses.
+    // We use a regex that matches a newline surrounded by non-newlines to preserve double newlines (paragraphs).
+    const rawText = selection.toString();
+    const textToRead = rawText.replace(/([^\r\n])\r?\n([^\r\n])/g, '$1 $2');
     setFullTextToRead(textToRead);
     
     // Use Native TTS if it's a native voice. Otherwise use Edge TTS.
@@ -223,16 +220,25 @@ export function AudioToolbar() {
         if (audioElement) {
           audioElement.src = `data:audio/mp3;base64,${response.audio_b64}`;
           audioElement.playbackRate = playbackRate;
-          audioElement.play();
-          setIsPlaying(true);
-          setIsPaused(false);
+          
+          // Use a promise catch to handle browser auto-play blocks seamlessly
+          audioElement.play().then(() => {
+            setIsPlaying(true);
+            setIsPaused(false);
+          }).catch(err => {
+            console.error("Audio play blocked by browser:", err);
+            // If Edge audio fails to play due to gesture limits, fallback safely
+            startNativeSpeech(text);
+          });
         }
       } else {
         console.error("TTS Error:", response.message);
         startNativeSpeech(text); // Fallback on error
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("IPC Error:", e);
+      // Optional: alert user if it was a real IPC error
+      // alert("Edge TTS Failed: " + String(e));
       startNativeSpeech(text); // Fallback on error
     } finally {
       setIsLoading(false);
@@ -309,22 +315,18 @@ export function AudioToolbar() {
   };
 
   const pause = () => {
-    if (isEdgeVoice && audioElement) {
-      audioElement.pause();
-    } else {
-      window.speechSynthesis.pause();
-    }
+    if (audioElement) audioElement.pause();
+    window.speechSynthesis.pause(); // Always pause native just in case
     setIsPaused(true);
     setIsPlaying(false);
   };
 
   const stop = () => {
-    if (isEdgeVoice && audioElement) {
+    if (audioElement) {
       audioElement.pause();
       audioElement.currentTime = 0;
-    } else {
-      window.speechSynthesis.cancel();
     }
+    window.speechSynthesis.cancel(); // Always cancel native speech to stop fallbacks!
     setIsPlaying(false);
     setIsPaused(false);
     setCurrentRange(null);
@@ -405,19 +407,21 @@ export function AudioToolbar() {
         <button onClick={speak} className="icon-btn" title="Read Aloud"><Play size={18} /></button>
       )}
       
-      <button 
-        onClick={() => {
-          setIsWordHighlightingEnabled(!isWordHighlightingEnabled);
-        }}
-        className="icon-btn" 
-        title={`Word Highlighting: ${isWordHighlightingEnabled ? 'ON' : 'OFF'}`}
-        style={{
-          background: isWordHighlightingEnabled ? 'var(--bs-accent)' : 'transparent',
-          color: isWordHighlightingEnabled ? 'var(--bs-bg)' : 'var(--bs-text)'
-        }}
-      >
-        <Type size={18} />
-      </button>
+      {activeView !== 'notes' && (
+        <button 
+          onClick={() => {
+            setIsWordHighlightingEnabled(!isWordHighlightingEnabled);
+          }}
+          className="icon-btn" 
+          title={`Word Highlighting: ${isWordHighlightingEnabled ? 'ON' : 'OFF'}`}
+          style={{
+            background: isWordHighlightingEnabled ? 'var(--bs-accent)' : 'transparent',
+            color: isWordHighlightingEnabled ? 'var(--bs-bg)' : 'var(--bs-text)'
+          }}
+        >
+          <Type size={18} />
+        </button>
+      )}
 
       {(isPlaying || isPaused) && (
         <button onClick={stop} className="icon-btn" title="Stop"><Square size={18} /></button>

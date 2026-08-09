@@ -15,27 +15,45 @@ async def _generate_audio_async(text: str, voice: str, output_path: str):
             if chunk['type'] == 'audio':
                 f.write(chunk['data'])
             elif chunk['type'] == 'SentenceBoundary':
-                sentence = chunk['text']
+                sentence = chunk['text'].strip()
                 offset = chunk['offset'] / 10_000_000 # to seconds
                 duration = chunk['duration'] / 10_000_000 # to seconds
+                
+                idx = text.find(sentence, len(text_so_far))
+                char_start_base = idx if idx != -1 else len(text_so_far)
                 
                 # Find words and their char offsets within the sentence
                 words = []
                 for match in re.finditer(r'\S+', sentence):
                     words.append({
                         'word': match.group(),
-                        'char_start': len(text_so_far) + match.start(),
-                        'char_end': len(text_so_far) + match.end(),
+                        'char_start': char_start_base + match.start(),
+                        'char_end': char_start_base + match.end(),
+                        'length': match.end() - match.start()
                     })
                 
                 if len(words) > 0:
-                    duration_per_word = duration / len(words)
-                    for i, w in enumerate(words):
-                        w['time_start'] = offset + (i * duration_per_word)
-                        w['time_end'] = w['time_start'] + duration_per_word
+                    # Character-proportional timing: longer words get more time
+                    total_chars = sum(w['length'] for w in words)
+                    current_time = offset
+                    
+                    for w in words:
+                        # Add a tiny base time per word to account for natural pauses between words
+                        word_duration = (w['length'] / total_chars) * duration
+                        w['time_start'] = current_time
+                        w['time_end'] = current_time + word_duration
+                        current_time += word_duration
+                        
+                        # We also attach the sentence boundaries to the word, so the frontend can choose to highlight the word OR the sentence!
+                        w['sentence_char_start'] = char_start_base
+                        w['sentence_char_end'] = char_start_base + len(sentence)
+                        
                         timings.append(w)
                 
-                text_so_far += sentence + ' '
+                if idx != -1:
+                    text_so_far = text[:idx + len(sentence)]
+                else:
+                    text_so_far += sentence + ' '
                 
     return timings
 

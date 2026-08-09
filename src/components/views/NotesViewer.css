@@ -363,7 +363,7 @@
   margin-bottom: 0.75rem;
 }
 .notes-core-lesson-text {
-  font-size: 1.1rem;
+  font-size: 1.1em;
   font-weight: 600;
   color: var(--bs-text-bright);
   line-height: 1.6;
@@ -455,7 +455,6 @@
   border-color: var(--bs-accent);
 }
 .notes-summary-text {
-  font-size: 14px;
   line-height: 1.8;
   color: var(--bs-text);
   margin: 0;
@@ -490,7 +489,6 @@
   min-width: 20px;
 }
 .notes-teaching-name {
-  font-size: 14px;
   font-weight: 600;
   color: var(--bs-text-bright);
   flex: 1;
@@ -503,7 +501,6 @@
 .notes-teaching-chevron.open { transform: rotate(180deg); }
 .notes-teaching-body {
   padding: 0.75rem 1rem;
-  font-size: 14px;
   line-height: 1.75;
   color: var(--bs-text);
   border-top: 1px solid var(--bs-border);
@@ -558,7 +555,6 @@
   margin-top: 1px;
 }
 .notes-step-text {
-  font-size: 14px;
   line-height: 1.6;
   color: var(--bs-text);
   transition: color 0.2s, opacity 0.2s;
@@ -577,7 +573,6 @@
   border-radius: 0 8px 8px 0;
   padding: 0.75rem 2.5rem 0.75rem 1rem;
   margin-bottom: 8px;
-  font-size: 14px;
   font-style: italic;
   line-height: 1.7;
   color: var(--bs-text);
@@ -627,7 +622,7 @@
   padding-top: 2px;
 }
 .notes-insight-text {
-  font-size: 15px;
+  font-size: 1.07em;
   font-weight: 600;
   color: var(--bs-text-bright);
   line-height: 1.5;
@@ -664,16 +659,16 @@
   border: none;
   outline: none;
   color: var(--bs-text);
-  font-size: 14px;
-  line-height: 1.8;
+  font-size: inherit;
+  line-height: inherit;
   font-family: 'Inter', sans-serif;
   resize: vertical;
   box-sizing: border-box;
 }
 .notes-reflections-preview {
   padding: 1rem;
-  font-size: 14px;
-  line-height: 1.8;
+  font-size: inherit;
+  line-height: inherit;
   color: var(--bs-text);
   min-height: 60px;
   cursor: text;

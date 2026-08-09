@@ -200,3 +200,12 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - Wired frontend button to `export_chapters` Python backend command via `invokePython`.
   - Added `ChapterUserData` interface to `dbService.ts` for strict typing.
   - Provided user feedback with intuitive toast notifications on success/failure.
+
+### Session 2026-08-10 Notes (Phase 5c)
+- **Completed Phase 5c (TTS on Notes & Polish):**
+  - Integrated Text-to-Speech (TTS) into the Notes Viewer using a global `ttsStore` for state sync.
+  - Restored high-fidelity, character-proportional word-by-word tracking in Python (`tts_engine.py`) to eliminate sync lag.
+  - Sanitized PDF input to strip soft line breaks, ensuring fluid TTS playback.
+  - Resolved UI CSS conflicts in Notes Viewer, replacing hardcoded `px` fonts with `em`/`inherit` so the font slider scales the entire view perfectly.
+  - Contextually hid the 'Type' (highlighting) button in the AudioToolbar when in the Notes view.
+  - Enforced global playback cancellation (`window.speechSynthesis.cancel()`) on stop to prevent ghost audio from fallback voices.
