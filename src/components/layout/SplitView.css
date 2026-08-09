@@ -1,0 +1,61 @@
+.split-view-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.split-view-pane {
+  height: 100%;
+  overflow: hidden; /* Prevents inner content from forcing width expansion */
+  display: flex;
+  flex-direction: column;
+}
+
+.left-pane {
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.right-pane {
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+/* Divider Styling */
+.split-view-divider {
+  width: 8px;
+  background-color: var(--bs-border);
+  cursor: col-resize;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  z-index: 50;
+  transition: background-color 0.2s ease;
+}
+
+.split-view-divider:hover,
+.split-view-divider.dragging {
+  background-color: var(--bs-accent); /* Teal color when hovered or dragged */
+}
+
+.divider-handle {
+  width: 4px;
+  height: 30px;
+  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.4);
+  transition: background-color 0.2s ease;
+}
+
+.split-view-divider:hover .divider-handle,
+.split-view-divider.dragging .divider-handle {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Specific inner overrides for NotesViewer and BookReader to ensure they don't break flex layouts when constrained */
+.split-view-container .book-reader,
+.split-view-container .notes-viewer-container {
+  width: 100% !important; /* Force them to respect the parent pane's width */
+}
