@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { useUiStore } from "./stores/uiStore";
 import { useBookStore } from "./stores/bookStore";
 import { IconSidebar } from "./components/layout/IconSidebar";
 import { LibraryView } from "./components/views/LibraryView";
 import { BookReader } from "./components/views/BookReader";
 import { NotesViewer } from "./components/views/NotesViewer";
+import { SplitView } from "./components/layout/SplitView";
 import { PipelineView } from "./components/views/PipelineView";
 import { AIChatView } from "./components/views/AIChatView";
 import { GlobalSearchModal } from "./components/shared/GlobalSearchModal";
@@ -13,13 +15,32 @@ import "pdfjs-dist/web/pdf_viewer.css";
 import "./App.css";
 
 function App() {
-  const { activeView, theme } = useUiStore();
+  const { activeView, theme, isNotesSplitOpen, toggleNotesSplit } = useUiStore();
   const { readerTheme, textSelectionColor } = useBookStore();
   
   // Initialize global keyboard shortcuts
   useShortcuts();
 
+  useEffect(() => {
+    const handleShortcut = (e: CustomEvent<{ action: string }>) => {
+      if (e.detail.action === 'toggle-split-view') {
+        toggleNotesSplit();
+      }
+    };
+    window.addEventListener('shortcut-triggered', handleShortcut as EventListener);
+    return () => window.removeEventListener('shortcut-triggered', handleShortcut as EventListener);
+  }, [toggleNotesSplit]);
+
   const renderView = () => {
+    if ((activeView === "reader" || activeView === "notes") && isNotesSplitOpen) {
+      return (
+        <SplitView 
+          left={<BookReader />} 
+          right={<NotesViewer />} 
+        />
+      );
+    }
+    
     switch (activeView) {
       case "library": return <LibraryView />;
       case "reader": return <BookReader />;

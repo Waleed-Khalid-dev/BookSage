@@ -1,9 +1,9 @@
 import { useUiStore } from '../../stores/uiStore';
-import { Home, BookOpen, FileText, Settings, Activity, MessageSquare } from 'lucide-react';
+import { Home, BookOpen, FileText, Settings, Activity, MessageSquare, Columns } from 'lucide-react';
 import './IconSidebar.css';
 
 export function IconSidebar() {
-  const { activeView, setActiveView } = useUiStore();
+  const { activeView, setActiveView, isNotesSplitOpen, toggleNotesSplit } = useUiStore();
 
   const navItems = [
     { id: 'library', icon: Home, label: 'Library' },
@@ -32,6 +32,15 @@ export function IconSidebar() {
         })}
       </div>
       <div className="icon-sidebar-bottom">
+        {(activeView === 'reader' || activeView === 'notes') && (
+          <button 
+            className={`nav-button ${isNotesSplitOpen ? 'active' : ''}`}
+            onClick={() => toggleNotesSplit()}
+            title="Split View"
+          >
+            <Columns size={24} />
+          </button>
+        )}
         <button className="nav-button" title="Settings" onClick={() => useUiStore.getState().setIsSettingsOpen(true)}>
           <Settings size={24} />
         </button>
