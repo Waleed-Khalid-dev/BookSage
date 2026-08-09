@@ -8,12 +8,16 @@ interface UiState {
   theme: 'dark' | 'light';
   isTtsPlaying: boolean;
   isSettingsOpen: boolean;
+  isNotesSplitOpen: boolean;
+  notesSplitWidth: number;
   activeSelection: SelectionData | null;
   ttsHighlight: { pageNum: number; rects: { top: number; left: number; width: number; height: number }[] } | null;
   setActiveView: (view: ViewType) => void;
   setTheme: (theme: 'dark' | 'light') => void;
   setIsTtsPlaying: (isPlaying: boolean) => void;
   setIsSettingsOpen: (isOpen: boolean) => void;
+  toggleNotesSplit: () => void;
+  setNotesSplitWidth: (width: number) => void;
   setActiveSelection: (selection: SelectionData | null) => void;
   setTtsHighlight: (highlight: { pageNum: number; rects: any[] } | null) => void;
 }
@@ -23,12 +27,16 @@ export const useUiStore = create<UiState>((set) => ({
   theme: 'dark',
   isTtsPlaying: false,
   isSettingsOpen: false,
+  isNotesSplitOpen: false,
+  notesSplitWidth: 50,
   activeSelection: null,
   ttsHighlight: null,
   setActiveView: (view) => set({ activeView: view }),
   setTheme: (theme) => set({ theme }),
   setIsTtsPlaying: (isPlaying) => set({ isTtsPlaying: isPlaying }),
   setIsSettingsOpen: (isOpen) => set({ isSettingsOpen: isOpen }),
+  toggleNotesSplit: () => set((state) => ({ isNotesSplitOpen: !state.isNotesSplitOpen })),
+  setNotesSplitWidth: (width) => set({ notesSplitWidth: width }),
   setActiveSelection: (selection) => set({ activeSelection: selection }),
   setTtsHighlight: (highlight) => set({ ttsHighlight: highlight }),
 }));

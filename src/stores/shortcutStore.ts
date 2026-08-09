@@ -9,7 +9,8 @@ export type ShortcutAction =
   | 'undo' 
   | 'redo' 
   | 'eraser' 
-  | 'freehand';
+  | 'freehand'
+  | 'toggle-split-view';
 
 export interface Shortcut {
   key: string;
@@ -28,6 +29,7 @@ export const defaultShortcuts: Record<ShortcutAction, Shortcut> = {
   redo: { key: 'y', ctrlKey: true, shiftKey: false, altKey: false, metaKey: false }, // Ctrl+Y as default
   eraser: { key: 'e', ctrlKey: true, shiftKey: false, altKey: false, metaKey: false },
   freehand: { key: 'd', ctrlKey: true, shiftKey: false, altKey: false, metaKey: false },
+  'toggle-split-view': { key: '\\', ctrlKey: true, shiftKey: false, altKey: false, metaKey: false },
 };
 
 export const actionLabels: Record<ShortcutAction, string> = {
@@ -39,6 +41,7 @@ export const actionLabels: Record<ShortcutAction, string> = {
   redo: 'Redo Drawing/Highlight',
   eraser: 'Toggle Eraser',
   freehand: 'Toggle Freehand Draw',
+  'toggle-split-view': 'Toggle Split View',
 };
 
 interface ShortcutState {
