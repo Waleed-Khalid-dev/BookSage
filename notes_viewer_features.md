@@ -109,8 +109,8 @@
 ## ⏳ Deferred to Later Phases
 
 - [ ] In-Notes Search (`Ctrl+F`) — Phase 5b
-- [ ] Split View: Reader + Notes side-by-side — Phase 5b
-- [ ] Obsidian Export per Chapter — Phase 5b (requires Python backend command)
+- [x] Split View: Reader + Notes side-by-side — Phase 5b
+- [x] Obsidian Export per Chapter — Phase 5b (requires Python backend command)
 - [ ] TTS on Notes — Phase 5b (reuse SpeechSynthesis from BookReader)
 
 ---
