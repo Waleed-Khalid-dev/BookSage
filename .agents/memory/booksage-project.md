@@ -194,3 +194,9 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - Implemented draggable divider with 20% to 80% width clamping.
   - Added 'Split View' toggle in IconSidebar and bound a customizable global hotkey (`Ctrl + \`).
   - Integrated state management via Zustand `uiStore` to persist the split state when switching views.
+- **Completed Phase 5b (Obsidian Export):**
+  - Implemented "Export to Obsidian" feature in NotesViewer.
+  - Integrated `@tauri-apps/plugin-dialog` to launch native folder selection.
+  - Wired frontend button to `export_chapters` Python backend command via `invokePython`.
+  - Added `ChapterUserData` interface to `dbService.ts` for strict typing.
+  - Provided user feedback with intuitive toast notifications on success/failure.
