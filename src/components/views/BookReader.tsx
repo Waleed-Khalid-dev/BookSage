@@ -478,10 +478,10 @@ export function BookReader() {
         <SearchBar />
       
       {!isFocusMode && (
-        <header className="view-header" style={{ padding: '1rem', borderBottom: '1px solid var(--bs-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ color: 'var(--bs-heading)', margin: 0 }}>{currentBookTitle}</h2>
+        <header className="view-header" style={{ padding: '1rem', borderBottom: '1px solid var(--bs-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <h2 style={{ color: 'var(--bs-heading)', margin: 0, maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={currentBookTitle}>{currentBookTitle}</h2>
         
-        <div className="view-toggles" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="view-toggles" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button 
             className={`btn-toggle ${viewMode === 'single' ? 'active' : ''}`}
             onClick={() => setViewMode('single')}

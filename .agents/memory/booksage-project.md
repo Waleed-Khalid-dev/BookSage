@@ -209,3 +209,4 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - Resolved UI CSS conflicts in Notes Viewer, replacing hardcoded `px` fonts with `em`/`inherit` so the font slider scales the entire view perfectly.
   - Contextually hid the 'Type' (highlighting) button in the AudioToolbar when in the Notes view.
   - Enforced global playback cancellation (`window.speechSynthesis.cancel()`) on stop to prevent ghost audio from fallback voices.
+  - Added responsive `flexWrap: wrap` and smart text truncation to the Book Reader toolbar so it reflows cleanly in narrow Split View setups.
