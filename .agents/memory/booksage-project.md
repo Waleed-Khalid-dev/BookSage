@@ -188,3 +188,9 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - **Reading Stats & Gamification:** Designed and implemented a comprehensive Reading Stats modal. Created `reading_sessions` SQLite table to securely log active reading periods. Engineered real-time calculation logic for personal average reading speed to output dynamic "Time Remaining" estimates. Displayed global stats (Daily Pages, Weekly Pages) and integrated a 🔥 Reading Streak algorithm that retroactively checks consecutive days read, gamifying the user experience.
 - **Next:** Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).
 
+### Session 2026-08-09 Notes (Phase 5b)
+- **Completed Phase 5b (Split View):**
+  - Built a resizable Split View layout for side-by-side Book Reader and Notes Viewer.
+  - Implemented draggable divider with 20% to 80% width clamping.
+  - Added 'Split View' toggle in IconSidebar and bound a customizable global hotkey (`Ctrl + \`).
+  - Integrated state management via Zustand `uiStore` to persist the split state when switching views.

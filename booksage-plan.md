@@ -50,7 +50,7 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
   - [ ] Select text → AI Explain/Summarize stub pill above selection
   - [ ] Select text → Simplify language stub pill
   - **🔴 CORE — Layout**
-  - [ ] Split view (Book + Notes side-by-side) — draggable divider, wire toolbar toggle
+  - [x] Split view (Book + Notes side-by-side) — draggable divider, wire toolbar toggle
   - **🟡 HIGH — Display & Themes**
   - [ ] Sepia / Warm tone mode — CSS filter toggle in reader toolbar
   - [ ] Invert PDF colors (night mode) — CSS invert filter toggle

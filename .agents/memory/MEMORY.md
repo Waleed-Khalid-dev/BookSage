@@ -55,3 +55,4 @@
 - [reference] Phase 4.5 Annotations & Focus Mode: Added Focus Mode, global search (Cmd+K), and Markdown annotation export via Tauri fs. → booksage-project.md
 - [reference] Phase 4.5 Gamification & Stats: Added daily/weekly stats, reading streak badge, and dynamic "Time Remaining" via SQLite `reading_sessions`. → booksage-project.md
 - [reference] Phase 4.5 TTS Zoom Stability: Refactored AudioToolbar TTS tracking for DOM-independence and used CSS transforms on TTSHighlightLayer to fix zooming jitter. → booksage-project.md
+- [reference] Phase 5b Split View: COMPLETE & verified. Added resizable dual-pane layout, persistent state, and global hotkey. → booksage-project.md
