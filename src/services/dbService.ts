@@ -477,6 +477,13 @@ export async function getReadingStreak(currentDateStr: string): Promise<number> 
 
 // --- NOTES VIEWER USER DATA ---
 
+export interface ChapterUserData {
+  chapter_id: string;
+  user_notes: string;
+  studied: boolean;
+  steps_progress: any[];
+}
+
 export async function getChapterUserData(chapterId: string): Promise<ChapterUserData> {
   const database = await getDb();
   const result = await database.select<any[]>(

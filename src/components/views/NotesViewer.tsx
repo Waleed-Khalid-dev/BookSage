@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { invokePython } from '../../services/pythonService';
 import { useBookStore } from '../../stores/bookStore';
 import { useUiStore } from '../../stores/uiStore';
+import { open } from '@tauri-apps/plugin-dialog';
 import {
   getChapterUserData, saveChapterUserData, getStudiedCountForBook
 } from '../../services/dbService';
@@ -198,6 +199,36 @@ export function NotesViewer() {
 
   const showToast = (msg: string) => setToast(msg);
 
+  const handleExportToObsidian = async () => {
+    if (!activeChapter || !chapterJson) return;
+    try {
+      const selectedPath = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Export Folder for Obsidian',
+      });
+      if (selectedPath) {
+        showToast('Exporting...');
+        const res = await invokePython({
+          command: 'export_chapters',
+          chapters: [{
+            path: activeChapter.path,
+            title: chapterJson.chapter_title || activeChapter.title,
+            num: chapterJson.chapter_number || activeChapter.num
+          }],
+          output_dir: selectedPath
+        });
+        if (res.status === 'success') {
+          showToast(`Exported successfully!`);
+        } else {
+          showToast(`Export failed: ${res.message}`);
+        }
+      }
+    } catch (e: any) {
+      showToast(`Error: ${e.message || String(e)}`);
+    }
+  };
+
   // Keyboard nav
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -332,7 +363,7 @@ export function NotesViewer() {
               <button className={`notes-studied-btn ${studied ? 'studied' : ''}`} onClick={toggleStudied}>
                 {studied ? '✓ Studied' : 'Mark as Studied'}
               </button>
-              <button className="notes-export-btn" onClick={() => showToast('Export coming soon')}>
+              <button className="notes-export-btn" onClick={handleExportToObsidian} title="Export to Obsidian">
                 <FileText size={14} /> Export
               </button>
             </div>
