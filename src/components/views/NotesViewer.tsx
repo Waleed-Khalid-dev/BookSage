@@ -10,6 +10,7 @@ import {
 } from '../../services/dbService';
 import { ChevronRight, ChevronDown, BookOpen, Lightbulb, Quote, ListChecks,
          GraduationCap, Tag, FileText, Copy, Maximize2, Zap } from 'lucide-react';
+import { AudioToolbar } from '../reader/AudioToolbar';
 import './NotesViewer.css';
 
 interface ChapterJson {
@@ -578,6 +579,8 @@ export function NotesViewer() {
           <button className="notes-btn" onClick={() => setIsSidebarOpen(o => !o)} title="Toggle Sidebar">
             <Maximize2 size={14} />
           </button>
+          <div className="notes-toolbar-sep" />
+          <AudioToolbar />
           <div className="notes-toolbar-sep" />
           <div className="notes-toolbar-group">
             <label>Font</label>

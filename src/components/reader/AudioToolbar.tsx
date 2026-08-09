@@ -4,6 +4,7 @@ import { Play, Pause, Square, Loader, Type } from 'lucide-react';
 import { invokePython } from '../../services/pythonService';
 import { useBookStore } from '../../stores/bookStore';
 import { useUiStore } from '../../stores/uiStore';
+import { useTtsStore } from '../../stores/ttsStore';
 import { getNonWsOffset, getRangeByNonWs } from '../../utils/domUtils';
 
 const EDGE_VOICES = [
@@ -14,33 +15,27 @@ const EDGE_VOICES = [
 ];
 
 export function AudioToolbar() {
-  const isPlaying = useUiStore(state => state.isTtsPlaying);
-  const setIsPlaying = useUiStore(state => state.setIsTtsPlaying);
+  const { 
+    audioElement, edgeTimings, isPlaying, isPaused, voiceURI, playbackRate, 
+    fullTextToRead, startNonWs, activePageNum,
+    setEdgeTimings, setIsPlaying, setIsPaused, setVoiceURI, setPlaybackRate,
+    setFullTextToRead, setStartNonWs, setActivePageNum
+  } = useTtsStore();
+
   const setTtsHighlight = useUiStore(state => state.setTtsHighlight);
-  const [isPaused, setIsPaused] = useState(false);
+  const setIsUiTtsPlaying = useUiStore(state => state.setIsTtsPlaying); // Sync global playing state for app UI if needed
   const [isLoading, setIsLoading] = useState(false);
-  const [voiceURI, setVoiceURI] = useState<string>('en-US-AriaNeural'); // Default to premium
-  const [playbackRate, setPlaybackRate] = useState<number>(1.0);
   const [nativeVoices, setNativeVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [currentRange, setCurrentRange] = useState<Range | null>(null);
-  const [startNonWs, setStartNonWs] = useState<number | null>(null);
-  const [activePageNum, setActivePageNum] = useState<number | null>(null);
-  const [fullTextToRead, setFullTextToRead] = useState<string>('');
   
   const isWordHighlightingEnabled = useBookStore(state => state.isWordHighlightingEnabled);
   const setIsWordHighlightingEnabled = useBookStore(state => state.setIsWordHighlightingEnabled);
   
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const edgeTimingsRef = useRef<any[]>([]);
   const rafRef = useRef<number>();
   const lastWordRef = useRef<number | null>(null);
   
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
+  // Sync UI store (used by some global layouts)
+  useEffect(() => { setIsUiTtsPlaying(isPlaying); }, [isPlaying, setIsUiTtsPlaying]);
 
   // Global Keyboard Shortcut Listener
   useEffect(() => {
@@ -63,11 +58,11 @@ export function AudioToolbar() {
     const isEdgeVoice = EDGE_VOICES.some(v => v.voiceURI === voiceURI);
 
     const trackEdgeHighlight = () => {
-      if (audioRef.current && isPlaying && isEdgeVoice && fullTextToRead) {
-        const currentTime = audioRef.current.currentTime;
+      if (audioElement && isPlaying && isEdgeVoice && fullTextToRead) {
+        const currentTime = audioElement.currentTime;
         
         // Find current word
-        const currentWord = edgeTimingsRef.current.find(w => currentTime >= w.time_start && currentTime <= w.time_end);
+        const currentWord = edgeTimings.find(w => currentTime >= w.time_start && currentTime <= w.time_end);
         
         // Edge TTS tracking logic using DOM-independent non-whitespace offsets
         if (isWordHighlightingEnabled && startNonWs !== null && activePageNum !== null) {
@@ -148,29 +143,26 @@ export function AudioToolbar() {
     updateVoices();
     window.speechSynthesis.onvoiceschanged = updateVoices;
     
-    // Create audio element for Edge TTS
-    audioRef.current = new Audio();
-    audioRef.current.preservesPitch = true; // Keep voice pitch normal when speeding up
-    audioRef.current.onended = () => {
+    // We only attach to the global audioElement if it doesn't already have an onended handler
+    // This prevents multiple toolbars from overwriting each other unnecessarily
+    audioElement.preservesPitch = true;
+    audioElement.onended = () => {
       setIsPlaying(false);
       setIsPaused(false);
     };
     
     return () => {
-      window.speechSynthesis.cancel();
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
+      // NOTE: We do NOT cancel synthesis or pause audio on unmount anymore
+      // because the user might just be toggling a panel or switching views while listening!
     };
-  }, []);
+  }, [audioElement, setIsPlaying, setIsPaused]);
 
   const isEdgeVoice = EDGE_VOICES.some(v => v.voiceURI === voiceURI);
 
   const speak = async () => {
     if (isPaused) {
-      if (isEdgeVoice && audioRef.current) {
-        audioRef.current.play();
+      if (isEdgeVoice && audioElement) {
+        audioElement.play();
       } else {
         window.speechSynthesis.resume();
       }
@@ -185,13 +177,18 @@ export function AudioToolbar() {
     
     let container = range.startContainer as HTMLElement;
     if (container.nodeType === 3) container = container.parentElement as HTMLElement;
-    const textLayer = container.closest('.textLayer') as HTMLElement;
+    
+    // Safely check for .textLayer in case we are in NotesViewer (no PDF layer)
+    const textLayer = container.closest ? container.closest('.textLayer') as HTMLElement : null;
     
     if (textLayer) {
       const pageNum = parseInt(textLayer.getAttribute('data-page-number') || '0', 10);
       const offset = getNonWsOffset(textLayer, range.startContainer, range.startOffset);
       setStartNonWs(offset);
       setActivePageNum(pageNum);
+    } else {
+      setStartNonWs(null);
+      setActivePageNum(null);
     }
     
     const textToRead = selection.toString();
@@ -199,7 +196,7 @@ export function AudioToolbar() {
     
     // Use Native TTS if it's a native voice. Otherwise use Edge TTS.
     if (!isEdgeVoice) {
-      startNativeSpeech(textToRead, selectionRange || undefined);
+      startNativeSpeech(textToRead, range || undefined);
     } else {
       await startEdgeSpeech(textToRead);
     }
@@ -222,11 +219,11 @@ export function AudioToolbar() {
       });
 
       if (response.status === 'success' && response.audio_b64) {
-        edgeTimingsRef.current = response.word_timings || [];
-        if (audioRef.current) {
-          audioRef.current.src = `data:audio/mp3;base64,${response.audio_b64}`;
-          audioRef.current.playbackRate = playbackRate;
-          audioRef.current.play();
+        setEdgeTimings(response.word_timings || []);
+        if (audioElement) {
+          audioElement.src = `data:audio/mp3;base64,${response.audio_b64}`;
+          audioElement.playbackRate = playbackRate;
+          audioElement.play();
           setIsPlaying(true);
           setIsPaused(false);
         }
@@ -312,8 +309,8 @@ export function AudioToolbar() {
   };
 
   const pause = () => {
-    if (isEdgeVoice && audioRef.current) {
-      audioRef.current.pause();
+    if (isEdgeVoice && audioElement) {
+      audioElement.pause();
     } else {
       window.speechSynthesis.pause();
     }
@@ -322,9 +319,9 @@ export function AudioToolbar() {
   };
 
   const stop = () => {
-    if (isEdgeVoice && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    if (isEdgeVoice && audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
     } else {
       window.speechSynthesis.cancel();
     }
@@ -343,8 +340,8 @@ export function AudioToolbar() {
     setPlaybackRate(nextRate);
     
     // Apply instantly if currently playing Edge TTS
-    if (isEdgeVoice && audioRef.current && isPlaying) {
-      audioRef.current.playbackRate = nextRate;
+    if (isEdgeVoice && audioElement && isPlaying) {
+      audioElement.playbackRate = nextRate;
     }
     
     // Note: Native SpeechSynthesis can't reliably change rate mid-speech without restarting on most browsers, 
