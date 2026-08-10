@@ -193,9 +193,6 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
   if (!pdfDocument) return <div className="pdf-status">No PDF loaded</div>;
 
   const handleContextMenu = async (e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-
     if (!bookId || !onContextMenuRequest) return;
     const rect = e.currentTarget.getBoundingClientRect();
     // Hitbox detection must account for the CSS transform ratio as well

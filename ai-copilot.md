@@ -75,7 +75,7 @@ WEB (React 18 / Tauri Desktop)
 - **VERIFY**: Prompting the AI in the popup or sidebar correctly returns a context-aware response from the active Python model.
 
 ## Phase X: Verification
-- [ ] Lint & Type Check: `npm run lint && npx tsc --noEmit`
-- [ ] UI/UX Audit: Check for correct colors (no purple/violet) and Obsidian-style visual grammar
-- [ ] Build Check: `npm run build`
-- [ ] Integration Test: Run app, select text, right-click, summarize text, receive AI response successfully.
+- [x] Lint & Type Check: `npm run lint && npx tsc --noEmit`
+- [x] UI/UX Audit: Check for correct colors (no purple/violet) and Obsidian-style visual grammar
+- [x] Build Check: `npm run build`
+- [x] Integration Test: Run app, select text, right-click, summarize text, receive AI response successfully.

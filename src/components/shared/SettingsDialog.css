@@ -145,3 +145,110 @@
   50% { opacity: 0.7; }
   100% { opacity: 1; }
 }
+
+/* Tabs */
+.settings-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--bs-text-muted);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.tab-btn:hover {
+  background: var(--bs-surface);
+  color: var(--bs-text);
+}
+
+.tab-btn.active {
+  background: var(--bs-surface-active, rgba(255,255,255,0.1));
+  color: var(--bs-text-bright);
+}
+
+/* API Keys */
+.api-keys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.api-key-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.api-key-item label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--bs-text);
+}
+
+.api-key-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.api-key-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.api-key-input-wrapper input {
+  width: 100%;
+  padding: 8px 36px 8px 12px;
+  border: 1px solid var(--bs-border-strong);
+  border-radius: 6px;
+  background: var(--bs-bg);
+  color: var(--bs-text-bright);
+  font-size: 0.95rem;
+}
+
+.api-key-input-wrapper input:focus {
+  outline: none;
+  border-color: var(--bs-accent);
+}
+
+.api-key-toggle-visible {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--bs-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+}
+
+.api-key-toggle-visible:hover {
+  color: var(--bs-text-bright);
+}
+
+.api-key-save-btn {
+  background: var(--bs-accent);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.api-key-save-btn:hover {
+  filter: brightness(1.1);
+}

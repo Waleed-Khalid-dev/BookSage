@@ -36,20 +36,20 @@
   transition: background 0.1s, color 0.1s;
   border-radius: 0;
 }
-.ctx-item:hover:not(:disabled) { background: var(--bs-surface, #2e2e2e); color: #fff; }
-.ctx-item:disabled { color: #555; cursor: not-allowed; }
+.ctx-item:hover:not(:disabled):not(.disabled) { background: var(--bs-surface, #2e2e2e); color: #fff; }
+.ctx-item:disabled, .ctx-item.disabled { color: #555; cursor: not-allowed; pointer-events: none; }
 
 .ctx-item--ai { color: var(--bs-accent, #009688); font-weight: 600; }
-.ctx-item--ai:hover:not(:disabled) { background: rgba(0,150,136,0.1); color: var(--bs-accent); }
+.ctx-item--ai:hover:not(:disabled):not(.disabled) { background: rgba(0,150,136,0.1); color: var(--bs-accent); }
 
 .ctx-icon { width: 16px; text-align: center; flex-shrink: 0; }
 
-/* Translate submenu */
-.ctx-item--sub {
+/* Submenus */
+.ctx-item--parent {
   position: relative;
   cursor: default;
 }
-.ctx-item--sub:hover { background: var(--bs-surface); color: #fff; }
+.ctx-item--parent:hover { background: var(--bs-surface); color: #fff; }
 .ctx-arrow { margin-left: auto; color: #777; font-size: 0.65rem; }
 
 .ctx-submenu {

@@ -5,6 +5,7 @@ import { useChatStore, CopilotPersona } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
 import { ModelSelector } from './ModelSelector';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { useApiKeys } from '../../stores/apiKeysStore';
 import './CopilotSidebar.css';
 
 const PRESET_PROMPTS = [
@@ -40,11 +41,12 @@ export function CopilotSidebar({
     sendMessage, loadSessions, persona, setPersona,
     pinInsight,
   } = useChatStore();
-  const { apiKey, aiModel, setAiModel } = useBookStore();
+  const { aiModel, setAiModel } = useBookStore();
+  const { getKey } = useApiKeys();
 
   const [input, setInput] = useState('');
   const [model, setModel] = useState(aiModel);
-  const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama'>('gemini');
+  const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek'>('gemini');
   const [copied, setCopied] = useState<string | null>(null);
   const [showPersona, setShowPersona] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
@@ -64,6 +66,20 @@ export function CopilotSidebar({
     }
   }, [transcript, resetTranscript]);
 
+  // Handle Add to Chat Context
+  useEffect(() => {
+    const handleAppend = (e: CustomEvent) => {
+      setInput((prev) => {
+        const spacer = prev && !prev.endsWith('\n\n') && prev.length > 0 ? '\n\n' : '';
+        return prev + spacer + e.detail;
+      });
+      // Small delay to let the sidebar render if it was just opened
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    };
+    window.addEventListener('append-chat-input', handleAppend as EventListener);
+    return () => window.removeEventListener('append-chat-input', handleAppend as EventListener);
+  }, []);
+
   // Load sessions when bookId changes
   useEffect(() => {
     if (bookId) loadSessions(bookId);
@@ -77,7 +93,11 @@ export function CopilotSidebar({
 
   const handleSend = async (text?: string) => {
     const msg = (text ?? input).trim();
-    if (!msg || !apiKey || isLoading) return;
+    const apiKey = getKey(provider);
+    if (!msg || !apiKey || isLoading) {
+      if (!apiKey) alert(`Please configure your ${provider} API key in Settings.`);
+      return;
+    }
 
     let sess = activeSession();
     if (!sess && bookId) {
@@ -291,7 +311,7 @@ export function CopilotSidebar({
 
       {/* ── Input area ── */}
       <div className="csb-input-area">
-        {!apiKey && (
+        {!getKey(provider) && (
           <div className="csb-no-key">⚠️ Add an API key in Settings to chat</div>
         )}
         <div className="csb-input-row">
@@ -303,7 +323,7 @@ export function CopilotSidebar({
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={2}
-            disabled={!apiKey || isLoading}
+            disabled={!getKey(provider) || isLoading}
           />
           <div className="csb-input-actions">
             {isSupported && (

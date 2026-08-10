@@ -5,7 +5,16 @@ import traceback
 def handle_command(cmd_data):
     command = cmd_data.get("command")
     
-    if command == "split_book":
+    if command == "get_hardware_id":
+        import uuid
+        import platform
+        # Combine MAC address and hostname for a unique hardware fingerprint
+        mac = str(uuid.getnode())
+        hostname = platform.node()
+        hw_id = f"{mac}-{hostname}"
+        return {"status": "success", "hardware_id": hw_id}
+
+    elif command == "split_book":
         pdf_path = cmd_data.get("path")
         book_id = cmd_data.get("book_id", "")
         if not pdf_path:

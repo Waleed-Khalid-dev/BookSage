@@ -69,8 +69,6 @@ interface BookState {
   // TTS State
   isWordHighlightingEnabled: boolean;
   
-  // Actions
-  setApiKey: (key: string) => void;
   setAiModel: (model: string) => void;
   setPdfPath: (path: string) => Promise<void>;
   loadBook: (id: string) => Promise<void>;
@@ -136,7 +134,6 @@ export const useBookStore = create<BookState>()(
       pdfPath: null,
       chapters: [],
       isExtracting: false,
-      apiKey: '',
       aiModel: 'gemini-3.6-flash',
       readerTheme: 'dark',
       invertPdfColors: false,
@@ -400,7 +397,6 @@ export const useBookStore = create<BookState>()(
       
       setIsWordHighlightingEnabled: (enabled) => set({ isWordHighlightingEnabled: enabled }),
 
-      setApiKey: (key: string) => set({ apiKey: key }),
       setAiModel: (model: string) => set({ aiModel: model }),
 
       setPdfPath: async (path: string) => {
@@ -582,11 +578,14 @@ export const useBookStore = create<BookState>()(
              });
           }
 
+          const apiKeysStore = (await import('./apiKeysStore')).useApiKeys;
+          const currentApiKey = apiKeysStore.getState().getKey(provider);
+
           const res = await invokePython({
             command: 'extract_chapter',
             chapter_path: chap.path,
             provider,
-            api_key: apiKey,
+            api_key: currentApiKey,
             model_name: aiModel
           });
 
@@ -615,9 +614,11 @@ export const useBookStore = create<BookState>()(
       },
 
       retryFailed: async (provider: string = 'gemini') => {
-        const { bookId, chapters, apiKey, aiModel } = get();
-        if (!apiKey) {
-          alert("Please enter a Gemini API Key first.");
+        const { bookId, chapters, aiModel } = get();
+        const apiKeysStore = (await import('./apiKeysStore')).useApiKeys;
+        const currentApiKey = apiKeysStore.getState().getKey(provider);
+        if (!currentApiKey) {
+          alert(`Please configure your ${provider} API Key in Settings.`);
           return;
         }
         const failedIndices = chapters
@@ -649,7 +650,7 @@ export const useBookStore = create<BookState>()(
             command: 'extract_chapter',
             chapter_path: c.path,
             provider,
-            api_key: apiKey,
+            api_key: currentApiKey,
             model_name: aiModel,
           });
 
@@ -679,9 +680,11 @@ export const useBookStore = create<BookState>()(
       },
 
       retrySpecificChapters: async (indices: number[], provider: string = 'gemini') => {
-        const { bookId, chapters, apiKey, aiModel } = get();
-        if (!apiKey) {
-           alert("Please enter a Gemini API Key first.");
+        const { bookId, chapters, aiModel } = get();
+        const apiKeysStore = (await import('./apiKeysStore')).useApiKeys;
+        const currentApiKey = apiKeysStore.getState().getKey(provider);
+        if (!currentApiKey) {
+           alert(`Please configure your ${provider} API Key in Settings.`);
            return;
         }
 
@@ -712,7 +715,7 @@ export const useBookStore = create<BookState>()(
                 command: 'extract_chapter',
                 chapter_path: chap.path,
                 provider,
-                api_key: apiKey,
+                api_key: currentApiKey,
                 model_name: aiModel
               });
               

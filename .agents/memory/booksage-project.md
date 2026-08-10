@@ -106,6 +106,9 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - Implemented `useSpeechRecognition` hook for voice input support in the chat.
 - Checked off Batch D in the task list and updated `copilot-features.md`.
 - Completed AI Copilot Phase 6 integration (Sidebar, Chat View, Context Menu, Popup, Voice).
+- Fixed Context Menu visual bug where missing API keys didn't properly gray out submenus.
+- Fixed `CopilotSidebar` crash when opened without an API key (due to legacy key variable removal).
+- Implemented "Add to Chat Context" to automatically paste selected text directly into the chat input box.
 
 ### Session 2026-08-07 Notes (Phase 5)
 - **Completed Phase 5 (Notes Viewer):**

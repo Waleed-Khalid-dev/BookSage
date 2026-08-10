@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useChatStore, QuickActionType } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
+import { useApiKeys } from '../../stores/apiKeysStore';
+import { getProviderForModel } from './ModelSelector';
 import './ContextMenu.css';
 
 const TRANSLATE_LANGS = [
@@ -16,12 +18,15 @@ export function ContextMenu({ onSaveHighlight }: ContextMenuProps) {
   const {
     showContextMenu, contextMenuPos, selection,
     closeContextMenu, setShowPopup, openSidebar,
-    sendQuickAction, sendTranslate,
+    setPendingQuickAction,
   } = useChatStore();
-  const { apiKey, aiModel } = useBookStore();
+  const { aiModel } = useBookStore();
+  const { hasKey, getKey } = useApiKeys();
 
   const ref = useRef<HTMLDivElement>(null);
   const [showTranslateSub, setShowTranslateSub] = React.useState(false);
+  const [showRewriteSub, setShowRewriteSub] = React.useState(false);
+  const [showStudySub, setShowStudySub] = React.useState(false);
 
   // Close on outside click or scroll
   useEffect(() => {
@@ -30,9 +35,16 @@ export function ContextMenu({ onSaveHighlight }: ContextMenuProps) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         closeContextMenu();
         setShowTranslateSub(false);
+        setShowRewriteSub(false);
+        setShowStudySub(false);
       }
     };
-    const scrollHandler = () => { closeContextMenu(); setShowTranslateSub(false); };
+    const scrollHandler = () => {
+      closeContextMenu();
+      setShowTranslateSub(false);
+      setShowRewriteSub(false);
+      setShowStudySub(false);
+    };
     document.addEventListener('mousedown', handler);
     document.addEventListener('scroll', scrollHandler, true);
     return () => {
@@ -58,29 +70,36 @@ export function ContextMenu({ onSaveHighlight }: ContextMenuProps) {
     if (x + w > window.innerWidth - 8) x = x - w;
     if (y + h > window.innerHeight - 8) y = y - h;
   }
-
   const hasText = !!(selection?.text?.trim());
-  const hasKey  = !!apiKey;
+  const wordCount = hasText ? selection!.text.trim().split(/\s+/).length : 0;
+  const provider = getProviderForModel(aiModel);
+  const isKeyReady  = hasKey(provider);
 
   const doQuickAction = async (action: QuickActionType) => {
-    if (!hasText || !hasKey) return;
+    if (!hasText || !isKeyReady) return;
+    const key = getKey(provider);
+    if (!key) return;
+    
     closeContextMenu();
+    setPendingQuickAction({ type: 'action', action });
     setShowPopup(true);      // open popup so user sees the response
-    try {
-      await sendQuickAction(action, selection!.text, 'gemini', apiKey, aiModel);
-    } catch { /* popup shows error internally */ }
   };
 
   const doTranslate = async (lang: string) => {
-    if (!hasText || !hasKey) return;
+    if (!hasText || !isKeyReady) return;
+    const key = getKey(provider);
+    if (!key) return;
+    
     closeContextMenu();
+    setPendingQuickAction({ type: 'translate', lang });
     setShowPopup(true);
-    try {
-      await sendTranslate(selection!.text, lang, 'gemini', apiKey, aiModel);
-    } catch { /* ignore */ }
   };
 
   const doAddToSidebar = () => {
+    if (selection && selection.text) {
+      const ctx = `> ${selection.text.trim()}\n\n`;
+      window.dispatchEvent(new CustomEvent('append-chat-input', { detail: ctx }));
+    }
     closeContextMenu();
     openSidebar();
   };
@@ -101,6 +120,7 @@ export function ContextMenu({ onSaveHighlight }: ContextMenuProps) {
       className="ctx-root"
       style={{ left: x, top: y }}
       onContextMenu={e => e.preventDefault()}
+      onMouseDown={e => e.preventDefault()}
     >
       {/* AI actions */}
       <button className="ctx-item ctx-item--ai" onClick={doAddToSidebar}>
@@ -112,28 +132,84 @@ export function ContextMenu({ onSaveHighlight }: ContextMenuProps) {
 
       <div className="ctx-separator" />
 
-      <button className="ctx-item" onClick={() => doQuickAction('summarize')} disabled={!hasText || !hasKey}>
-        <span className="ctx-icon">📋</span> Summarize
-      </button>
-      <button className="ctx-item" onClick={() => doQuickAction('eli5')} disabled={!hasText || !hasKey}>
-        <span className="ctx-icon">🧠</span> Simplify (ELI5)
-      </button>
-      <button className="ctx-item" onClick={() => doQuickAction('explain')} disabled={!hasText || !hasKey}>
+      {/* 1. Quick Lookups (1-3 words) */}
+      {wordCount > 0 && wordCount <= 3 && (
+        <>
+          <button className="ctx-item" onClick={() => doQuickAction('define')} disabled={!isKeyReady}>
+            <span className="ctx-icon">📖</span> Define
+          </button>
+          <button className="ctx-item" onClick={() => doQuickAction('encyclopedia')} disabled={!isKeyReady}>
+            <span className="ctx-icon">🏛️</span> Encyclopedia Lookup
+          </button>
+          <div className="ctx-separator" />
+        </>
+      )}
+
+      {/* 2. Standard Summarization & Explanation */}
+      {wordCount > 3 && (
+        <>
+          <button className="ctx-item" onClick={() => doQuickAction('summarize')} disabled={!isKeyReady}>
+            <span className="ctx-icon">📋</span> Summarize
+          </button>
+          <button className="ctx-item" onClick={() => doQuickAction('eli5')} disabled={!isKeyReady}>
+            <span className="ctx-icon">🧠</span> Simplify (ELI5)
+          </button>
+        </>
+      )}
+      <button className="ctx-item" onClick={() => doQuickAction('explain')} disabled={!hasText || !isKeyReady}>
         <span className="ctx-icon">💡</span> Explain
       </button>
-      <button className="ctx-item" onClick={() => doQuickAction('shorten')} disabled={!hasText || !hasKey}>
-        <span className="ctx-icon">✂️</span> Make Shorter
-      </button>
-      <button className="ctx-item" onClick={() => doQuickAction('lengthen')} disabled={!hasText || !hasKey}>
-        <span className="ctx-icon">📝</span> Make Longer
-      </button>
-      <button className="ctx-item" onClick={() => doQuickAction('grammar')} disabled={!hasText || !hasKey}>
+      <button className="ctx-item" onClick={() => doQuickAction('grammar')} disabled={!hasText || !isKeyReady}>
         <span className="ctx-icon">✅</span> Fix Grammar
       </button>
 
+      <div className="ctx-separator" />
+
+      {/* 3. Rewrite Submenu */}
+      <div 
+        className={`ctx-item ctx-item--parent ${showRewriteSub ? 'active' : ''} ${(!hasText || !isKeyReady) ? 'disabled' : ''}`}
+        style={{ position: 'relative' }}
+        onMouseEnter={() => setShowRewriteSub(true)}
+        onMouseLeave={() => setShowRewriteSub(false)}
+      >
+        <span className="ctx-icon">✍️</span> Rewrite
+        <span className="ctx-arrow">▶</span>
+        {showRewriteSub && (
+          <div className="ctx-submenu">
+            <button className="ctx-item" onClick={() => doQuickAction('professional')}>Professional</button>
+            <button className="ctx-item" onClick={() => doQuickAction('casual')}>Friendly / Casual</button>
+            <button className="ctx-item" onClick={() => doQuickAction('academic')}>Academic</button>
+            <button className="ctx-item" onClick={() => doQuickAction('concise')}>Make Concise</button>
+            <div className="ctx-separator" />
+            <button className="ctx-item" onClick={() => doQuickAction('shorten')}>Make Shorter</button>
+            <button className="ctx-item" onClick={() => doQuickAction('lengthen')}>Make Longer</button>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Study Tools Submenu */}
+      {wordCount > 3 && (
+        <div 
+          className={`ctx-item ctx-item--parent ${showStudySub ? 'active' : ''} ${(!hasText || !isKeyReady) ? 'disabled' : ''}`}
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setShowStudySub(true)}
+          onMouseLeave={() => setShowStudySub(false)}
+        >
+          <span className="ctx-icon">🎓</span> Study Tools
+          <span className="ctx-arrow">▶</span>
+          {showStudySub && (
+            <div className="ctx-submenu">
+              <button className="ctx-item" onClick={() => doQuickAction('takeaways')}>Key Takeaways</button>
+              <button className="ctx-item" onClick={() => doQuickAction('flashcard')}>Generate Flashcard</button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Translate submenu */}
-      <div
-        className="ctx-item ctx-item--sub"
+      <div 
+        className={`ctx-item ctx-item--parent ${showTranslateSub ? 'active' : ''} ${(!hasText || !isKeyReady) ? 'disabled' : ''}`}
+        style={{ position: 'relative' }}
         onMouseEnter={() => setShowTranslateSub(true)}
         onMouseLeave={() => setShowTranslateSub(false)}
       >

@@ -4,18 +4,39 @@ import './ModelSelector.css';
 export interface ModelOption {
   id: string;
   label: string;
-  provider: 'gemini' | 'openai' | 'claude' | 'ollama';
+  provider: 'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek';
 }
 
-const MODEL_GROUPS: { label: string; provider: ModelOption['provider']; models: { id: string; label: string }[] }[] = [
+export const MODEL_GROUPS: { label: string; provider: ModelOption['provider']; models: { id: string; label: string }[] }[] = [
   {
     label: 'Google Gemini',
     provider: 'gemini',
     models: [
       { id: 'gemini-3.6-flash',   label: 'Gemini 3.6 Flash' },
-      { id: 'gemini-2.0-flash',   label: 'Gemini 2.0 Flash' },
-      { id: 'gemini-1.5-pro',     label: 'Gemini 1.5 Pro' },
-      { id: 'gemini-1.5-flash',   label: 'Gemini 1.5 Flash' },
+      { id: 'gemini-3.5-flash',   label: 'Gemini 3.5 Flash' },
+      { id: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite' },
+      { id: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash-Lite' },
+      { id: 'gemini-2.5-flash',   label: 'Gemini 2.5 Flash' },
+      { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite' },
+      { id: 'gemini-3.1-pro',     label: 'Gemini 3.1 Pro' },
+      { id: 'gemini-3-flash',     label: 'Gemini 3 Flash' },
+      { id: 'gemini-2.5-pro',     label: 'Gemini 2.5 Pro' },
+    ],
+  },
+  {
+    label: 'Groq (Fast & Free)',
+    provider: 'groq',
+    models: [
+      { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B' },
+      { id: 'mixtral-8x7b-32768',      label: 'Mixtral 8x7B' },
+    ],
+  },
+  {
+    label: 'DeepSeek (Affordable)',
+    provider: 'deepseek',
+    models: [
+      { id: 'deepseek-chat',     label: 'DeepSeek V3' },
+      { id: 'deepseek-reasoner', label: 'DeepSeek R1' },
     ],
   },
   {
@@ -42,6 +63,15 @@ const MODEL_GROUPS: { label: string; provider: ModelOption['provider']; models: 
     ],
   },
 ];
+
+export function getProviderForModel(modelId: string): ModelOption['provider'] {
+  for (const group of MODEL_GROUPS) {
+    if (group.models.some(m => m.id === modelId)) {
+      return group.provider;
+    }
+  }
+  return 'gemini'; // default fallback
+}
 
 interface ModelSelectorProps {
   value: string;

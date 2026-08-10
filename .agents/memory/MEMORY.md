@@ -61,3 +61,4 @@
 - [reference] Phase 4.5 Search Fix: COMPLETE & verified. Refactored search navigation to use robust DOM polling and scrollIntoView, fixing Spread Mode offsets. → booksage-project.md
 - [reference] Phase 6 AI Copilot: COMPLETE & verified. Integrated CopilotPopup, ContextMenu, and CopilotSidebar into Reader and Notes, plus full-screen AIChatView studio. → booksage-project.md
 - [reference] Phase 6 Copilot Extensions: COMPLETE. Added Voice Input, global Copilot Orb, and checked off Phase 6 in tracker. → booksage-project.md
+- [reference] Phase 6 Copilot Bug Fixes: COMPLETE. Fixed Context Menu visual state, Sidebar crash, and Add to Chat Context data passing. → booksage-project.md

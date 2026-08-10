@@ -13,15 +13,15 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  background: var(--bs-surface);
+  background: #2e2e2e;
   border: 1px solid var(--bs-border, #3a3a3a);
   border-radius: 6px;
-  color: var(--bs-text, #e0e0e0);
+  color: #e0e0e0;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
   white-space: nowrap;
 }
-.ms-trigger:hover { border-color: var(--bs-accent); background: var(--bs-panel); }
+.ms-trigger:hover { border-color: var(--bs-accent); background: #242424; }
 
 .ms-dot {
   width: 7px;
@@ -40,7 +40,7 @@
   bottom: calc(100% + 6px);
   left: 0;
   min-width: 200px;
-  background: var(--bs-panel);
+  background: #242424;
   border: 1px solid var(--bs-border, #3a3a3a);
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
@@ -67,12 +67,12 @@
   padding: 7px 12px;
   background: none;
   border: none;
-  color: var(--bs-text, #e0e0e0);
+  color: #e0e0e0;
   cursor: pointer;
   font-size: 0.82rem;
   transition: background 0.1s;
 }
-.ms-option:hover { background: var(--bs-surface); }
+.ms-option:hover { background: #2e2e2e; }
 .ms-option--active { color: var(--bs-accent); font-weight: 600; }
 
 .ms-needs-key {

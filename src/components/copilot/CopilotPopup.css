@@ -11,15 +11,64 @@
   box-shadow: 0 16px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,150,136,0.15);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   animation: cpp-in 0.18s cubic-bezier(0.34,1.56,0.64,1);
   font-family: var(--bs-font, 'Inter', sans-serif);
   font-size: 0.85rem;
+  /* Manual resizer */
+  min-width: 320px;
+  min-height: 250px;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.cpp-resizer {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  z-index: 10000;
+  border-bottom-right-radius: 14px;
+}
+.cpp-resizer::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 2px solid rgba(255,255,255,0.2);
+  border-right: 2px solid rgba(255,255,255,0.2);
+}
+.cpp-resizer:hover::after {
+  border-color: var(--bs-accent);
 }
 
 @keyframes cpp-in {
   from { opacity: 0; transform: scale(0.92) translateY(-8px); }
   to   { opacity: 1; transform: none; }
+}
+
+/* ── Pill Button ── */
+.cpp-pill {
+  background: var(--bs-copilot-bg, #1e2a2a);
+  border: 1px solid var(--bs-accent, #009688);
+  border-radius: 20px;
+  color: var(--bs-accent, #009688);
+  font-family: var(--bs-font, 'Inter', sans-serif);
+  font-size: 0.94em;
+  font-weight: 600;
+  padding: 6px 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,150,136,0.15);
+  cursor: pointer;
+  animation: cpp-in 0.15s cubic-bezier(0.34,1.56,0.64,1);
+  transition: transform 0.1s, background 0.15s;
+  user-select: none;
+}
+.cpp-pill:hover {
+  background: rgba(0,150,136,0.15);
+  transform: scale(1.05);
 }
 
 /* ── Header ── */
@@ -31,16 +80,32 @@
   cursor: grab;
   background: rgba(0,150,136,0.08);
   border-bottom: 1px solid rgba(0,150,136,0.2);
+  border-radius: 14px 14px 0 0;
   user-select: none;
 }
 .cpp-header:active { cursor: grabbing; }
 
-.cpp-drag-icon { color: #555; font-size: 1rem; flex-shrink: 0; }
-.cpp-title { flex: 1; font-weight: 700; color: var(--bs-accent, #009688); font-size: 0.82rem; letter-spacing: 0.03em; }
+.cpp-drag-icon { color: #555; font-size: 1.17em; flex-shrink: 0; }
+.cpp-title { flex: 1; font-weight: 700; color: var(--bs-accent, #009688); font-size: 0.96em; letter-spacing: 0.03em; }
+.cpp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cpp-font-btn {
+  background: none; border: none; color: #888; font-size: 0.9em;
+  font-family: monospace; font-weight: bold;
+  cursor: pointer; line-height: 1; padding: 4px; border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.cpp-font-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
 .cpp-close {
-  background: none; border: none; color: #888; font-size: 1rem;
+  background: none; border: none; color: #888; font-size: 1.17em;
   cursor: pointer; line-height: 1; padding: 2px 4px; border-radius: 4px;
   transition: color 0.15s, background 0.15s;
+  margin-left: 4px;
 }
 .cpp-close:hover { color: #fff; background: rgba(255,255,255,0.08); }
 
@@ -54,7 +119,7 @@
   border-bottom: 1px solid #2a3a3a;
 }
 .cpp-context-label {
-  font-size: 0.68rem;
+  font-size: 0.8em;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -63,7 +128,7 @@
   margin-top: 2px;
 }
 .cpp-context-text {
-  font-size: 0.78rem;
+  font-size: 0.91em;
   color: #aaa;
   font-style: italic;
   line-height: 1.4;
@@ -78,12 +143,12 @@
   border-bottom: 1px solid #2a3a3a;
 }
 .cpp-quick-actions button {
-  background: var(--bs-surface, #2e2e2e);
+  background: #2e2e2e;
   border: 1px solid #3a3a3a;
   border-radius: 20px;
-  color: var(--bs-text, #d0d0d0);
+  color: #d0d0d0;
   padding: 4px 10px;
-  font-size: 0.74rem;
+  font-size: 0.87em;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
@@ -94,7 +159,7 @@
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  background: var(--bs-panel, #242424);
+  background: #242424;
   border: 1px solid #3a3a3a;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
@@ -105,9 +170,9 @@
 .cpp-translate-menu button {
   display: block; width: 100%; text-align: left;
   padding: 6px 12px; border-radius: 0; border: none;
-  background: none; font-size: 0.8rem;
+  background: none; font-size: 0.94em;
 }
-.cpp-translate-menu button:hover { background: var(--bs-surface); }
+.cpp-translate-menu button:hover { background: #2e2e2e; }
 
 /* ── Input ── */
 .cpp-input-row {
@@ -118,12 +183,12 @@
 }
 .cpp-input {
   flex: 1;
-  background: var(--bs-surface, #2e2e2e);
+  background: #2e2e2e;
   border: 1px solid #3a3a3a;
   border-radius: 8px;
-  color: var(--bs-text, #e0e0e0);
+  color: #e0e0e0;
   padding: 8px 10px;
-  font-size: 0.82rem;
+  font-size: 0.96em;
   resize: none;
   outline: none;
   font-family: inherit;
@@ -136,7 +201,7 @@
   border: none;
   border-radius: 8px;
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 1.29em;
   width: 36px;
   height: 36px;
   cursor: pointer;
@@ -172,7 +237,7 @@
 .cpp-error {
   padding: 8px 12px;
   color: #f44336;
-  font-size: 0.8rem;
+  font-size: 0.94em;
   background: rgba(244,67,54,0.08);
   border-top: 1px solid rgba(244,67,54,0.2);
 }
@@ -180,14 +245,15 @@
 /* ── Response ── */
 .cpp-response {
   border-top: 1px solid #2a3a3a;
-  max-height: 280px;
+  flex: 1;
   overflow-y: auto;
+  min-height: 80px;
 }
 .cpp-response-content {
   padding: 10px 12px;
-  font-size: 0.83rem;
+  font-size: 0.97em;
   line-height: 1.6;
-  color: var(--bs-text, #d8d8d8);
+  color: #e0e0e0;
 }
 .cpp-response-content p { margin: 0 0 6px; }
 .cpp-response-content p:last-child { margin-bottom: 0; }
@@ -197,7 +263,7 @@
   color: var(--bs-code-text, #e05252);
   padding: 1px 5px;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.94em;
 }
 .cpp-response-content ul, .cpp-response-content ol {
   margin: 4px 0;
@@ -211,13 +277,13 @@
   flex-wrap: wrap;
 }
 .cpp-response-actions button {
-  background: var(--bs-surface);
+  background: #2e2e2e;
   border: 1px solid #3a3a3a;
   border-radius: 6px;
   color: #aaa;
   padding: 4px 10px;
-  font-size: 0.74rem;
+  font-size: 0.87em;
   cursor: pointer;
   transition: all 0.15s;
 }
-.cpp-response-actions button:hover { background: var(--bs-panel); color: #fff; border-color: var(--bs-accent); }
+.cpp-response-actions button:hover { background: #242424; color: #fff; border-color: var(--bs-accent); }

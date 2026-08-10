@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useChatStore, CopilotPersona } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
+import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector } from '../copilot/ModelSelector';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import './AIChatView.css';
@@ -31,11 +32,12 @@ export function AIChatView() {
     activeSession, createSession, setActiveSession, deleteSession,
     sendMessage, loadSessions, persona, setPersona,
   } = useChatStore();
-  const { bookId, currentBookTitle, apiKey, aiModel, setAiModel, chapters } = useBookStore();
+  const { bookId, currentBookTitle, aiModel, setAiModel, chapters } = useBookStore();
+  const { getKey } = useApiKeys();
 
   const [input, setInput] = useState('');
   const [model, setModel] = useState(aiModel);
-  const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama'>('gemini');
+  const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek'>('gemini');
   const [copied, setCopied] = useState<string | null>(null);
   const [contextMode, setContextMode] = useState<'book' | 'chapter'>('book');
   const { isSupported, isListening, transcript, toggleListening, resetTranscript } = useSpeechRecognition();
@@ -73,7 +75,11 @@ export function AIChatView() {
 
   const handleSend = async (text?: string) => {
     const msg = (text ?? input).trim();
-    if (!msg || !apiKey || isLoading) return;
+    const apiKey = getKey(provider);
+    if (!msg || !apiKey || isLoading) {
+      if (!apiKey) alert(`Please configure your ${provider} API key in Settings.`);
+      return;
+    }
 
     let sess = session;
     if (!sess && bookId) {

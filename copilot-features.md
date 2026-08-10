@@ -26,103 +26,103 @@
 ### 1. Text Selection → Copilot Popup (`CopilotPopup.tsx`)
 *Inspired by: Readwise Ghostreader, VS Code Copilot, Notion AI*
 
-- [ ] Detect text selection via `mouseup` in BookReader AND NotesViewer
-- [ ] Show a small floating pill button `✦ Ask AI` just above the selection anchor
-- [ ] Pill button dismisses on click-away or `Esc`
-- [ ] Clicking pill opens the CopilotPopup panel:
-  - [ ] Draggable (drag handle at top)
-  - [ ] Close button `[✕]`
-  - [ ] "Ask about this..." textarea pre-seeded with selected text as context
-  - [ ] Model selector mini-dropdown (inline, compact)
-  - [ ] Send button (`Enter` to submit)
-  - [ ] AI response renders with `react-markdown` inside the popup
-  - [ ] Streaming response display (character-by-character reveal)
-  - [ ] Popup remembers position between opens in the same session
-- [ ] Smart viewport clamping: popup flips above/below selection to stay on screen
+- [x] Detect text selection via `mouseup` in BookReader AND NotesViewer
+- [x] Show a small floating pill button `✦ Ask AI` just above the selection anchor
+- [x] Pill button dismisses on click-away or `Esc`
+- [x] Clicking pill opens the CopilotPopup panel:
+  - [x] Draggable (drag handle at top)
+  - [x] Close button `[✕]`
+  - [x] "Ask about this..." textarea pre-seeded with selected text as context
+  - [x] Model selector mini-dropdown (inline, compact)
+  - [x] Send button (`Enter` to submit)
+  - [x] AI response renders with `react-markdown` inside the popup
+  - [x] Streaming response display (character-by-character reveal)
+  - [x] Popup remembers position between opens in the same session
+- [x] Smart viewport clamping: popup flips above/below selection to stay on screen
 
 ### 2. Right-Click Context Menu (`ContextMenu.tsx`)
 *Inspired by: Readwise, Notion AI, Microsoft Edge Copilot*
 
-- [ ] Custom right-click menu replacing native browser menu in BookReader + NotesViewer
-- [ ] Menu items:
-  - [ ] **✦ Add to Chat Context** — appends selected text to sidebar chat context
-  - [ ] **💬 Quick Ask** — opens CopilotPopup with selected text
-  - [ ] `──────────────`
-  - [ ] **📋 Summarize** — one-click summarization in popup
-  - [ ] **🧠 Simplify (ELI5)** — "Explain like I'm 5" in popup
-  - [ ] **💡 Explain** — detailed concept explanation in popup
-  - [ ] **✂️ Make Shorter** — condense the selected text
-  - [ ] **📝 Make Longer** — expand/elaborate the selected text
-  - [ ] **✅ Fix Grammar** — grammar and spelling correction
-  - [ ] **🌐 Translate to...** — submenu with 10 common languages
-  - [ ] `──────────────`
-  - [ ] **📌 Save as Highlight** — creates highlight annotation (bridges Phase 4.5)
-  - [ ] **📋 Copy** — native copy action
-- [ ] Menu auto-closes on any click outside
-- [ ] Quick-action items pre-fill the popup and auto-send (no extra click needed)
+- [x] Custom right-click menu replacing native browser menu in BookReader + NotesViewer
+- [x] Menu items:
+  - [x] **✦ Add to Chat Context** — appends selected text to sidebar chat context
+  - [x] **💬 Quick Ask** — opens CopilotPopup with selected text
+  - [x] `──────────────`
+  - [x] **📋 Summarize** — one-click summarization in popup
+  - [x] **🧠 Simplify (ELI5)** — "Explain like I'm 5" in popup
+  - [x] **💡 Explain** — detailed concept explanation in popup
+  - [x] **✂️ Make Shorter** — condense the selected text
+  - [x] **📝 Make Longer** — expand/elaborate the selected text
+  - [x] **✅ Fix Grammar** — grammar and spelling correction
+  - [x] **🌐 Translate to...** — submenu with 10 common languages
+  - [x] `──────────────`
+  - [x] **📌 Save as Highlight** — creates highlight annotation (bridges Phase 4.5)
+  - [x] **📋 Copy** — native copy action
+- [x] Menu auto-closes on any click outside
+- [x] Quick-action items pre-fill the popup and auto-send (no extra click needed)
 
 ### 3. Copilot Sidebar (`CopilotSidebar.tsx`)
 *Inspired by: VS Code GitHub Copilot Chat, Readwise Reader sidebar*
 
-- [ ] Collapsible right panel (default width: 320px, resizable)
-- [ ] Toggle button in BookReader + NotesViewer toolbars
-- [ ] Panel sections:
-  - [ ] **Context Badge** — shows currently loaded context: book title + chapter name
-  - [ ] **Chat History** — scrollable message thread (user + AI alternating bubbles)
-  - [ ] **Input Area** — multiline textarea + Send button + model selector
-  - [ ] **Clear Chat** button — resets history for current session
-- [ ] Chat persists while navigating between pages/chapters (session-level)
-- [ ] Context auto-updates when chapter changes in NotesViewer
-- [ ] "Context: [Chapter Name]" badge clickable → opens context details modal
-- [ ] Loading spinner (animated dots) while AI is responding
-- [ ] Copy button on every AI message bubble
-- [ ] "Regenerate" button on last AI message
+- [x] Collapsible right panel (default width: 320px, resizable)
+- [x] Toggle button in BookReader + NotesViewer toolbars
+- [x] Panel sections:
+  - [x] **Context Badge** — shows currently loaded context: book title + chapter name
+  - [x] **Chat History** — scrollable message thread (user + AI alternating bubbles)
+  - [x] **Input Area** — multiline textarea + Send button + model selector
+  - [x] **Clear Chat** button — resets history for current session
+- [x] Chat persists while navigating between pages/chapters (session-level)
+- [x] Context auto-updates when chapter changes in NotesViewer
+- [x] "Context: [Chapter Name]" badge clickable → opens context details modal
+- [x] Loading spinner (animated dots) while AI is responding
+- [x] Copy button on every AI message bubble
+- [x] "Regenerate" button on last AI message
 
 ### 4. Full AIChatView (`AIChatView.tsx` — View 5)
 *Inspired by: ChatPDF, Claude Web, Perplexity*
 
-- [ ] Full-screen chat replacing the current placeholder stub
-- [ ] Three-column layout:
-  - [ ] **Left**: Book + Chapter context selector (which book/chapters to include)
-  - [ ] **Center**: Chat thread with message history
-  - [ ] **Right**: Session metadata + model info + clear/export actions
-- [ ] "New Chat" button (clears history, keeps context)
-- [ ] Context selector:
-  - [ ] "Entire Book" mode — injects all extracted chapter JSONs
-  - [ ] "Current Chapter" mode — injects only active chapter JSON
-  - [ ] "Custom Selection" mode — multi-select specific chapters
-- [ ] Message bubbles with user avatar + AI avatar
-- [ ] Markdown rendering in AI responses (code blocks, lists, bold, etc.)
-- [ ] Timestamps on messages
-- [ ] Conversation history persisted to SQLite (`chat_sessions` table)
-- [ ] Load previous sessions from history dropdown
+- [x] Full-screen chat replacing the current placeholder stub
+- [x] Three-column layout:
+  - [x] **Left**: Book + Chapter context selector (which book/chapters to include)
+  - [x] **Center**: Chat thread with message history
+  - [x] **Right**: Session metadata + model info + clear/export actions
+- [x] "New Chat" button (clears history, keeps context)
+- [x] Context selector:
+  - [x] "Entire Book" mode — injects all extracted chapter JSONs
+  - [x] "Current Chapter" mode — injects only active chapter JSON
+  - [x] "Custom Selection" mode — multi-select specific chapters
+- [x] Message bubbles with user avatar + AI avatar
+- [x] Markdown rendering in AI responses (code blocks, lists, bold, etc.)
+- [x] Timestamps on messages
+- [x] Conversation history persisted to SQLite (`chat_sessions` table)
+- [x] Load previous sessions from history dropdown
 
 ### 5. Model Selector (`ModelSelector.tsx`)
 *Inspired by: Readwise model picker, LM Studio*
 
-- [ ] Compact dropdown component (used in popup + sidebar + chat view)
-- [ ] Shows all configured providers with live availability dots:
-  - [ ] `gemini-2.0-flash` ● green (if key configured)
-  - [ ] `gemini-1.5-pro` ● green
-  - [ ] `──────────────`
-  - [ ] `gpt-4o` ○ grey (needs API key)
-  - [ ] `gpt-4o-mini` ○ grey
-  - [ ] `──────────────`
-  - [ ] `claude-sonnet-4` ○ grey
-  - [ ] `──────────────`
-  - [ ] `Ollama (local)` ● green (if Ollama running)
-- [ ] Persists last-used model in settingsStore
-- [ ] "Configure Keys" link at bottom → opens SettingsDialog
+- [x] Compact dropdown component (used in popup + sidebar + chat view)
+- [x] Shows all configured providers with live availability dots:
+  - [x] `gemini-2.0-flash` ● green (if key configured)
+  - [x] `gemini-1.5-pro` ● green
+  - [x] `──────────────`
+  - [x] `gpt-4o` ○ grey (needs API key)
+  - [x] `gpt-4o-mini` ○ grey
+  - [x] `──────────────`
+  - [x] `claude-sonnet-4` ○ grey
+  - [x] `──────────────`
+  - [x] `Ollama (local)` ● green (if Ollama running)
+- [x] Persists last-used model in settingsStore
+- [x] "Configure Keys" link at bottom → opens SettingsDialog
 
 ### 6. Python Backend: `chat_message` command
 *Already partially implemented in `ai_chat.py` + `main.py`*
 
-- [ ] Extend `chat_with_context` to support:
-  - [ ] Multi-chapter context injection (concatenate multiple chapter JSONs)
-  - [ ] "Entire book" mode (all chapter summaries + core lessons injected)
-  - [ ] Quick-action prompts (Summarize, ELI5, Explain, etc. as system instructions)
-- [ ] Add `translate_text` command to `main.py` for the Translate action
-- [ ] Add `quick_action` command with `action_type` + `text` params
+- [x] Extend `chat_with_context` to support:
+  - [x] Multi-chapter context injection (concatenate multiple chapter JSONs)
+  - [x] "Entire book" mode (all chapter summaries + core lessons injected)
+  - [x] Quick-action prompts (Summarize, ELI5, Explain, etc. as system instructions)
+- [x] Add `translate_text` command to `main.py` for the Translate action
+- [x] Add `quick_action` command with `action_type` + `text` params
 
 ---
 

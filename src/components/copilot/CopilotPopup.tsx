@@ -3,7 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useChatStore, QuickActionType } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
-import { ModelSelector } from './ModelSelector';
+import { useApiKeys } from '../../stores/apiKeysStore';
+import { ModelSelector, getProviderForModel } from './ModelSelector';
 import './CopilotPopup.css';
 
 const TRANSLATE_LANGS = [
@@ -22,12 +23,16 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
   const {
     showPopup, selection, setShowPopup, setSelection,
     sendQuickAction, sendTranslate, pinInsight,
+    popupSize, setPopupSize,
+    popupFontSize, setPopupFontSize,
+    pendingQuickAction, setPendingQuickAction,
   } = useChatStore();
-  const { apiKey, aiModel, setAiModel } = useBookStore();
+  const { aiModel, setAiModel } = useBookStore();
+  const { getKey } = useApiKeys();
 
   // Local model state (synced from bookStore)
   const [model, setModel] = useState(aiModel);
-  const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama'>('gemini');
+  const [provider, setProvider] = useState<any>(() => getProviderForModel(aiModel));
 
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState('');
@@ -42,12 +47,22 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
   const dragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
+  const lastSelectionText = useRef('');
+
   // Position popup above selection when it appears
   useEffect(() => {
-    if (!showPopup || !selection) return;
+    if (!showPopup || !selection) {
+      lastSelectionText.current = '';
+      return;
+    }
+    
+    // Only reposition if the text actually changed or if this is the first open for this text
+    if (lastSelectionText.current === selection.text) return;
+    lastSelectionText.current = selection.text;
+
     const rect = selection.rect;
-    const w = 400;
-    const h = 300;
+    const w = popupSize.w;
+    const h = popupSize.h;
     let x = rect.left + rect.width / 2 - w / 2;
     let y = rect.top - h - 12;
 
@@ -89,11 +104,38 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     document.addEventListener('mouseup', onUp);
   }, [pos]);
 
+  // Resize handler
+  const resizing = useRef(false);
+  const resizeStart = useRef({ w: 0, h: 0, x: 0, y: 0 });
+  const onResizeStart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    resizing.current = true;
+    resizeStart.current = {
+      w: popupSize.w,
+      h: popupSize.h,
+      x: e.clientX,
+      y: e.clientY
+    };
+    const onMove = (ev: MouseEvent) => {
+      if (!resizing.current) return;
+      const newW = Math.max(320, Math.min(resizeStart.current.w + (ev.clientX - resizeStart.current.x), window.innerWidth * 0.9));
+      const newH = Math.max(250, Math.min(resizeStart.current.h + (ev.clientY - resizeStart.current.y), window.innerHeight * 0.9));
+      setPopupSize(newW, newH);
+    };
+    const onUp = () => { resizing.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [popupSize, setPopupSize]);
+
   const close = () => { setShowPopup(false); setSelection(null); setShowTranslateMenu(false); };
 
   const handleSend = async (promptText?: string) => {
     const text = promptText ?? question;
-    if (!text.trim() || !apiKey) return;
+    const apiKey = getKey(provider);
+    if (!text.trim() || !apiKey) {
+      if (!apiKey) alert(`Please configure your ${provider} API key in Settings.`);
+      return;
+    }
     setIsLoading(true);
     setError('');
     setResponse('');
@@ -111,7 +153,11 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
   };
 
   const handleQuickAction = async (action: QuickActionType) => {
-    if (!selection?.text || !apiKey) return;
+    const apiKey = getKey(provider);
+    if (!selection?.text || !apiKey) {
+      if (!apiKey) alert(`Please configure your ${provider} API key in Settings.`);
+      return;
+    }
     setIsLoading(true);
     setError('');
     setResponse('');
@@ -126,7 +172,11 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
   };
 
   const handleTranslate = async (lang: string) => {
-    if (!selection?.text || !apiKey) return;
+    const apiKey = getKey(provider);
+    if (!selection?.text || !apiKey) {
+      if (!apiKey) alert(`Please configure your ${provider} API key in Settings.`);
+      return;
+    }
     setShowTranslateMenu(false);
     setIsLoading(true);
     setError('');
@@ -157,21 +207,57 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     setAiModel(modelId);
   };
 
-  if (!showPopup || !pos) return null;
+  useEffect(() => {
+    if (showPopup && pendingQuickAction) {
+      const action = pendingQuickAction;
+      setPendingQuickAction(null); // clear it immediately
+      if (action.type === 'action') {
+        handleQuickAction(action.action);
+      } else if (action.type === 'translate') {
+        handleTranslate(action.lang);
+      }
+    }
+  }, [showPopup, pendingQuickAction]);
 
   const hasSelection = !!selection?.text;
+
+  if (!showPopup || !pos) return null;
 
   return (
     <div
       ref={popupRef}
       className="cpp-root"
-      style={{ left: pos.x, top: pos.y }}
+      style={{ 
+        left: pos.x, 
+        top: pos.y, 
+        width: popupSize.w, 
+        height: popupSize.h,
+        fontSize: popupFontSize > 0 ? `${popupFontSize}px` : `${8 + (popupSize.w * 0.014)}px`
+      }}
     >
+      <div className="cpp-resizer" onMouseDown={onResizeStart} />
       {/* ── Header ── */}
       <div className="cpp-header" onMouseDown={onDragStart}>
         <span className="cpp-drag-icon">⠿</span>
         <span className="cpp-title">✦ BookSage Copilot</span>
-        <button className="cpp-close" onClick={close} title="Close">✕</button>
+        <div className="cpp-header-actions" onMouseDown={(e) => e.stopPropagation()}>
+          <button 
+            className="cpp-font-btn" 
+            title="Decrease Font Size"
+            onClick={() => setPopupFontSize((popupFontSize || (8 + (popupSize.w * 0.014))) - 1)}
+          >A-</button>
+          <button 
+            className="cpp-font-btn" 
+            title="Auto Font Size"
+            onClick={() => setPopupFontSize(0)}
+          >A</button>
+          <button 
+            className="cpp-font-btn" 
+            title="Increase Font Size"
+            onClick={() => setPopupFontSize((popupFontSize || (8 + (popupSize.w * 0.014))) + 1)}
+          >A+</button>
+          <button className="cpp-close" onClick={close} title="Close">✕</button>
+        </div>
       </div>
 
       {/* ── Selected text context ── */}

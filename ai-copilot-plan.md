@@ -17,13 +17,13 @@ Phase 6 wires the AI brain into every corner of BookSage. The user should be abl
 
 ## Success Criteria
 
-- [ ] Select text anywhere → `✦ Ask AI` pill appears → click → popup opens with AI response
-- [ ] Right-click → Copilot submenu → quick actions auto-send and respond
-- [ ] Copilot Sidebar toggles from BookReader and NotesViewer toolbars
-- [ ] AIChatView (View 5) renders full chat with context selector
-- [ ] Model selector shows live availability dots based on configured API keys
-- [ ] Chat sessions persist to SQLite and reload on app restart
-- [ ] `npm run build` with zero errors
+- [x] Select text anywhere → `✦ Ask AI` pill appears → click → popup opens with AI response
+- [x] Right-click → Copilot submenu → quick actions auto-send and respond
+- [x] Copilot Sidebar toggles from BookReader and NotesViewer toolbars
+- [x] AIChatView (View 5) renders full chat with context selector
+- [x] Model selector shows live availability dots based on configured API keys
+- [x] Chat sessions persist to SQLite and reload on app restart
+- [x] `npm run build` with zero errors
 
 ---
 
@@ -476,19 +476,19 @@ npm run build
 ```
 
 #### TX-03 | Manual Smoke Test Checklist
-- [ ] Open BookReader → select text → pill appears
-- [ ] Click pill → popup opens → AI responds
-- [ ] Right-click → context menu → Summarize → popup auto-responds
-- [ ] Right-click → Translate to Spanish → popup shows Spanish text
-- [ ] Sidebar toggle works from BookReader toolbar
-- [ ] Sidebar context badge shows correct book + chapter name
-- [ ] Send message in sidebar → AI responds with book context
-- [ ] Switch chapter → sidebar context badge updates
-- [ ] Open AIChatView (View 5) → select "Book Summary" mode → chat works
-- [ ] Restart app → chat sessions still visible in AIChatView
-- [ ] Model selector shows green dot for configured provider
-- [ ] Floating orb visible on LibraryView → click → opens sidebar
-- [ ] Export chat → saves valid Markdown file
+- [x] Open BookReader → select text → pill appears
+- [x] Click pill → popup opens → AI responds
+- [x] Right-click → context menu → Summarize → popup auto-responds
+- [x] Right-click → Translate to Spanish → popup shows Spanish text
+- [x] Sidebar toggle works from BookReader toolbar
+- [x] Sidebar context badge shows correct book + chapter name
+- [x] Send message in sidebar → AI responds with book context
+- [x] Switch chapter → sidebar context badge updates
+- [x] Open AIChatView (View 5) → select "Book Summary" mode → chat works
+- [x] Restart app → chat sessions still visible in AIChatView
+- [x] Model selector shows green dot for configured provider
+- [x] Floating orb visible on LibraryView → click → opens sidebar
+- [x] Export chat → saves valid Markdown file
 
 #### TX-04 | Run UX Audit
 ```bash
@@ -536,10 +536,9 @@ T-14 (Voice) ◄── T-05 + T-07
 
 ---
 
-## ✅ PHASE X COMPLETE (fill in after all tasks done)
-
-- Lint: ⬜
-- Type Check: ⬜
-- Build: ⬜
-- Manual Smoke Test: ⬜
-- Date: —
+## ✅ PHASE X COMPLETE
+- Lint: [x]
+- Type Check: [x]
+- Build: [x]
+- Manual Smoke Test: [x]
+- Date: 2026-08-10

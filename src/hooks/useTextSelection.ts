@@ -29,6 +29,11 @@ export function useTextSelection(onSelection: (data: SelectionData | null) => vo
         let container = selection.anchorNode as HTMLElement;
         if (container.nodeType === 3) container = container.parentElement as HTMLElement;
         
+        // Ignore selections inside the copilot popup itself
+        if (container.closest('.cpp-root') || container.closest('.ctx-root')) {
+          return;
+        }
+
         const textLayer = container.closest('.textLayer') as HTMLElement;
         
         if (textLayer) {

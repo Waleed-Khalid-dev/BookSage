@@ -12,7 +12,11 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ContextMode = 'chapter' | 'book' | 'custom';
-export type QuickActionType = 'summarize' | 'eli5' | 'explain' | 'shorten' | 'lengthen' | 'grammar' | 'rephrase';
+export type QuickActionType = 
+  | 'summarize' | 'eli5' | 'explain' | 'shorten' | 'lengthen' | 'grammar' | 'rephrase'
+  | 'define' | 'encyclopedia'
+  | 'professional' | 'casual' | 'concise' | 'academic'
+  | 'takeaways' | 'flashcard';
 export type CopilotPersona = 'scholar' | 'teacher' | 'coach' | 'devil';
 
 export interface ChatMessage extends ChatMessageRecord {
@@ -48,6 +52,9 @@ interface ChatState {
   showPopup: boolean;
   showContextMenu: boolean;
   contextMenuPos: { x: number; y: number };
+  popupSize: { w: number; h: number };
+  popupFontSize: number;
+  pendingQuickAction: { type: 'action', action: QuickActionType } | { type: 'translate', lang: string } | null;
 
   // Selection state (shared between BookReader & NotesViewer)
   selection: SelectionAnchor | null;
@@ -96,6 +103,9 @@ interface ChatState {
   openContextMenu: (x: number, y: number) => void;
   closeContextMenu: () => void;
   setPersona: (p: CopilotPersona) => void;
+  setPopupSize: (w: number, h: number) => void;
+  setPopupFontSize: (size: number) => void;
+  setPendingQuickAction: (action: { type: 'action', action: QuickActionType } | { type: 'translate', lang: string } | null) => void;
 }
 
 // ─── Persona prompts ──────────────────────────────────────────────────────────
@@ -117,6 +127,14 @@ const QUICK_ACTION_PROMPTS: Record<QuickActionType, string> = {
   lengthen:  'Expand and elaborate on the following text with more detail, examples, and context:\n\n',
   grammar:   'Fix all grammar, spelling, and punctuation issues in the following text. Return only the corrected text:\n\n',
   rephrase:  'Rephrase the following text in a different style while preserving the meaning:\n\n',
+  define:       'Provide a concise dictionary definition for the following term, including its part of speech:\n\n',
+  encyclopedia: 'Provide a brief, Wikipedia-style encyclopedia summary for the following person, place, or concept:\n\n',
+  professional: 'Rewrite the following text in a highly professional, formal business tone:\n\n',
+  casual:       'Rewrite the following text in a friendly, casual, and approachable tone:\n\n',
+  concise:      'Rewrite the following text to be as concise and punchy as possible, removing all fluff:\n\n',
+  academic:     'Rewrite the following text in an academic, scholarly tone, using precise terminology:\n\n',
+  takeaways:    'Extract the key takeaways from the following text and format them as a bulleted list:\n\n',
+  flashcard:    'Create a study flashcard (Question and Answer) based on the most important concept in the following text:\n\n',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -178,6 +196,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   contextMenuPos: { x: 0, y: 0 },
   selection: null,
   persona: 'scholar',
+  popupSize: { w: 400, h: 300 },
+  popupFontSize: 0, // 0 means dynamic based on width
+  pendingQuickAction: null,
 
   activeSession: () => {
     const { sessions, activeSessionId } = get();
@@ -346,8 +367,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
   toggleSidebar: () => set(state => ({ isSidebarOpen: !state.isSidebarOpen })),
   openSidebar: () => set({ isSidebarOpen: true }),
   setShowPopup: (show) => set({ showPopup: show }),
-  setSelection: (anchor) => set({ selection: anchor, showPopup: !!anchor }),
+  setSelection: (anchor) => set((state) => {
+    // If popup is open, don't clear the context if native selection vanishes (e.g. clicking an input)
+    if (state.showPopup && !anchor) {
+      return {};
+    }
+    if (state.selection?.text === anchor?.text) {
+      return { selection: anchor };
+    }
+    // Update selection but preserve showPopup so the popup doesn't close abruptly
+    return { selection: anchor, showPopup: state.showPopup };
+  }),
   openContextMenu: (x, y) => set({ showContextMenu: true, contextMenuPos: { x, y } }),
   closeContextMenu: () => set({ showContextMenu: false }),
   setPersona: (p) => set({ persona: p }),
+  setPopupSize: (w, h) => set({ popupSize: { w, h } }),
+  setPopupFontSize: (size) => set({ popupFontSize: size }),
+  setPendingQuickAction: (action) => set({ pendingQuickAction: action }),
 }));
