@@ -101,9 +101,11 @@ export function ContinuousReader({ onContextMenuRequest }: { onContextMenuReques
   
   // Create a stable callback for setPage so we don't break LazyPDFPage memoization
   const setPageRef = useRef(pdfState.setPage);
+  const scaleRef = useRef(pdfState.scale);
   useEffect(() => {
     setPageRef.current = pdfState.setPage;
-  }, [pdfState.setPage]);
+    scaleRef.current = pdfState.scale;
+  }, [pdfState.setPage, pdfState.scale]);
   
   const handlePageVisible = React.useCallback((pageNum: number) => {
     setPageRef.current(pageNum);
@@ -123,7 +125,27 @@ export function ContinuousReader({ onContextMenuRequest }: { onContextMenuReques
       if (e.detail && e.detail.page) {
         const el = document.getElementById(`pdf-page-${e.detail.page}`);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (e.detail.rect) {
+            const cropScale = 1 + (useBookStore.getState().pdfMarginCrop || 0) / 100;
+            const visualScale = (scaleRef.current || 1.2) * cropScale;
+            const relativeTop = e.detail.rect.top * visualScale;
+            
+            // Scroll the page into view at the top first
+            el.scrollIntoView({ behavior: 'auto', block: 'start' });
+            
+            // Then scroll the container down by the relative offset
+            setTimeout(() => {
+               let container = el.parentElement;
+               while (container && container.scrollHeight === container.clientHeight && container !== document.body) {
+                  container = container.parentElement;
+               }
+               if (container) {
+                  container.scrollBy({ top: Math.max(0, relativeTop - 150), behavior: 'smooth' });
+               }
+            }, 50);
+          } else {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }
       }
     };

@@ -31,7 +31,7 @@ export function SpreadReader({ onContextMenuRequest }: SpreadReaderProps) {
       style={{ 
         display: 'flex', 
         justifyContent: 'center', 
-        alignItems: 'center',
+        alignItems: 'flex-start',
         padding: '2rem',
         minHeight: '100%',
         perspective: '2000px',

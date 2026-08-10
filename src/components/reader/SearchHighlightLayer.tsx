@@ -20,6 +20,7 @@ export function SearchHighlightLayer({ pageNumber, scale = 1.0 }: SearchHighligh
         return (
           <div
             key={`search-${pageNumber}-${idx}`}
+            id={isActive ? 'active-search-highlight' : undefined}
             style={{
               position: 'absolute',
               top: `${rect.top * scale}px`,

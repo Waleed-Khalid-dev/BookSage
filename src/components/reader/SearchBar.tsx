@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { useBookStore } from '../../stores/bookStore';
+import { useUiStore } from '../../stores/uiStore';
 
 export function SearchBar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +22,10 @@ export function SearchBar() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 'f') {
+        const currentFocus = useUiStore.getState().focusedPanel;
+        // In full-screen reader mode, it's fine. In split view, if notes has focus, ignore.
+        if (currentFocus === 'notes') return;
+        
         e.preventDefault();
         setIsOpen(true);
         setTimeout(() => inputRef.current?.focus(), 50);
@@ -67,8 +72,8 @@ export function SearchBar() {
       for (const pageMatches of searchResults) {
         for (const rect of pageMatches.rects) {
           if (rect.matchIndex === currentSearchIndex) {
-            window.dispatchEvent(new CustomEvent('search-jump', { detail: { page: pageMatches.page } }));
-            break;
+            window.dispatchEvent(new CustomEvent('search-jump', { detail: { page: pageMatches.page, rect: rect } }));
+            return;
           }
         }
       }

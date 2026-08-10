@@ -33,7 +33,7 @@ export function BookReader() {
     drawingTool, setDrawingTool, eraserSize, setEraserSize, penSize, setPenSize,
     pdfTintColor, pdfTextColor, isWordHighlightingEnabled
   } = useBookStore();
-  const { isTtsPlaying, setActiveSelection } = useUiStore();
+  const { isTtsPlaying, setActiveSelection, setFocusedPanel } = useUiStore();
   const pdfState = usePDF(pdfPath, lastPage);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('single');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -198,9 +198,35 @@ export function BookReader() {
     }
   };
 
+  // Use a ref to store latest state so event listeners don't need to re-attach
+  const readerStateRef = useRef({
+    currentPage: pdfState.currentPage,
+    totalPages: pdfState.totalPages,
+    scale: pdfState.scale,
+    setPage: pdfState.setPage,
+    setScale: pdfState.setScale,
+    viewMode,
+    isTtsPlaying,
+    isWordHighlightingEnabled,
+  });
+
+  useEffect(() => {
+    readerStateRef.current = {
+      currentPage: pdfState.currentPage,
+      totalPages: pdfState.totalPages,
+      scale: pdfState.scale,
+      setPage: pdfState.setPage,
+      setScale: pdfState.setScale,
+      viewMode,
+      isTtsPlaying,
+      isWordHighlightingEnabled,
+    };
+  });
+
   // Keyboard & Click navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const state = readerStateRef.current;
       if (e.key === 'Escape') {
         setContextMenu(null);
         setEditingNote(null);
@@ -210,12 +236,30 @@ export function BookReader() {
 
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        const step = (viewMode === 'spread' && pdfState.currentPage > 1) ? 2 : 1;
-        handlePageChangeRequest(pdfState.currentPage + step);
+        const step = (state.viewMode === 'spread' && state.currentPage > 1) ? 2 : 1;
+        const newPage = state.currentPage + step;
+        
+        if (state.viewMode === 'single' && state.isTtsPlaying && state.isWordHighlightingEnabled) return;
+        if (newPage >= 1 && newPage <= state.totalPages) {
+          state.setPage(newPage);
+          if (state.viewMode === 'continuous') {
+            const el = document.getElementById(`pdf-page-${newPage}`);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        const step = (viewMode === 'spread' && pdfState.currentPage === 2) ? 1 : (viewMode === 'spread' && pdfState.currentPage > 2) ? 2 : 1;
-        handlePageChangeRequest(pdfState.currentPage - step);
+        const step = (state.viewMode === 'spread' && state.currentPage === 2) ? 1 : (state.viewMode === 'spread' && state.currentPage > 2) ? 2 : 1;
+        const newPage = state.currentPage - step;
+        
+        if (state.viewMode === 'single' && state.isTtsPlaying && state.isWordHighlightingEnabled) return;
+        if (newPage >= 1 && newPage <= state.totalPages) {
+          state.setPage(newPage);
+          if (state.viewMode === 'continuous') {
+            const el = document.getElementById(`pdf-page-${newPage}`);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
       } else if (e.key === 'j') {
         // Vim down
         const scrollEl = scrollContainerRef.current;
@@ -231,13 +275,13 @@ export function BookReader() {
       } else if (e.ctrlKey) {
         if (e.key === '=' || e.key === '+') {
           e.preventDefault();
-          pdfState.setScale(prev => Math.min(prev * 1.2, 3.0));
+          state.setScale(prev => Math.min(prev * 1.2, 3.0));
         } else if (e.key === '-') {
           e.preventDefault();
-          pdfState.setScale(prev => Math.max(prev / 1.2, 0.5));
+          state.setScale(prev => Math.max(prev / 1.2, 0.5));
         } else if (e.key === '0') {
           e.preventDefault();
-          pdfState.setScale(1.0);
+          state.setScale(1.0);
         }
       }
     };
@@ -247,22 +291,71 @@ export function BookReader() {
     };
     
     const handleSearchJump = (e: any) => {
+      const state = readerStateRef.current;
       if (e.detail && e.detail.page) {
-        if (viewMode === 'single') {
-          handlePageChangeRequest(e.detail.page);
-        } else if (viewMode === 'continuous') {
+        if (state.viewMode === 'single' || state.viewMode === 'spread') {
+          const newPage = e.detail.page;
+          if (state.viewMode === 'single' && state.isTtsPlaying && state.isWordHighlightingEnabled) return;
+          if (newPage >= 1 && newPage <= state.totalPages) {
+            state.setPage(newPage);
+          }
+          
+          setTimeout(() => {
+            let attempts = 0;
+            const tryScroll = () => {
+              const activeHighlight = document.getElementById('active-search-highlight');
+              if (activeHighlight) {
+                activeHighlight.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+              } else if (attempts < 50) {
+                attempts++;
+                setTimeout(tryScroll, 100);
+              } else {
+                // Fallback if highlight element isn't found
+                const scrollEl = scrollContainerRef.current;
+                if (scrollEl && e.detail.rect) {
+                  const cropScale = 1 + (useBookStore.getState().pdfMarginCrop || 0) / 100;
+                  const visualScale = readerStateRef.current.scale * cropScale;
+                  
+                  const top = e.detail.rect.top * visualScale;
+                  let left = e.detail.rect.left * visualScale;
+                  
+                  if (state.viewMode === 'spread') {
+                    const isRightPage = newPage % 2 !== 0; 
+                    if (isRightPage) {
+                      const leftPageEl = scrollEl.querySelector('.spread-reader > div:first-child') as HTMLElement;
+                      if (leftPageEl) {
+                         left += leftPageEl.offsetWidth;
+                      }
+                    }
+                  }
+                  
+                  scrollEl.scrollTo({ 
+                    top: Math.max(0, top - 150), 
+                    left: Math.max(0, left - 150), 
+                    behavior: 'smooth' 
+                  });
+                }
+              }
+            };
+            tryScroll();
+          }, 50);
+        } else if (state.viewMode === 'continuous') {
           // For continuous, we trigger the native scroll event handled by ContinuousReader
-          window.dispatchEvent(new CustomEvent('continuous-jump', { detail: { page: e.detail.page } }));
+          window.dispatchEvent(new CustomEvent('continuous-jump', { detail: { page: e.detail.page, rect: e.detail.rect } }));
         }
       }
     };
     
     const handleBookSageJump = (e: any) => {
+      const state = readerStateRef.current;
       if (typeof e.detail === 'number') {
         const page = e.detail;
-        if (viewMode === 'single') {
-          handlePageChangeRequest(page);
-        } else if (viewMode === 'continuous') {
+        if (state.viewMode === 'single' || state.viewMode === 'spread') {
+          if (state.viewMode === 'single' && state.isTtsPlaying && state.isWordHighlightingEnabled) return;
+          if (page >= 1 && page <= state.totalPages) {
+            state.setPage(page);
+          }
+        } else if (state.viewMode === 'continuous') {
           window.dispatchEvent(new CustomEvent('continuous-jump', { detail: { page } }));
         }
       }
@@ -278,7 +371,7 @@ export function BookReader() {
       window.removeEventListener('search-jump', handleSearchJump);
       window.removeEventListener('booksage-jump-page', handleBookSageJump);
     };
-  }, [pdfState.currentPage, pdfState.totalPages, viewMode, pdfState.setScale, pdfState.setPage, isTtsPlaying, isWordHighlightingEnabled]);
+  }, []);
 
   // Keep references for event listeners without triggering re-renders
   const setScaleRef = useRef(pdfState.setScale);
@@ -474,7 +567,12 @@ export function BookReader() {
         </svg>
       )}
       
-      <div className="view-container book-reader" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
+      <div 
+        className="view-container book-reader" 
+        style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}
+        onMouseEnter={() => setFocusedPanel('reader')}
+        onClick={() => setFocusedPanel('reader')}
+      >
         <SearchBar />
       
       {!isFocusMode && (
