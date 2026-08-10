@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { invokePython } from '../../services/pythonService';
 import { useBookStore } from '../../stores/bookStore';
 import { useUiStore } from '../../stores/uiStore';
+import { useChatStore } from '../../stores/chatStore';
 import { open } from '@tauri-apps/plugin-dialog';
 import {
   getChapterUserData, saveChapterUserData, getStudiedCountForBook
@@ -11,6 +12,8 @@ import {
 import { ChevronRight, ChevronDown, BookOpen, Lightbulb, Quote, ListChecks, Copy, GraduationCap, FileText, Tag, Maximize2, Zap, Search } from 'lucide-react';
 import { AudioToolbar } from '../reader/AudioToolbar';
 import { NotesSearchBar } from './NotesSearchBar';
+import { CopilotPopup } from '../copilot/CopilotPopup';
+import { ContextMenu as AiContextMenu } from '../copilot/ContextMenu';
 import './NotesViewer.css';
 
 interface ChapterJson {
@@ -65,6 +68,7 @@ function SkeletonLoader() {
 export function NotesViewer() {
   const { chapters, bookId, currentBookTitle } = useBookStore();
   const { setActiveView, setFocusedPanel } = useUiStore();
+  const { setSelection: setCopilotSelection, openContextMenu } = useChatStore();
 
   const [activeChapterIdx, setActiveChapterIdx] = useState(0);
   const [chapterJson, setChapterJson] = useState<ChapterJson | null>(null);
@@ -92,7 +96,8 @@ export function NotesViewer() {
   const [toast, setToast] = useState('');
   const [chapterDiffs, setChapterDiffs] = useState<Record<number, string>>({});
   const [chapterInsights, setChapterInsights] = useState<Record<number, string>>({});
-  const [selectionPill, setSelectionPill] = useState<{ x: number; y: number } | null>(null);
+  // Selection pill is no longer a separate state — handled by CopilotPopup via chatStore
+  // (kept as minimal ref for backward compat)
 
   const notesRef = useRef(userNotes);
   notesRef.current = userNotes;
@@ -249,21 +254,21 @@ export function NotesViewer() {
     return () => window.removeEventListener('keydown', handler);
   }, [doneChapters.length, viewMode, chapterJson?.teachings?.length]);
 
-  // Text selection → Copilot stub pill
+  // Text selection → chatStore (drives CopilotPopup)
   useEffect(() => {
     const handler = () => {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || !sel.toString().trim()) {
-        setSelectionPill(null);
+        setCopilotSelection(null);
         return;
       }
       const range = sel.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      setSelectionPill({ x: rect.left + rect.width / 2, y: rect.top });
+      setCopilotSelection({ text: sel.toString().trim(), rect });
     };
     document.addEventListener('mouseup', handler);
     return () => document.removeEventListener('mouseup', handler);
-  }, []);
+  }, [setCopilotSelection]);
 
   // No book / no chapters states
   if (!bookId) {
@@ -525,6 +530,10 @@ export function NotesViewer() {
       className="notes-viewer"
       onMouseEnter={() => setFocusedPanel('notes')}
       onClick={() => setFocusedPanel('notes')}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        openContextMenu(e.clientX, e.clientY);
+      }}
     >
       {/* Left Sidebar */}
       <div className={`notes-sidebar ${isSidebarOpen ? '' : 'collapsed'}`}>
@@ -626,17 +635,9 @@ export function NotesViewer() {
         {viewMode === 'insights' ? renderKeyInsights() : renderContent()}
       </div>
 
-      {/* Copilot Stub Pill */}
-      {selectionPill && (
-        <div
-          className="notes-copilot-pill"
-          style={{ left: selectionPill.x, top: selectionPill.y }}
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => { showToast('✦ AI Copilot coming in Phase 6'); setSelectionPill(null); }}
-        >
-          ✦ Copilot
-        </div>
-      )}
+      {/* Phase 6: AI Copilot overlays */}
+      <CopilotPopup />
+      <AiContextMenu />
 
       {toast && <Toast message={toast} onDone={() => setToast('')} />}
     </div>

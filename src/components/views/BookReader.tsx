@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useBookStore } from '../../stores/bookStore';
 import { usePDF, PDFContext } from '../../hooks/usePDF';
 import { useUiStore } from '../../stores/uiStore';
+import { useChatStore } from '../../stores/chatStore';
 import { useTextSelection, SelectionData } from '../../hooks/useTextSelection';
 import { PDFCanvas } from '../reader/PDFCanvas';
 import { PageControls } from '../reader/PageControls';
@@ -14,6 +15,9 @@ import { DisplaySettings } from '../reader/DisplaySettings';
 import { AudioToolbar } from '../reader/AudioToolbar';
 import { SearchBar } from '../reader/SearchBar';
 import { ReadingStats } from '../reader/ReadingStats';
+import { CopilotPopup } from '../copilot/CopilotPopup';
+import { ContextMenu as AiContextMenu } from '../copilot/ContextMenu';
+import { CopilotSidebar } from '../copilot/CopilotSidebar';
 import { Search, ChevronRight, PenTool, Undo, Redo, Eraser, Maximize, Minimize } from 'lucide-react';
 
 const hexToRgbNormalized = (hex: string) => {
@@ -27,13 +31,14 @@ const hexToRgbNormalized = (hex: string) => {
 
 export function BookReader() {
   const { 
-    pdfPath, currentBookTitle, lastPage, setLastPage, incrementReadingStats,
+    pdfPath, currentBookTitle, bookId, lastPage, setLastPage, incrementReadingStats,
     isDrawingMode, drawingColor, setIsDrawingMode, setDrawingColor, 
     undoDrawingAction, redoDrawingAction, undoStack, redoStack,
     drawingTool, setDrawingTool, eraserSize, setEraserSize, penSize, setPenSize,
     pdfTintColor, pdfTextColor, isWordHighlightingEnabled
   } = useBookStore();
   const { isTtsPlaying, setActiveSelection, setFocusedPanel } = useUiStore();
+  const { setSelection: setCopilotSelection, openContextMenu, closeContextMenu } = useChatStore();
   const pdfState = usePDF(pdfPath, lastPage);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('single');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -45,7 +50,7 @@ export function BookReader() {
   const lastActivityTime = useRef(Date.now());
   const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
   
-  // Context Menu State
+  // Legacy highlight context menu (right-click on existing highlight)
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, highlightId: string } | null>(null);
   
   // Note Editor State
@@ -54,8 +59,14 @@ export function BookReader() {
   useTextSelection((sel) => {
     setSelection(sel);
     setActiveSelection(sel);
+    // Phase 6: also feed selection into copilot store for popup/context-menu
     if (sel) {
-      // In Phase 6, we'll trigger Copilot popup here alongside highlights
+      const domSel = window.getSelection();
+      const range = domSel && domSel.rangeCount > 0 ? domSel.getRangeAt(0) : null;
+      const rect = range ? range.getBoundingClientRect() : new DOMRect();
+      setCopilotSelection({ text: sel.text, rect });
+    } else {
+      setCopilotSelection(null);
     }
   });
 
@@ -736,6 +747,7 @@ export function BookReader() {
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
           
+          {/* Left annotation sidebar */}
           <div style={{
             width: isSidebarOpen ? '300px' : '0px',
             minWidth: isSidebarOpen ? '300px' : '0px',
@@ -775,19 +787,28 @@ export function BookReader() {
             </button>
           )}
           
+          {/* PDF scroll area */}
           <div 
             ref={scrollContainerRef}
             className="pdf-scroll-container" 
             onWheel={handleWheel}
+            onContextMenu={(e) => {
+              // If right-clicking on an existing highlight the highlight handler fires first;
+              // if not, open the AI context menu
+              if (!contextMenu) {
+                e.preventDefault();
+                openContextMenu(e.clientX, e.clientY);
+              }
+            }}
             style={{ flex: 1, overflow: 'auto', padding: '1rem', background: 'var(--bs-bg)', overflowAnchor: 'none', position: 'relative' }}
           >
             <div 
               className="zoom-target" 
               style={{ 
-                width: 'fit-content', // Shrink-wraps the content for accurate contentRect math
-                margin: '0 auto', // Safe centering that never cuts off left edge
+                width: 'fit-content',
+                margin: '0 auto',
                 flexShrink: 0,
-                textAlign: 'left' // Reset text alignment for inner content
+                textAlign: 'left'
               }}
             >
               {viewMode === 'single' && (
@@ -802,9 +823,20 @@ export function BookReader() {
               {viewMode === 'single' && <WordHighlighter />}
             </div>
           </div>
+
+          {/* Right: AI Copilot Sidebar */}
+          <CopilotSidebar
+            bookId={bookId}
+            bookTitle={currentBookTitle}
+            contextText={`You are helping a reader who is reading "${currentBookTitle}". Answer their questions about the book.`}
+          />
         </div>
       
       <HighlightToolbar selection={selection} onHighlightSaved={() => setSelection(null)} />
+
+      {/* Phase 6: AI Copilot overlays */}
+      <CopilotPopup />
+      <AiContextMenu />
 
       {/* Reading Progress Bar */}
       <div style={{ height: '4px', width: '100%', background: 'var(--bs-border)' }}>

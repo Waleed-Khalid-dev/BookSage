@@ -89,12 +89,12 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 | 4 | Book Reader | ✅ Done |
 | 4.5 | Reader Polish | ✅ Done |
 | 5 | Notes Viewer | ✅ Done |
-| 6 | AI Copilot | ⏳ Not started |
+| 6 | AI Copilot | ✅ Done |
 | 7 | Library View | ⏳ Not started |
 | 8 | Settings & Polish | ⏳ Not started |
 | 9 | Packaging | ⏳ Not started |
 
-**Current status: Phase 4.5 complete (Reader Polish). Next action = Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).**
+**Current status: Phase 6 complete (AI Copilot). Next action = Phase 7 (Library View).**
 
 ### Session 2026-08-07 Notes
 - Implemented global Keyboard Shortcuts with persistent Zustand store.
@@ -215,3 +215,11 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Search Navigation Fix:** Refactored PDF search jump logic to use robust native `scrollIntoView` anchoring.
 - **Spread Mode Scrolling:** Eliminated manual horizontal padding math in Spread Mode by polling for a unique `active-search-highlight` DOM ID, fixing search jump misalignment.
 - **Render Awaiting:** Increased search jump polling timeout to 5 seconds to gracefully handle slow PDF rendering hardware.
+
+### Session 2026-08-10 Notes (Phase 6)
+- **Completed Phase 6 (AI Copilot):**
+  - Integrated `CopilotPopup`, `ContextMenu`, and `CopilotSidebar` into both `BookReader` and `NotesViewer`.
+  - Upgraded `useTextSelection` to stream selection data directly to `chatStore`, powering context-aware AI interactions.
+  - Built full-screen `AIChatView` studio with 3-column layout: Session List, Chat Thread, and Input Area.
+  - Implemented features: Preset Prompts grid, Persona selection (`scholar`, `teacher`, `coach`, `devil`), follow-up pill buttons, and markdown response rendering.
+  - Confirmed Python sidecar integration for `chat_message` command.

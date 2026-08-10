@@ -162,6 +162,20 @@ async function initDb(database: Database) {
     );
   `);
 
+  // Phase 6 – AI Copilot: chat sessions
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      id           TEXT PRIMARY KEY,
+      book_id      TEXT REFERENCES books(id) ON DELETE CASCADE,
+      title        TEXT NOT NULL DEFAULT 'New Chat',
+      messages     TEXT NOT NULL DEFAULT '[]',
+      context_mode TEXT NOT NULL DEFAULT 'chapter',
+      model_name   TEXT,
+      created_at   INTEGER NOT NULL,
+      updated_at   INTEGER NOT NULL
+    );
+  `);
+
   // Migrations for existing databases
   const migrations = [
     'ALTER TABLE books ADD COLUMN last_page INTEGER DEFAULT 1',
@@ -172,7 +186,9 @@ async function initDb(database: Database) {
     // Phase 5 -- Notes Viewer columns
     'ALTER TABLE chapters ADD COLUMN user_notes TEXT',
     'ALTER TABLE chapters ADD COLUMN studied INTEGER DEFAULT 0',
-    'ALTER TABLE chapters ADD COLUMN steps_progress TEXT'
+    'ALTER TABLE chapters ADD COLUMN steps_progress TEXT',
+    // Phase 6 -- AI Copilot columns
+    'ALTER TABLE chapters ADD COLUMN ai_insights TEXT'
   ];
 
   for (const query of migrations) {
@@ -540,4 +556,81 @@ export async function getStudiedCountForBook(bookId: string): Promise<{ studied:
     studied: result[0].studied || 0,
     total: result[0].total || 0
   };
+}
+
+// ─── PHASE 6: AI COPILOT CHAT SESSIONS ───────────────────────────────────────
+
+export interface ChatMessageRecord {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  ts: number;
+}
+
+export interface ChatSessionRecord {
+  id: string;
+  book_id: string | null;
+  title: string;
+  messages: string;        // JSON-serialised ChatMessageRecord[]
+  context_mode: 'chapter' | 'book' | 'custom';
+  model_name: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export async function saveChatSession(session: ChatSessionRecord): Promise<void> {
+  const database = await getDb();
+  await database.execute(
+    `INSERT INTO chat_sessions (id, book_id, title, messages, context_mode, model_name, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     ON CONFLICT(id) DO UPDATE SET
+       title        = excluded.title,
+       messages     = excluded.messages,
+       context_mode = excluded.context_mode,
+       model_name   = excluded.model_name,
+       updated_at   = excluded.updated_at`,
+    [
+      session.id, session.book_id, session.title, session.messages,
+      session.context_mode, session.model_name,
+      session.created_at, session.updated_at,
+    ]
+  );
+}
+
+export async function getAllChatSessions(bookId: string): Promise<ChatSessionRecord[]> {
+  const database = await getDb();
+  return await database.select<ChatSessionRecord[]>(
+    'SELECT * FROM chat_sessions WHERE book_id = $1 ORDER BY updated_at DESC',
+    [bookId]
+  );
+}
+
+export async function deleteChatSession(id: string): Promise<void> {
+  const database = await getDb();
+  await database.execute('DELETE FROM chat_sessions WHERE id = $1', [id]);
+}
+
+export async function pinChapterInsight(chapterId: string, insight: string): Promise<void> {
+  const database = await getDb();
+  const result = await database.select<{ ai_insights: string | null }[]>(
+    'SELECT ai_insights FROM chapters WHERE id = $1',
+    [chapterId]
+  );
+  const existing: string[] = result[0]?.ai_insights
+    ? JSON.parse(result[0].ai_insights)
+    : [];
+  existing.push(insight);
+  await database.execute(
+    'UPDATE chapters SET ai_insights = $1 WHERE id = $2',
+    [JSON.stringify(existing), chapterId]
+  );
+}
+
+export async function getChapterInsights(chapterId: string): Promise<string[]> {
+  const database = await getDb();
+  const result = await database.select<{ ai_insights: string | null }[]>(
+    'SELECT ai_insights FROM chapters WHERE id = $1',
+    [chapterId]
+  );
+  return result[0]?.ai_insights ? JSON.parse(result[0].ai_insights) : [];
 }
