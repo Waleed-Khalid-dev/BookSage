@@ -1,6 +1,10 @@
 /* ── CopilotSidebar ────────────────────────────────────────────────────────── */
 
 .csb-root {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   width: 320px;
@@ -13,6 +17,8 @@
   font-size: 0.83rem;
   animation: csb-slide-in 0.22s cubic-bezier(0.25,0.8,0.25,1);
   overflow: hidden;
+  z-index: 8000;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.3);
 }
 
 @keyframes csb-slide-in {

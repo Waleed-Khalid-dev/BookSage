@@ -101,6 +101,12 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - Added "Shortcuts" Settings modal for assigning custom bindings (TTS, highlight, drawing, undo/redo).
 - Updated Unified Undo/Redo stack to support Highlights, Underlines, and Strikethroughs smoothly.
 
+### Session 2026-08-10 Notes (Phase 6 AI Copilot Completed)
+- Implemented `CopilotOrb` globally available across views for quick access.
+- Implemented `useSpeechRecognition` hook for voice input support in the chat.
+- Checked off Batch D in the task list and updated `copilot-features.md`.
+- Completed AI Copilot Phase 6 integration (Sidebar, Chat View, Context Menu, Popup, Voice).
+
 ### Session 2026-08-07 Notes (Phase 5)
 - **Completed Phase 5 (Notes Viewer):**
   - Built an interactive, Obsidian-inspired UI rendered dynamically from AI-extracted JSON.

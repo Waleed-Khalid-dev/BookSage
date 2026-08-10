@@ -17,7 +17,6 @@ import { SearchBar } from '../reader/SearchBar';
 import { ReadingStats } from '../reader/ReadingStats';
 import { CopilotPopup } from '../copilot/CopilotPopup';
 import { ContextMenu as AiContextMenu } from '../copilot/ContextMenu';
-import { CopilotSidebar } from '../copilot/CopilotSidebar';
 import { Search, ChevronRight, PenTool, Undo, Redo, Eraser, Maximize, Minimize } from 'lucide-react';
 
 const hexToRgbNormalized = (hex: string) => {
@@ -31,14 +30,14 @@ const hexToRgbNormalized = (hex: string) => {
 
 export function BookReader() {
   const { 
-    pdfPath, currentBookTitle, bookId, lastPage, setLastPage, incrementReadingStats,
+    pdfPath, currentBookTitle, lastPage, setLastPage, incrementReadingStats,
     isDrawingMode, drawingColor, setIsDrawingMode, setDrawingColor, 
     undoDrawingAction, redoDrawingAction, undoStack, redoStack,
     drawingTool, setDrawingTool, eraserSize, setEraserSize, penSize, setPenSize,
     pdfTintColor, pdfTextColor, isWordHighlightingEnabled
   } = useBookStore();
   const { isTtsPlaying, setActiveSelection, setFocusedPanel } = useUiStore();
-  const { setSelection: setCopilotSelection, openContextMenu, closeContextMenu } = useChatStore();
+  const { setSelection: setCopilotSelection, openContextMenu } = useChatStore();
   const pdfState = usePDF(pdfPath, lastPage);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('single');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -823,13 +822,6 @@ export function BookReader() {
               {viewMode === 'single' && <WordHighlighter />}
             </div>
           </div>
-
-          {/* Right: AI Copilot Sidebar */}
-          <CopilotSidebar
-            bookId={bookId}
-            bookTitle={currentBookTitle}
-            contextText={`You are helping a reader who is reading "${currentBookTitle}". Answer their questions about the book.`}
-          />
         </div>
       
       <HighlightToolbar selection={selection} onHighlightSaved={() => setSelection(null)} />

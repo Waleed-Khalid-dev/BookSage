@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { useChatStore, CopilotPersona } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
 import { ModelSelector } from '../copilot/ModelSelector';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import './AIChatView.css';
 
 const PRESET_PROMPTS = [
@@ -37,9 +38,21 @@ export function AIChatView() {
   const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama'>('gemini');
   const [copied, setCopied] = useState<string | null>(null);
   const [contextMode, setContextMode] = useState<'book' | 'chapter'>('book');
+  const { isSupported, isListening, transcript, toggleListening, resetTranscript } = useSpeechRecognition();
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Update input when transcript changes
+  useEffect(() => {
+    if (transcript) {
+      setInput((prev) => {
+        const spacer = prev && !prev.endsWith(' ') ? ' ' : '';
+        return prev + spacer + transcript;
+      });
+      resetTranscript();
+    }
+  }, [transcript, resetTranscript]);
 
   // Load sessions when view opens
   useEffect(() => {
@@ -274,12 +287,23 @@ export function AIChatView() {
               rows={3}
               disabled={!apiKey || isLoading}
             />
-            <button
-              className="acv-send"
-              onClick={() => handleSend()}
-              disabled={!input.trim() || !apiKey || isLoading}
-              title="Send (Enter)"
-            >→</button>
+            <div className="acv-input-actions">
+              {isSupported && (
+                <button
+                  className={`acv-mic-btn ${isListening ? 'listening' : ''}`}
+                  onClick={toggleListening}
+                  title={isListening ? "Stop listening" : "Voice input (Alt+M)"}
+                >
+                  🎤
+                </button>
+              )}
+              <button
+                className="acv-send"
+                onClick={() => handleSend()}
+                disabled={!input.trim() || !apiKey || isLoading}
+                title="Send (Enter)"
+              >→</button>
+            </div>
           </div>
           <div className="acv-input-footer">
             <ModelSelector value={model} onChange={handleModelChange} activeProviders={new Set([provider])} />

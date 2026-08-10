@@ -10,13 +10,15 @@ import { PipelineView } from "./components/views/PipelineView";
 import { AIChatView } from "./components/views/AIChatView";
 import { GlobalSearchModal } from "./components/shared/GlobalSearchModal";
 import { SettingsDialog } from "./components/shared/SettingsDialog";
+import { CopilotOrb } from "./components/copilot/CopilotOrb";
+import { CopilotSidebar } from "./components/copilot/CopilotSidebar";
 import { useShortcuts } from "./hooks/useShortcuts";
 import "pdfjs-dist/web/pdf_viewer.css";
 import "./App.css";
 
 function App() {
   const { activeView, theme, isNotesSplitOpen, toggleNotesSplit } = useUiStore();
-  const { readerTheme, textSelectionColor } = useBookStore();
+  const { readerTheme, textSelectionColor, bookId, currentBookTitle } = useBookStore();
   
   // Initialize global keyboard shortcuts
   useShortcuts();
@@ -71,6 +73,12 @@ function App() {
       </main>
       <GlobalSearchModal />
       <SettingsDialog />
+      <CopilotOrb />
+      <CopilotSidebar
+        bookId={bookId}
+        bookTitle={currentBookTitle}
+        contextText={`You are helping a reader who is reading "${currentBookTitle}". Answer their questions about the book.`}
+      />
     </div>
   );
 }

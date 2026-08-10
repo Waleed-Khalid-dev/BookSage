@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { useChatStore, CopilotPersona } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
 import { ModelSelector } from './ModelSelector';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import './CopilotSidebar.css';
 
 const PRESET_PROMPTS = [
@@ -47,9 +48,21 @@ export function CopilotSidebar({
   const [copied, setCopied] = useState<string | null>(null);
   const [showPersona, setShowPersona] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
+  const { isSupported, isListening, transcript, toggleListening, resetTranscript } = useSpeechRecognition();
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Update input when transcript changes
+  useEffect(() => {
+    if (transcript) {
+      setInput((prev) => {
+        const spacer = prev && !prev.endsWith(' ') ? ' ' : '';
+        return prev + spacer + transcript;
+      });
+      resetTranscript();
+    }
+  }, [transcript, resetTranscript]);
 
   // Load sessions when bookId changes
   useEffect(() => {
@@ -292,12 +305,23 @@ export function CopilotSidebar({
             rows={2}
             disabled={!apiKey || isLoading}
           />
-          <button
-            className="csb-send"
-            onClick={() => handleSend()}
-            disabled={!input.trim() || !apiKey || isLoading}
-            title="Send (Enter)"
-          >→</button>
+          <div className="csb-input-actions">
+            {isSupported && (
+              <button
+                className={`csb-mic-btn ${isListening ? 'listening' : ''}`}
+                onClick={toggleListening}
+                title={isListening ? "Stop listening" : "Voice input (Alt+M)"}
+              >
+                🎤
+              </button>
+            )}
+            <button
+              className="csb-send"
+              onClick={() => handleSend()}
+              disabled={!input.trim() || !apiKey || isLoading}
+              title="Send (Enter)"
+            >→</button>
+          </div>
         </div>
         <div className="csb-input-footer">
           <ModelSelector value={model} onChange={handleModelChange} compact activeProviders={new Set([provider])} />
