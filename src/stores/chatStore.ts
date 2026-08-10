@@ -253,6 +253,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   // ── Messaging ───────────────────────────────────────────────────────────────
 
+  /**
+   * Sends a user message to the AI copilot and appends the response to the active session.
+   * Optimistically updates the UI with the user's message before awaiting the Python backend.
+   */
   sendMessage: async (text, contextText, provider, apiKey, modelName) => {
     const { activeSession, persona } = get();
     let session = activeSession();
