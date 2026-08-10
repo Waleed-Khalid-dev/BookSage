@@ -1,12 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ModelSelector.css';
 
+/**
+ * Represents a single selectable AI model in the Copilot UI.
+ */
 export interface ModelOption {
   id: string;
   label: string;
   provider: 'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek';
 }
 
+/**
+ * Grouped list of all supported AI models by provider.
+ * This drives the dropdown UI and provider matching logic.
+ */
 export const MODEL_GROUPS: { label: string; provider: ModelOption['provider']; models: { id: string; label: string }[] }[] = [
   {
     label: 'Google Gemini',
