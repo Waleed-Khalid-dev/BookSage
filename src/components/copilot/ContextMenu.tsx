@@ -10,10 +10,18 @@ const TRANSLATE_LANGS = [
   'Chinese', 'Japanese', 'Portuguese', 'Italian', 'Russian',
 ];
 
+/**
+ * Props for the AI Copilot Context Menu.
+ */
 interface ContextMenuProps {
+  /** Callback fired when the user selects 'Save Highlight' */
   onSaveHighlight?: (text: string) => void;
 }
 
+/**
+ * Renders a custom right-click context menu containing native copy/highlight actions
+ * alongside AI Copilot tools (Summarize, Translate, etc.) nested in submenus.
+ */
 export function ContextMenu({ onSaveHighlight }: ContextMenuProps) {
   const {
     showContextMenu, contextMenuPos, selection,
