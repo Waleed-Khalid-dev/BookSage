@@ -58,3 +58,4 @@
 - [reference] Phase 5b Split View: COMPLETE & verified. Added resizable dual-pane layout, persistent state, and global hotkey. → booksage-project.md
 - [reference] Phase 5b Obsidian Export: COMPLETE & verified. Integrated Tauri dialog and Python sidecar export to generated Markdown files. → booksage-project.md
 - [reference] Phase 5c Notes TTS & Polish: COMPLETE & verified. Added global state tracking, character-proportional word highlighting in Python, and CSS font scaling fixes. → booksage-project.md
+- [reference] Phase 4.5 Search Fix: COMPLETE & verified. Refactored search navigation to use robust DOM polling and scrollIntoView, fixing Spread Mode offsets. → booksage-project.md

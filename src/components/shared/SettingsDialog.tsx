@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useUiStore } from '../../stores/uiStore';
-import { useShortcutStore, ShortcutAction, actionLabels, defaultShortcuts, Shortcut } from '../../stores/shortcutStore';
+import { useShortcutStore, ShortcutAction, actionLabels, Shortcut } from '../../stores/shortcutStore';
 import { X, RotateCcw } from 'lucide-react';
 import './SettingsDialog.css';
 

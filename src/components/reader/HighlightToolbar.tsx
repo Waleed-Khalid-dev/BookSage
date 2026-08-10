@@ -1,5 +1,5 @@
 import { useBookStore } from '../../stores/bookStore';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { SelectionData } from '../../hooks/useTextSelection';
 import { Sparkles, Underline, Strikethrough } from 'lucide-react';
 

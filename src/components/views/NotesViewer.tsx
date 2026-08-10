@@ -8,9 +8,9 @@ import { open } from '@tauri-apps/plugin-dialog';
 import {
   getChapterUserData, saveChapterUserData, getStudiedCountForBook
 } from '../../services/dbService';
-import { ChevronRight, ChevronDown, BookOpen, Lightbulb, Quote, ListChecks,
-         GraduationCap, Tag, FileText, Copy, Maximize2, Zap } from 'lucide-react';
+import { ChevronRight, ChevronDown, BookOpen, Lightbulb, Quote, ListChecks, Copy, GraduationCap, FileText, Tag, Maximize2, Zap, Search } from 'lucide-react';
 import { AudioToolbar } from '../reader/AudioToolbar';
+import { NotesSearchBar } from './NotesSearchBar';
 import './NotesViewer.css';
 
 interface ChapterJson {
@@ -64,7 +64,7 @@ function SkeletonLoader() {
 
 export function NotesViewer() {
   const { chapters, bookId, currentBookTitle } = useBookStore();
-  const { setActiveView } = useUiStore();
+  const { setActiveView, setFocusedPanel } = useUiStore();
 
   const [activeChapterIdx, setActiveChapterIdx] = useState(0);
   const [chapterJson, setChapterJson] = useState<ChapterJson | null>(null);
@@ -521,7 +521,11 @@ export function NotesViewer() {
   };
 
   return (
-    <div className="notes-viewer">
+    <div 
+      className="notes-viewer"
+      onMouseEnter={() => setFocusedPanel('notes')}
+      onClick={() => setFocusedPanel('notes')}
+    >
       {/* Left Sidebar */}
       <div className={`notes-sidebar ${isSidebarOpen ? '' : 'collapsed'}`}>
         <div className="notes-sidebar-header">
@@ -567,7 +571,9 @@ export function NotesViewer() {
       </div>
 
       {/* Main Content */}
-      <div className="notes-content-area">
+      <div className="notes-content-area" style={{ position: 'relative' }}>
+        <NotesSearchBar containerSelector=".notes-content-area" />
+        
         {!isSidebarOpen && (
           <button className="notes-sidebar-toggle" onClick={() => setIsSidebarOpen(true)} title="Show Sidebar">
             <ChevronRight size={16} />
@@ -578,6 +584,14 @@ export function NotesViewer() {
         <div className="notes-toolbar">
           <button className="notes-btn" onClick={() => setIsSidebarOpen(o => !o)} title="Toggle Sidebar">
             <Maximize2 size={14} />
+          </button>
+          <div className="notes-toolbar-sep" />
+          <button 
+            className="notes-btn" 
+            onClick={() => window.dispatchEvent(new Event('open-notes-search'))} 
+            title="Search Notes (Ctrl+F)"
+          >
+            <Search size={14} /> Search
           </button>
           <div className="notes-toolbar-sep" />
           <AudioToolbar />

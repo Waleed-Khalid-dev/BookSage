@@ -210,3 +210,8 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - Contextually hid the 'Type' (highlighting) button in the AudioToolbar when in the Notes view.
   - Enforced global playback cancellation (`window.speechSynthesis.cancel()`) on stop to prevent ghost audio from fallback voices.
   - Added responsive `flexWrap: wrap` and smart text truncation to the Book Reader toolbar so it reflows cleanly in narrow Split View setups.
+
+### Session 2026-08-10 Notes (Phase 4.5 Fix)
+- **Search Navigation Fix:** Refactored PDF search jump logic to use robust native `scrollIntoView` anchoring.
+- **Spread Mode Scrolling:** Eliminated manual horizontal padding math in Spread Mode by polling for a unique `active-search-highlight` DOM ID, fixing search jump misalignment.
+- **Render Awaiting:** Increased search jump polling timeout to 5 seconds to gracefully handle slow PDF rendering hardware.

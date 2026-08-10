@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { Play, Pause, Square, Loader, Type } from 'lucide-react';
 import { invokePython } from '../../services/pythonService';
 import { useBookStore } from '../../stores/bookStore';
@@ -16,8 +15,8 @@ const EDGE_VOICES = [
 
 export function AudioToolbar() {
   const { 
-    audioElement, edgeTimings, isPlaying, isPaused, voiceURI, playbackRate, 
-    fullTextToRead, startNonWs, activePageNum,
+    audioElement, isPlaying, isPaused, voiceURI, playbackRate, 
+    startNonWs, activePageNum,
     setEdgeTimings, setIsPlaying, setIsPaused, setVoiceURI, setPlaybackRate,
     setFullTextToRead, setStartNonWs, setActivePageNum
   } = useTtsStore();
@@ -27,12 +26,11 @@ export function AudioToolbar() {
   const activeView = useUiStore(state => state.activeView);
   const [isLoading, setIsLoading] = useState(false);
   const [nativeVoices, setNativeVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [currentRange, setCurrentRange] = useState<Range | null>(null);
   
   const isWordHighlightingEnabled = useBookStore(state => state.isWordHighlightingEnabled);
   const setIsWordHighlightingEnabled = useBookStore(state => state.setIsWordHighlightingEnabled);
   
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number>(0);
   const lastWordRef = useRef<number | null>(null);
   
   // Sync UI store (used by some global layouts)
@@ -193,7 +191,7 @@ export function AudioToolbar() {
     
     // Use Native TTS if it's a native voice. Otherwise use Edge TTS.
     if (!isEdgeVoice) {
-      startNativeSpeech(textToRead, range || undefined);
+      startNativeSpeech(textToRead);
     } else {
       await startEdgeSpeech(textToRead);
     }
@@ -245,7 +243,7 @@ export function AudioToolbar() {
     }
   };
 
-  const startNativeSpeech = (text: string, range?: Range) => {
+  const startNativeSpeech = (text: string) => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     
@@ -329,7 +327,6 @@ export function AudioToolbar() {
     window.speechSynthesis.cancel(); // Always cancel native speech to stop fallbacks!
     setIsPlaying(false);
     setIsPaused(false);
-    setCurrentRange(null);
     setStartNonWs(null);
     setActivePageNum(null);
     setTtsHighlight(null);

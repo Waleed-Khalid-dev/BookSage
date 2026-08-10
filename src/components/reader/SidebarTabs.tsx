@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useBookStore } from '../../stores/bookStore';
-import { usePDFContext } from '../../hooks/usePDF';
 import { getBookmarksForBook, getHighlightsForBook, deleteBookmark, deleteHighlight, BookmarkRecord, HighlightRecord } from '../../services/dbService';
 import { ThumbnailList } from './ThumbnailList';
 import { copyExportToClipboard, saveExportToFile } from '../../services/exportService';
@@ -10,7 +9,7 @@ export function SidebarTabs() {
   const [activeTab, setActiveTab] = useState<'toc' | 'thumbnails' | 'annotations'>('toc');
   const { chapters, bookId, highlightsRefreshCounter, bookmarksRefreshCounter } = useBookStore();
   const { setSearchModalOpen } = useSearchStore();
-  const pdfState = usePDFContext();
+
   
   const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
   const [highlights, setHighlights] = useState<HighlightRecord[]>([]);
