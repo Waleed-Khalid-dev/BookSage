@@ -24,6 +24,11 @@
         }
       ]
     },
-    "fs:default"
+    "fs:default",
+    "fs:allow-write-text-file",
+    "fs:allow-remove",
+    "fs:allow-mkdir",
+    "fs:allow-applocaldata-read-recursive",
+    "fs:allow-applocaldata-write-recursive"
   ]
 }
