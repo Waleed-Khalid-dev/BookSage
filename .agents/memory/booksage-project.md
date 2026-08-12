@@ -101,6 +101,13 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - Added "Shortcuts" Settings modal for assigning custom bindings (TTS, highlight, drawing, undo/redo).
 - Updated Unified Undo/Redo stack to support Highlights, Underlines, and Strikethroughs smoothly.
 
+### Session 2026-08-12 Notes (Phase 6 IPC Bridge Polish)
+- Resolved Windows CLI character limit crash by upgrading the React-to-Python IPC bridge.
+- `invokePython` now securely writes large AI payloads (e.g., 5-page text selections) to temporary files in `appLocalDataDir`.
+- `main.py` updated to read `--file` arguments, bypassing the 32k character limit and URL encoding overhead.
+- Granted Tauri v2 `@tauri-apps/plugin-fs` strict permissions (`fs:allow-write-text-file`, `fs:allow-mkdir`) in `default.json`.
+- Scrubbed legacy `apiKey` references from `PipelineView.tsx`, `AIChatView.tsx`, and `bookStore.ts` to prevent UI crashes.
+
 ### Session 2026-08-10 Notes (Phase 6 AI Copilot Completed)
 - Implemented `CopilotOrb` globally available across views for quick access.
 - Implemented `useSpeechRecognition` hook for voice input support in the chat.
