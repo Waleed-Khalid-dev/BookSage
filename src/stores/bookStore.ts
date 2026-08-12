@@ -32,7 +32,6 @@ interface BookState {
   pdfPath: string | null;
   chapters: Chapter[];
   isExtracting: boolean;
-  apiKey: string;
   aiModel: string;
   readerTheme: 'dark' | 'light' | 'sepia' | 'night' | 'oled' | 'focus';
   invertPdfColors: boolean;
@@ -554,10 +553,12 @@ export const useBookStore = create<BookState>()(
       },
 
       extractLessons: async (provider: string = 'gemini') => {
-        const { bookId, chapters, apiKey, aiModel } = get();
+        const { bookId, chapters, aiModel } = get();
+        const apiKeysStore = (await import('./apiKeysStore')).useApiKeys;
+        const apiKey = apiKeysStore.getState().getKey(provider as any);
         
         if (!apiKey) {
-          alert("Please enter a Gemini API Key first.");
+          alert(`Please enter a API Key for ${provider} in Settings first.`);
           return;
         }
         
@@ -834,7 +835,6 @@ export const useBookStore = create<BookState>()(
       name: 'booksage-settings',   // localStorage key
       // Only persist user settings — NOT chapters/extraction progress
       partialize: (state) => ({
-        apiKey: state.apiKey,
         aiModel: state.aiModel,
         readerTheme: state.readerTheme,
         invertPdfColors: state.invertPdfColors,

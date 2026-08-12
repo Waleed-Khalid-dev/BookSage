@@ -71,7 +71,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function PipelineView() {
-  const { currentBookTitle, pdfPath, chapters, isExtracting, apiKey, aiModel, setApiKey, setAiModel, setPdfPath, splitBook, extractLessons, retryFailed, retrySpecificChapters } = useBookStore();
+  const { currentBookTitle, pdfPath, chapters, isExtracting, aiModel, setAiModel, setPdfPath, splitBook, extractLessons, retryFailed, retrySpecificChapters } = useBookStore();
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number>(0);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([0]);
   const [activeTab, setActiveTab] = useState<'Raw Text' | 'AI Output' | 'Markdown Source'>('AI Output');
@@ -267,16 +267,9 @@ export function PipelineView() {
         <div className="settings-overlay">
            <div className="settings-modal">
              <h3>Settings</h3>
-             <label className="stats-label" style={{ marginTop: '16px', display: 'block' }}>Gemini API Key</label>
-             <input
-               type="password"
-               value={apiKey}
-               onChange={(e) => setApiKey(e.target.value)}
-               placeholder="AIzaSy..."
-               className="stats-input"
-               style={{ marginTop: '8px' }}
-             />
-             
+             <p className="stats-label" style={{ marginTop: '16px', display: 'block', color: 'var(--bs-text-muted)' }}>
+               <em>Manage API keys in global Settings</em>
+             </p>
              <label className="stats-label" style={{ marginTop: '16px', display: 'block' }}>AI Model</label>
              <select
                value={aiModel}
