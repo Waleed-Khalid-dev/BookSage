@@ -206,13 +206,19 @@ def main():
     if len(sys.argv) > 1:
         # CLI Argument mode (Tauri sidecar usually uses args or stdin)
         try:
-            if sys.argv[1] == '--b64' and len(sys.argv) > 2:
+            if sys.argv[1] == '--file' and len(sys.argv) > 2:
+                file_path = sys.argv[2]
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    cmd_data = json.load(f)
+            elif sys.argv[1] == '--b64' and len(sys.argv) > 2:
+                # Keep legacy --b64 for backwards compatibility if needed
                 import base64
                 b64_str = sys.argv[2]
                 json_str = base64.b64decode(b64_str).decode('utf-8')
                 cmd_data = json.loads(json_str)
             else:
                 cmd_data = json.loads(sys.argv[1])
+            
             result = handle_command(cmd_data)
             print(json.dumps(result))
         except Exception as e:
