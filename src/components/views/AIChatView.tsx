@@ -219,7 +219,7 @@ export function AIChatView() {
                     key={p.text}
                     className="acv-preset-card"
                     onClick={() => handleSend(p.text)}
-                    disabled={!apiKey}
+                    disabled={!getKey(provider)}
                   >
                     <span className="acv-preset-icon">{p.icon}</span>
                     <span>{p.label}</span>
@@ -279,7 +279,7 @@ export function AIChatView() {
 
         {/* Input */}
         <div className="acv-input-area">
-          {!apiKey && (
+          {!getKey(provider) && (
             <div className="acv-no-key">⚠️ Please add an API key in Settings to use BookSage Copilot</div>
           )}
           <div className="acv-input-row">
@@ -291,7 +291,7 @@ export function AIChatView() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={3}
-              disabled={!apiKey || isLoading}
+              disabled={!getKey(provider) || isLoading}
             />
             <div className="acv-input-actions">
               {isSupported && (
@@ -306,7 +306,7 @@ export function AIChatView() {
               <button
                 className="acv-send"
                 onClick={() => handleSend()}
-                disabled={!input.trim() || !apiKey || isLoading}
+                disabled={!input.trim() || !getKey(provider) || isLoading}
                 title="Send (Enter)"
               >→</button>
             </div>

@@ -338,7 +338,7 @@ export function CopilotSidebar({
             <button
               className="csb-send"
               onClick={() => handleSend()}
-              disabled={!input.trim() || !apiKey || isLoading}
+              disabled={!input.trim() || !getKey(provider) || isLoading}
               title="Send (Enter)"
             >→</button>
           </div>
