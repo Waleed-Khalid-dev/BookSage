@@ -67,11 +67,7 @@ export function AIChatView() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [session?.messages.length, isLoading]);
 
-  const buildContextText = () => {
-    const doneChaps = chapters.filter(c => c.status === 'done');
-    const chapterList = doneChaps.map(c => `Chapter ${c.num}: ${c.title} (pp. ${c.pp})`).join('\n');
-    return `Book: "${currentBookTitle}"\n\nChapters:\n${chapterList}`;
-  };
+
 
   const handleSend = async (text?: string) => {
     const msg = (text ?? input).trim();
@@ -88,7 +84,12 @@ export function AIChatView() {
     if (!sess) return;
 
     setInput('');
-    await sendMessage(msg, buildContextText(), provider, apiKey, model);
+    await sendMessage(msg, {
+      mode: sess.contextMode || 'book',
+      chapterPath: undefined,
+      allJsonPaths: chapters.map(c => c.json_path).filter(Boolean) as string[],
+      totalChapters: chapters.length
+    }, provider, apiKey, model);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

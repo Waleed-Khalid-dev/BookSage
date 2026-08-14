@@ -28,11 +28,13 @@ interface CopilotSidebarProps {
   bookTitle: string;
   chapterTitle?: string;
   chapterId?: string;
-  contextText?: string;     // pre-built context string for current chapter/book
+  chapterPath?: string;
+  allJsonPaths?: string[];
+  totalChapters?: number;
 }
 
 export function CopilotSidebar({
-  bookId, bookTitle, chapterTitle, chapterId, contextText = '',
+  bookId, bookTitle, chapterTitle, chapterId, chapterPath, allJsonPaths, totalChapters
 }: CopilotSidebarProps) {
   const {
     isSidebarOpen, toggleSidebar,
@@ -126,9 +128,14 @@ export function CopilotSidebar({
       sess = createSession(bookId, model);
     }
     if (!sess) return;
-
+    
+    await sendMessage(msg, {
+      mode: sess.contextMode,
+      chapterPath,
+      allJsonPaths,
+      totalChapters
+    }, provider, apiKey, model);
     setInput('');
-    await sendMessage(msg, contextText, provider, apiKey, model);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

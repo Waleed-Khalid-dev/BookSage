@@ -18,7 +18,7 @@ import "./App.css";
 
 function App() {
   const { activeView, theme, isNotesSplitOpen, toggleNotesSplit } = useUiStore();
-  const { readerTheme, textSelectionColor, bookId, currentBookTitle } = useBookStore();
+  const { readerTheme, textSelectionColor, bookId, currentBookTitle, chapters, lastPage } = useBookStore();
   
   // Initialize global keyboard shortcuts
   useShortcuts();
@@ -53,6 +53,13 @@ function App() {
     }
   };
 
+  // Determine current chapter based on lastPage
+  const activeChapter = chapters.find(c => {
+    if (!c.pp) return false;
+    const [start, end] = c.pp.split('-').map(Number);
+    return lastPage >= start && lastPage <= end;
+  });
+
   return (
     <div 
       className={`booksage-theme ${theme === "light" ? "booksage-light" : ""} app-container`}
@@ -77,7 +84,11 @@ function App() {
       <CopilotSidebar
         bookId={bookId}
         bookTitle={currentBookTitle}
-        contextText={`You are helping a reader who is reading "${currentBookTitle}". Answer their questions about the book.`}
+        chapterId={activeChapter?.id || activeChapter?.num.toString()}
+        chapterTitle={activeChapter?.title}
+        chapterPath={activeChapter?.path}
+        allJsonPaths={chapters.map(c => c.json_path).filter(Boolean) as string[]}
+        totalChapters={chapters.length}
       />
     </div>
   );

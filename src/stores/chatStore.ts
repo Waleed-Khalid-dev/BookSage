@@ -74,7 +74,12 @@ interface ChatState {
   // Actions — messaging
   sendMessage: (
     text: string,
-    contextText: string,
+    contextData: { 
+      mode: 'book' | 'chapter' | 'custom'; 
+      chapterPath?: string; 
+      allJsonPaths?: string[]; 
+      totalChapters?: number; 
+    },
     provider: string,
     apiKey: string,
     modelName: string
@@ -257,15 +262,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
    * Sends a user message to the AI copilot and appends the response to the active session.
    * Optimistically updates the UI with the user's message before awaiting the Python backend.
    */
-  sendMessage: async (text, contextText, provider, apiKey, modelName) => {
+  sendMessage: async (text, contextData, provider, apiKey, modelName) => {
     const { activeSession, persona } = get();
     let session = activeSession();
     if (!session) return;
 
-    const userMsg = makeMessage('user', text);
-    const updatedMessages = [...session.messages, userMsg];
+    let updatedMessages = [...session.messages, makeMessage('user', text)];
+    let warningMsg = null;
 
-    // Optimistically add user message
+    // Check if we need to inject a system warning about missing chapters
+    if (contextData.mode === 'book' && contextData.allJsonPaths && contextData.totalChapters) {
+      if (contextData.allJsonPaths.length < contextData.totalChapters) {
+        const missing = contextData.totalChapters - contextData.allJsonPaths.length;
+        warningMsg = makeMessage('assistant', `*System Note: ${missing} chapter(s) are missing from the book summary context because their extraction is incomplete.*`);
+        updatedMessages = [...updatedMessages, warningMsg];
+      }
+    }
+
+    // Optimistically add user message (and warning if applicable)
     set(state => ({
       sessions: state.sessions.map(s =>
         s.id === session!.id ? { ...s, messages: updatedMessages } : s
@@ -273,8 +287,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isLoading: true,
     }));
 
-    // Build history for Python (exclude follow-up metadata)
-    const history = updatedMessages.slice(0, -1).map(m => ({
+    // Build history for Python (exclude follow-up metadata and system warnings)
+    const history = session.messages.filter(m => !m.content.startsWith('*System Note')).map(m => ({
       role: m.role,
       content: m.content,
     }));
@@ -286,7 +300,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         command: 'chat_message',
         message: text,
         history,
-        context_text: personaPrefix + contextText,
+        context_mode: contextData.mode,
+        chapter_path: contextData.chapterPath,
+        all_json_paths: contextData.allJsonPaths,
+        persona_prefix: personaPrefix,
         provider,
         api_key: apiKey,
         model_name: modelName,

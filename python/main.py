@@ -2,6 +2,10 @@ import json
 import sys
 import traceback
 
+# Force UTF-8 encoding for stdout to prevent Tauri IPC crashes on Windows
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 def handle_command(cmd_data):
     command = cmd_data.get("command")
     
@@ -38,7 +42,10 @@ def handle_command(cmd_data):
     elif command == "chat_message":
         message = cmd_data.get("message")
         history = cmd_data.get("history", [])
-        context_text = cmd_data.get("context_text", "")
+        context_mode = cmd_data.get("context_mode", "chapter")
+        chapter_path = cmd_data.get("chapter_path")
+        all_json_paths = cmd_data.get("all_json_paths", [])
+        persona_prefix = cmd_data.get("persona_prefix", "")
         provider = cmd_data.get("provider", "gemini")
         api_key = cmd_data.get("api_key")
         model_name = cmd_data.get("model_name", "gemini-3.6-flash")
@@ -47,7 +54,17 @@ def handle_command(cmd_data):
             return {"status": "error", "message": "Missing 'message' or 'api_key'."}
             
         from ai_chat import chat_with_context
-        response = chat_with_context(message, history, context_text, provider, api_key, model_name=model_name)
+        response = chat_with_context(
+            user_message=message,
+            history=history,
+            context_mode=context_mode,
+            chapter_path=chapter_path,
+            all_json_paths=all_json_paths,
+            persona_prefix=persona_prefix,
+            provider=provider,
+            api_key=api_key,
+            model_name=model_name
+        )
         return {"status": "success", "response": response}
     
     elif command == "search_pdf":
