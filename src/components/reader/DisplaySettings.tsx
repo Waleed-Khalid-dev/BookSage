@@ -12,6 +12,8 @@ export function DisplaySettings() {
     setPdfTintColor,
     pdfTextColor,
     setPdfTextColor,
+    continuousGapless,
+    setContinuousGapless,
     pdfMarginCrop,
     setPdfMarginCrop,
     highlightOpacity,
@@ -101,6 +103,16 @@ export function DisplaySettings() {
                 style={{ cursor: 'pointer' }}
               />
               Invert PDF Colors
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--bs-text)', marginTop: '0.25rem' }}>
+              <input 
+                type="checkbox" 
+                checked={continuousGapless}
+                onChange={(e) => setContinuousGapless(e.target.checked)}
+                style={{ cursor: 'pointer' }}
+              />
+              Gapless Scroll (Continuous Mode)
             </label>
             
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem' }}>

@@ -68,6 +68,10 @@ interface BookState {
   // TTS State
   isWordHighlightingEnabled: boolean;
   
+  // Display State
+  continuousGapless: boolean;
+  setContinuousGapless: (gapless: boolean) => void;
+  
   setAiModel: (model: string) => void;
   setPdfPath: (path: string) => Promise<void>;
   loadBook: (id: string) => Promise<void>;
@@ -150,6 +154,7 @@ export const useBookStore = create<BookState>()(
       lastPage: 1,
       readingTimeSecs: 0,
       pagesReadTotal: 0,
+      continuousGapless: true,
       
       dailyPages: 0,
       weeklyPages: 0,
@@ -395,7 +400,7 @@ export const useBookStore = create<BookState>()(
       },
       
       setIsWordHighlightingEnabled: (enabled) => set({ isWordHighlightingEnabled: enabled }),
-
+      setContinuousGapless: (gapless) => set({ continuousGapless: gapless }),
       setAiModel: (model: string) => set({ aiModel: model }),
 
       setPdfPath: async (path: string) => {
