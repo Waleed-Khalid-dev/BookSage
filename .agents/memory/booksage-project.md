@@ -239,3 +239,8 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - Built full-screen `AIChatView` studio with 3-column layout: Session List, Chat Thread, and Input Area.
   - Implemented features: Preset Prompts grid, Persona selection (`scholar`, `teacher`, `coach`, `devil`), follow-up pill buttons, and markdown response rendering.
   - Confirmed Python sidecar integration for `chat_message` command.
+
+### Session 2026-08-14 Notes (Bug Fixes)
+- **Continuous Mode Text Selection:** Fixed Chromium CSS gap bug by switching margin to padding, completely restoring multi-page text selection logic without dropping text.
+- **Selection Virtualization Lock:** Implemented 'Selection Lock' state in uiStore that forces pages trapped inside a dragging selection to stay mounted regardless of IntersectionObserver status, guaranteeing native DOM selection integrity.
+- **Gapless Scroll Toggle:** Turned the padding gap fix into a feature toggle inside Display Settings for users who prefer seamless PDF scrolling.

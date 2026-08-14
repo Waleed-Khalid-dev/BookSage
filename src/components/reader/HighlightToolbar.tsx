@@ -1,4 +1,5 @@
 import { useBookStore } from '../../stores/bookStore';
+import { useChatStore, QuickActionType } from '../../stores/chatStore';
 import { useState, useEffect } from 'react';
 import { SelectionData } from '../../hooks/useTextSelection';
 import { Sparkles, Underline, Strikethrough } from 'lucide-react';
@@ -168,11 +169,11 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
     { name: 'pink', value: '#ff69b4' }
   ];
 
-  const handleCopilotAction = (action: string) => {
-    // Stub for now. In Phase 6 this will send to AIChatView or open a popup.
-    console.log(`Copilot action [${action}] on text: "${selection.text}"`);
-    alert(`Copilot [${action}] feature coming in Phase 6!\nSelected: "${selection.text.substring(0, 50)}..."`);
-    window.getSelection()?.removeAllRanges();
+  const handleCopilotAction = (action: QuickActionType) => {
+    // Wire into Copilot popup directly without clearing selection
+    const chatStore = useChatStore.getState();
+    chatStore.setPendingQuickAction({ type: 'action', action });
+    chatStore.setShowPopup(true);
   };
 
   return (
@@ -242,13 +243,13 @@ export function HighlightToolbar({ selection, onHighlightSaved }: HighlightToolb
       </button>
       <div style={{ width: '1px', height: '24px', background: 'var(--bs-border)' }}></div>
       <button 
-        onClick={() => handleCopilotAction('Explain')}
+        onClick={() => handleCopilotAction('explain')}
         style={{ background: 'transparent', border: 'none', color: 'var(--bs-accent)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 500 }}
       >
         <Sparkles size={14} /> Explain
       </button>
       <button 
-        onClick={() => handleCopilotAction('Summarize')}
+        onClick={() => handleCopilotAction('summarize')}
         style={{ background: 'transparent', border: 'none', color: 'var(--bs-accent)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 500 }}
       >
         <Sparkles size={14} /> Summarize

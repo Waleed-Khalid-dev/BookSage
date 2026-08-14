@@ -62,3 +62,4 @@
 - [reference] Phase 6 AI Copilot: COMPLETE & verified. Integrated CopilotPopup, ContextMenu, and CopilotSidebar into Reader and Notes, plus full-screen AIChatView studio. → booksage-project.md
 - [reference] Phase 6 Copilot Extensions: COMPLETE. Added Voice Input, global Copilot Orb, and checked off Phase 6 in tracker. → booksage-project.md
 - [reference] Phase 6 Copilot Bug Fixes: COMPLETE. Fixed Context Menu visual state, Sidebar crash, and Add to Chat Context data passing. → booksage-project.md
+- [reference] Bug Fixes: Fixed Continuous Mode multi-page selection bug and virtualization unmount bug; added Gapless Scroll feature toggle. → booksage-project.md

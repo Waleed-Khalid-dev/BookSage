@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useChatStore, CopilotPersona } from '../../stores/chatStore';
+import { useChatStore, CopilotPersona, ContextMode } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
 import { ModelSelector } from './ModelSelector';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
@@ -37,9 +37,9 @@ export function CopilotSidebar({
   const {
     isSidebarOpen, toggleSidebar,
     sessions, activeSessionId, isLoading,
-    activeSession, createSession, setActiveSession, deleteSession,
     sendMessage, loadSessions, persona, setPersona,
     pinInsight,
+    activeSession, createSession, setActiveSession, deleteSession
   } = useChatStore();
   const { aiModel, setAiModel } = useBookStore();
   const { getKey } = useApiKeys();
@@ -50,6 +50,10 @@ export function CopilotSidebar({
   const [copied, setCopied] = useState<string | null>(null);
   const [showPersona, setShowPersona] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
+  
+  // Track local context mode
+  const session = activeSession();
+  const [contextMode, setContextMode] = useState<ContextMode>(session?.contextMode ?? 'chapter');
   const { isSupported, isListening, transcript, toggleListening, resetTranscript } = useSpeechRecognition();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -86,10 +90,28 @@ export function CopilotSidebar({
   }, [bookId, loadSessions]);
 
   // Auto-scroll to bottom on new messages
-  const session = activeSession();
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [session?.messages.length, isLoading]);
+
+  // Sync context mode from session
+  useEffect(() => {
+    if (session) {
+      setContextMode(session.contextMode);
+    }
+  }, [session?.id, session?.contextMode]);
+
+  const handleScopeChange = (mode: 'book' | 'chapter') => {
+    setContextMode(mode);
+    if (session) {
+      // Create a shallow copy and update context mode in the store
+      const updated = { ...session, contextMode: mode, updatedAt: Date.now() };
+      useChatStore.setState(state => ({
+        sessions: state.sessions.map(s => s.id === session.id ? updated : s)
+      }));
+    }
+  };
 
   const handleSend = async (text?: string) => {
     const msg = (text ?? input).trim();
@@ -240,9 +262,39 @@ export function CopilotSidebar({
       </div>
 
       {/* ── Context badge ── */}
-      <div className="csb-context-badge">
-        <span className="csb-book-name">📚 {bookTitle}</span>
-        {chapterTitle && <span className="csb-chapter-name">› {chapterTitle}</span>}
+      <div className="csb-context-badge" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div>
+          <span className="csb-book-name">📚 {bookTitle}</span>
+          {chapterTitle && <span className="csb-chapter-name">› {chapterTitle}</span>}
+        </div>
+        
+        {/* Context Scope Picker */}
+        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+          <button
+            onClick={() => handleScopeChange('book')}
+            style={{
+              flex: 1, padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer',
+              background: contextMode === 'book' ? 'var(--bs-accent)' : 'var(--bs-surface-hover)',
+              color: contextMode === 'book' ? 'white' : 'var(--bs-text)',
+              border: 'none', transition: 'all 0.2s'
+            }}
+          >
+            📚 Entire Book
+          </button>
+          <button
+            onClick={() => handleScopeChange('chapter')}
+            disabled={!chapterId}
+            title={!chapterId ? "No chapter available" : "Focus on this chapter"}
+            style={{
+              flex: 1, padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', cursor: chapterId ? 'pointer' : 'not-allowed',
+              background: contextMode === 'chapter' ? 'var(--bs-accent)' : 'var(--bs-surface-hover)',
+              color: contextMode === 'chapter' ? 'white' : 'var(--bs-text)',
+              border: 'none', transition: 'all 0.2s', opacity: chapterId ? 1 : 0.5
+            }}
+          >
+            📄 Chapter
+          </button>
+        </div>
       </div>
 
       {/* ── Preset prompts ── */}

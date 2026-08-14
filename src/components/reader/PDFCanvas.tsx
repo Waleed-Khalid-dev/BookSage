@@ -125,6 +125,11 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
           });
 
           const restoreSelection = () => {
+            const currentSel = window.getSelection();
+            // NEVER overwrite an active multi-page user selection
+            if (currentSel && !currentSel.isCollapsed && currentSel.toString().trim().length > 0) {
+              return;
+            }
             import('../../stores/uiStore').then(({ useUiStore }) => {
               const activeSelection = useUiStore.getState().activeSelection;
               if (activeSelection && activeSelection.pageNum === pageNumber && activeSelection.startNonWs !== undefined && activeSelection.lengthNonWs !== undefined) {
@@ -296,7 +301,6 @@ export function PDFCanvas({ pageNumber, onLoadSuccess, onContextMenuRequest }: P
             top: 0, 
             right: 0, 
             bottom: 0, 
-            overflow: 'hidden',
             pointerEvents: isDrawingMode ? 'none' : 'auto',
             userSelect: isDrawingMode ? 'none' : 'text',
             WebkitUserSelect: isDrawingMode ? 'none' : 'text'

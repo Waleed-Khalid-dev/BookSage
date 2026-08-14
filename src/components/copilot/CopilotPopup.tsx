@@ -34,6 +34,12 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
   const [model, setModel] = useState(aiModel);
   const [provider, setProvider] = useState<any>(() => getProviderForModel(aiModel));
 
+  // Sync model state when bookStore changes
+  useEffect(() => {
+    setModel(aiModel);
+    setProvider(getProviderForModel(aiModel));
+  }, [aiModel]);
+
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -69,6 +75,7 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     // Viewport clamping
     x = Math.max(8, Math.min(x, window.innerWidth - w - 8));
     y = y < 8 ? rect.bottom + 8 : y;
+    y = Math.max(8, Math.min(y, window.innerHeight - h - 8));
 
     setPos({ x, y });
     setQuestion('');
