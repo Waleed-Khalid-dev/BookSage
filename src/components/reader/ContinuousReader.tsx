@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { usePDFContext } from '../../hooks/usePDF';
 import { PDFCanvas } from './PDFCanvas';
 import { useBookStore } from '../../stores/bookStore';
+import { useUiStore } from '../../stores/uiStore';
 
 interface LazyPDFPageProps {
   pageNum: number;
@@ -14,7 +15,7 @@ const LazyPDFPage = React.memo(function LazyPDFPage({ pageNum, onContextMenuRequ
   // Pre-render the active page and its immediate neighbors to prevent blank screens on initial load
   const [isVisible, setIsVisible] = useState(() => Math.abs(pageNum - currentPage) <= 3);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { invertPdfColors, pdfTintColor } = useBookStore();
+  const { invertPdfColors, pdfTintColor, continuousGapless } = useBookStore();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -53,21 +54,24 @@ const LazyPDFPage = React.memo(function LazyPDFPage({ pageNum, onContextMenuRequ
     return () => observer.disconnect();
   }, [pageNum, onPageVisible]);
 
+  const activeSelectionPages = useUiStore(s => s.activeSelectionPages);
+
   // We only render when visible (or nearby). This drops GPU memory for pages scrolled past.
-  const shouldRender = isVisible;
+  // Selection Lock: Keep pages mounted if they are part of an active multi-page selection
+  const isSelected = activeSelectionPages && pageNum >= activeSelectionPages[0] && pageNum <= activeSelectionPages[1];
+  const shouldRender = isVisible || isSelected;
 
   return (
     <div 
       id={`pdf-page-${pageNum}`}
       ref={containerRef} 
       style={{ 
-        height: 'calc(var(--pdf-base-height, 1100px) * var(--pdf-scale, 1.2))', 
-        marginBottom: 'calc(10px * var(--pdf-scale, 1.2))', 
+        height: `calc(var(--pdf-base-height, 1100px) * var(--pdf-scale, 1.2) + ${continuousGapless ? 0 : 10}px)`, 
+        paddingBottom: 'calc(10px * var(--pdf-scale, 1.2))', 
         position: 'relative',
         display: 'flex',
         justifyContent: 'center',
-        width: '100%',
-        overflow: 'hidden'
+        width: '100%'
       }}
     >
       {shouldRender ? (
