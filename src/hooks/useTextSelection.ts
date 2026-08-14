@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useUiStore } from '../stores/uiStore';
 
 export interface RelativeRect {
   top: number;
@@ -25,8 +26,8 @@ export function useTextSelection(onSelection: (data: SelectionData | null) => vo
         const range = selection.getRangeAt(0);
         
         // Find if we are inside a textLayer (which means we are selecting PDF text)
-        // Use anchorNode instead of commonAncestorContainer so cross-page selections in Continuous Mode still work
-        let container = selection.anchorNode as HTMLElement;
+        // Use range.startContainer instead of anchorNode so cross-page selections in Continuous Mode still work
+        let container = range.startContainer as HTMLElement;
         if (container.nodeType === 3) container = container.parentElement as HTMLElement;
         
         // Ignore selections inside the copilot popup itself
@@ -84,10 +85,49 @@ export function useTextSelection(onSelection: (data: SelectionData | null) => vo
         }, 100);
       }
     };
+    
+    // Track active selection pages during drag to prevent virtualization unmounts
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) {
+        useUiStore.getState().setActiveSelectionPages(null);
+        return;
+      }
+      
+      const anchorNode = selection.anchorNode;
+      const focusNode = selection.focusNode;
+      
+      if (anchorNode && focusNode) {
+        let anchorContainer = anchorNode.nodeType === 3 ? anchorNode.parentElement : anchorNode as HTMLElement;
+        let focusContainer = focusNode.nodeType === 3 ? focusNode.parentElement : focusNode as HTMLElement;
+        
+        const anchorTextLayer = anchorContainer?.closest('.textLayer');
+        const focusTextLayer = focusContainer?.closest('.textLayer');
+        
+        if (anchorTextLayer && focusTextLayer) {
+          const anchorPageAttr = anchorTextLayer.getAttribute('data-page-number');
+          const focusPageAttr = focusTextLayer.getAttribute('data-page-number');
+          
+          if (anchorPageAttr && focusPageAttr) {
+            const anchorPage = parseInt(anchorPageAttr, 10);
+            const focusPage = parseInt(focusPageAttr, 10);
+            const minPage = Math.min(anchorPage, focusPage);
+            const maxPage = Math.max(anchorPage, focusPage);
+            useUiStore.getState().setActiveSelectionPages([minPage, maxPage]);
+            return;
+          }
+        }
+      }
+      
+      // If we got here, it's not a valid PDF multi-page selection
+      useUiStore.getState().setActiveSelectionPages(null);
+    };
 
     document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('selectionchange', handleSelectionChange);
     return () => {
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('selectionchange', handleSelectionChange);
     };
   }, [onSelection]);
 }

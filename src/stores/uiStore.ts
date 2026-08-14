@@ -11,6 +11,7 @@ interface UiState {
   isNotesSplitOpen: boolean;
   notesSplitWidth: number;
   activeSelection: SelectionData | null;
+  activeSelectionPages: [number, number] | null;
   ttsHighlight: { pageNum: number; rects: { top: number; left: number; width: number; height: number }[] } | null;
   focusedPanel: 'reader' | 'notes' | null;
   setActiveView: (view: ViewType) => void;
@@ -20,6 +21,7 @@ interface UiState {
   toggleNotesSplit: () => void;
   setNotesSplitWidth: (width: number) => void;
   setActiveSelection: (selection: SelectionData | null) => void;
+  setActiveSelectionPages: (pages: [number, number] | null) => void;
   setTtsHighlight: (highlight: { pageNum: number; rects: any[] } | null) => void;
   setFocusedPanel: (panel: 'reader' | 'notes' | null) => void;
 }
@@ -32,6 +34,7 @@ export const useUiStore = create<UiState>((set) => ({
   isNotesSplitOpen: false,
   notesSplitWidth: 50,
   activeSelection: null,
+  activeSelectionPages: null,
   ttsHighlight: null,
   focusedPanel: null,
   setActiveView: (view) => set({ activeView: view }),
@@ -41,6 +44,7 @@ export const useUiStore = create<UiState>((set) => ({
   toggleNotesSplit: () => set((state) => ({ isNotesSplitOpen: !state.isNotesSplitOpen })),
   setNotesSplitWidth: (width) => set({ notesSplitWidth: width }),
   setActiveSelection: (selection) => set({ activeSelection: selection }),
+  setActiveSelectionPages: (pages) => set({ activeSelectionPages: pages }),
   setTtsHighlight: (highlight) => set({ ttsHighlight: highlight }),
   setFocusedPanel: (panel) => set({ focusedPanel: panel }),
 }));
