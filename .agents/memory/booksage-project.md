@@ -314,3 +314,9 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Continuous Mode Text Selection:** Fixed Chromium CSS gap bug by switching margin to padding, completely restoring multi-page text selection logic without dropping text.
 - **Selection Virtualization Lock:** Implemented 'Selection Lock' state in uiStore that forces pages trapped inside a dragging selection to stay mounted regardless of IntersectionObserver status, guaranteeing native DOM selection integrity.
 - **Gapless Scroll Toggle:** Turned the padding gap fix into a feature toggle inside Display Settings for users who prefer seamless PDF scrolling.
+
+### Session 2026-08-15 Notes (Copilot Fixes)
+- **Copilot UI Fixes:** Fixed bottom orb overlapping the page controls, added font size increase/decrease buttons in the Copilot sidebar, and added tooltips for personas (Scholar, Teacher, Coach, Devil's Advocate).
+- **Sidebar UX:** Made the Copilot sidebar resizable and bound it to `uiStore` to remember width across sessions.
+- **Pipeline Data Integrity:** Fixed race conditions where chapters were prematurely marked green without generated lessons. Refactored `bookStore.ts` extractions to use ID-based tracking.
+- **Chat Export:** Refactored Tauri Chat Export to properly use Tauri v2's `@tauri-apps/plugin-dialog` and `@tauri-apps/plugin-fs` natively, with dynamic session-title filenames, fixing silent fallback downloads.
