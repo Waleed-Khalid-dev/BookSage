@@ -187,6 +187,76 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Text Selection:** Validated perfect sync between internal pdf.js coordinates and rendered text layers.
 - **Next:** Phase 4.5 (Reader Polish) or Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).
 
+### Session 2026-08-07 Notes (Phase 5)
+- **Completed Phase 5 (Notes Viewer):**
+  - Built an interactive, Obsidian-inspired UI rendered dynamically from AI-extracted JSON.
+  - Implemented 'Key Insights' (global list) and 'Flashcard' (active recall) view modes.
+  - Resolved Tauri FS ACL errors by using `invokePython` to fetch local files securely.
+  - Handled varying JSON array-wrapping edge cases for robust parsing.
+  - Persisted user notes, studied status, and implementation steps progress to SQLite.
+
+### Session 2026-08-07 Notes
+- Added CSS transform-based zoom stability for highlighting and TTS
+- Implemented persistent customizable text selection color and opacity
+- Refined annotation toolbar: added underline and strikethrough color picker
+- Fixed strikethrough alignment to center on lowercase letters
+- Separated layer blending to fix opacity of lines vs highlight blocks
+- Refactored AudioToolbar to use DOM-independent tracking offsets
+- Re-architected TTSHighlightLayer scaling to prevent CSS transition fighting
+- Updated reader_feature_research to mark completed UI/UX improvements
+
+## Key Files
+- `RoadMap.md` — v3, full technical blueprint
+- `booksage-plan.md` — v3, 9-phase task list
+- `README.md` — public-facing description
+- `GUI/` — all Replit mockup TSX + screenshots
+- `.agents/memory/` — this memory system
+- `C:\Users\Ace\.gemini\antigravity\brain\81b4e0a9-.../replit-ui-prompt.md` — Replit prompt artifact
+
+### Session 2026-07-30 Notes
+- **Built Phase 0 & Phase 1:** Scaffolding complete (Tauri v2 + React 18) and Python sidecar PDF engine built (`pdf_handler.py`, `chapter_splitter.py`, `main.py`).
+- **Verified:** PDF split by chapters using PyMuPDF successfully outputs to `Documents/BookSage_Projects`. React frontend builds cleanly.
+- **Built Phase 2 (AI Extractor):** Developed AI extractor backend with `GeminiClient` and strict JSON schema generation with one-shot retry logic. Added session-based chat with context injection (`ai_chat.py`).
+- **Verified:** `gemini-flash-latest` accurately extracts JSON chapter lessons and bypasses restrictive API quotas.
+- **Built Phase 3 (Pipeline View):** Configured Tauri `shell:allow-execute` capabilities. Implemented `pythonService.ts` for sidecar IPC and `bookStore.ts` for state management. Refactored Tailwind-based `MainWindow.tsx` to Vanilla CSS (`PipelineView.tsx`, `PipelineView.css`, `DonutChart.tsx`, `ActivityBarChart.tsx`) ensuring strict compliance with the no-Tailwind rule.
+- **Next:** Phase 4 — Book Reader.
+
+### Session 2026-07-31 Notes
+- **Debugged Phase 3 Pipeline:** Identified cause of immediate extraction failures (empty API key).
+- **Refactoring UI:** Reverting PipelineView back to the exact Tailwind-based GUI mockup to match RoadMap.md specifications.
+- **Fixed Encoding & UI Accessibility:** Replaced `btoa` with Unicode-safe encoder (`encodeURIComponent`) in `pythonService.ts` to fix extraction crashes on special characters. Fixed light/dark mode CSS bugs in `PipelineView` (chapter titles & dropdown readability).
+- **Added Robustness & Persistence:** Implemented "Retry Failed" feature. Wrapped `bookStore.ts` with Zustand `persist` middleware to save API Key and Model choice to localStorage across app restarts.
+- **Multi-chapter selection & Markdown Rendering Fix:** Added multi-select retry logic. Fixed UI and backend Python script to properly render `Quotes`, `Difficulty to Implement`, and `Tags` missing from the markdown export.
+- **Decision:** Use SQLite (Phase 3.5) for proper session persistence instead of localStorage to support production-grade long-term storage and the upcoming Library View.
+- **Next:** Phase 3.5 — SQLite Persistence Layer or Phase 4 — Book Reader.
+
+### Session 2026-08-01 Notes
+- **Storage & Build Resolution:** Resolved a massive disk space crash on the C: drive caused by Rust compiler artifacts. Moved the Windows Page File to D: and restored the Rust environment to maintain the build system.
+- **Completed Phase 3.5 (SQLite Persistence):** 
+  - Integrated `tauri-plugin-sql` and successfully created `booksage.db` in the AppData directory.
+  - Implemented `dbService.ts` to perform CRUD operations (upsertBook, upsertChapter).
+  - Wired `bookStore.ts` to save and resume extraction state into SQLite, completely bypassing localStorage for chapter data.
+  - Fixed a Tauri capabilities error by explicitly enabling `sql:allow-execute` in `default.json`.
+- **Verified:** Extracted 34 chapters, closed the app midway, and confirmed the SQLite DB perfectly saved the `done` and `process` state for future resumption.
+- **Roadmap Validation:** Checked `RoadMap.md` to verify that Phase 7 (Library View) correctly dictates how the saved SQLite books will be visually loaded into the UI.
+- **Next:** Phase 4 (Book Reader).
+
+### Session 2026-08-03 Notes
+- **Completed Phase 4 (Book Reader):**
+  - Built Continuous and Single Page reading modes.
+  - Fixed native PDF text selection by using pdfjs-dist native CSS.
+  - Fixed infinite render loop in Continuous mode by removing IntersectionObserver state dependency.
+  - Implemented highlight extraction rendering and context menu removal feature.
+  - Resolved trackpad pinch-to-zoom by enabling zoomHotkeysEnabled in Tauri.
+- **Next:** Phase 5 — Notes Viewer or Phase 6 — AI Copilot.
+
+### Session 2026-08-04 Notes
+- **Completed Phase 4 (Book Reader) Refinements:**
+- **Fixed Render Crashes:** Added ErrorBoundary and fixed hooks execution order.
+- **Fixed Zoom & Layout Bugs:** Removed flexbox vertical squishing, enforced strict `overflow: hidden` to prevent text layer bleed, and stabilized continuous mode viewport jumping.
+- **Text Selection:** Validated perfect sync between internal pdf.js coordinates and rendered text layers.
+- **Next:** Phase 4.5 (Reader Polish) or Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).
+
 ### Session 2026-08-05 Notes
 - **Completed Phase 4.5 (Reader Polish):**
   - **Full-Text Search:** Integrated PyMuPDF `search_for` via IPC. Replaced `window.find()` with a robust backend engine. Highlight rectangles are rendered over the PDF natively.
@@ -194,6 +264,18 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - **Visual Polish:** Added on-canvas sticky note indicator icons, a reading progress bar in the header, and improved hotkey bindings.
   - **Virtualization:** Implemented a highly performant PDF Thumbnail Strip in the sidebar using `@tanstack/react-virtual` to dynamically render mini canvases without lagging the UI.
   - **Two-Page Spread:** Implemented a true side-by-side Book view (`SpreadReader`) with automatic cover page handling (even=left, odd=right), smart 2-page jump navigation, smooth 3D page flip animations, and a realistic central spine gradient.
+  - **Collapsible Sidebar:** Maximized reading focus with a fully collapsible sidebar, utilizing smooth width transitions and a floating toggle button.
+  - **Drawing Tools:** Added freehand Pen tool, dynamic Eraser tool with hit-detection, and customizable pen/eraser size sliders.
+  - **Undo/Redo System:** Implemented a robust in-memory stack for tracking drawing/erasing actions with UI buttons and keyboard shortcuts (Ctrl+Z / Ctrl+Y).
+  - **Display Themes:** Added Invert PDF Colors toggle, and custom PDF Background and Text Tint color pickers utilizing CSS mix-blend-mode and dynamic SVG Duotone filters for perfect color mapping without losing image fidelity.
+  - **Margin Control:** Implemented Smart Margin Cropping using a robust CSS transform strategy, allowing users to dynamically slice off baked-in PDF white space without breaking the document's absolute layout or virtualized scrolling engine. Font Size and Line Spacing controls were deferred to the upcoming Markdown Notes Viewer.
+  - **Rendering Stability & Performance:** Fixed 0x0 container initialization bug causing persistent blank pages in Single Page mode. Restored offscreen canvas double-buffering to eliminate black flickering during page transitions. Optimized Continuous Reader scroll performance by increasing IntersectionObserver margin to 800% (8-viewport prefetch) and implementing a precise 25ms debounce on the worker queue, completely eliminating "unloaded white page" flashes during rapid scrolling. Added Highlight Opacity persistence slider.
+  - **Focus Mode & Annotations:** Implemented native distraction-free Focus Mode (F11/Maximize) with smooth UI transitions and auto-collapsing panels. Added Annotation Export feature (Markdown/Text) via Tauri fs/dialog. Integrated global database search (Cmd+K) for querying highlights and custom notes across all books with jump-to-page navigation.
+  - **Reading Stats & Gamification:** Designed and implemented a comprehensive Reading Stats modal. Created `reading_sessions` SQLite table to securely log active reading periods. Engineered real-time calculation logic for personal average reading speed to output dynamic "Time Remaining" estimates. Displayed global stats (Daily Pages, Weekly Pages) and integrated a 🔥 Reading Streak algorithm that retroactively checks consecutive days read, gamifying the user experience.
+- **Next:** Phase 5 (Notes Viewer) or Phase 6 (AI Copilot).
+
+### Session 2026-08-09 Notes (Phase 5b)
+- **Completed Phase 5b (Split View):**
   - Built a resizable Split View layout for side-by-side Book Reader and Notes Viewer.
   - Implemented draggable divider with 20% to 80% width clamping.
   - Added 'Split View' toggle in IconSidebar and bound a customizable global hotkey (`Ctrl + \`).

@@ -568,12 +568,19 @@ export const useBookStore = create<BookState>()(
         }
         
         for (let i = 0; i < chapters.length; i++) {
+          if (get().bookId !== bookId) {
+            console.log("Book changed, stopping extraction.");
+            break;
+          }
           const chap = chapters[i];
           if (chap.status === 'done' || !chap.path) continue;
 
           set((state) => {
             const newChapters = [...state.chapters];
-            newChapters[i].status = 'process';
+            const currentIndex = newChapters.findIndex(c => c.id === chap.id);
+            if (currentIndex !== -1) {
+              newChapters[currentIndex].status = 'process';
+            }
             return { chapters: newChapters };
           });
           
@@ -597,24 +604,30 @@ export const useBookStore = create<BookState>()(
 
           set((state) => {
             const newChapters = [...state.chapters];
-            if (res.status === 'success') {
-               newChapters[i].status = 'done';
-               newChapters[i].error = undefined;
-               newChapters[i].json_path = res.output_path;
-            } else {
-               newChapters[i].status = 'error';
-               newChapters[i].error = res.message || 'Unknown error occurred.';
+            const currentIndex = newChapters.findIndex(c => c.id === chap.id);
+            if (currentIndex !== -1) {
+              if (res.status === 'success') {
+                 newChapters[currentIndex].status = 'done';
+                 newChapters[currentIndex].error = undefined;
+                 newChapters[currentIndex].json_path = res.output_path;
+              } else {
+                 newChapters[currentIndex].status = 'error';
+                 newChapters[currentIndex].error = res.message || 'Unknown error occurred.';
+              }
             }
             return { chapters: newChapters };
           });
           
-          const updatedChap = get().chapters[i];
-          if (updatedChap.id && bookId) {
-             await upsertChapter({
-                id: updatedChap.id, book_id: bookId, num: updatedChap.num, title: updatedChap.title, pages: updatedChap.pp,
-                status: updatedChap.status, txt_path: updatedChap.path || null, json_path: updatedChap.json_path || null, 
-                error_msg: updatedChap.error || null, updated_at: Date.now()
-             });
+          const currentIndex = get().chapters.findIndex(c => c.id === chap.id);
+          if (currentIndex !== -1) {
+            const updatedChap = get().chapters[currentIndex];
+            if (updatedChap.id && bookId) {
+               await upsertChapter({
+                  id: updatedChap.id, book_id: bookId, num: updatedChap.num, title: updatedChap.title, pages: updatedChap.pp,
+                  status: updatedChap.status, txt_path: updatedChap.path || null, json_path: updatedChap.json_path || null, 
+                  error_msg: updatedChap.error || null, updated_at: Date.now()
+               });
+            }
           }
         }
       },
@@ -637,11 +650,19 @@ export const useBookStore = create<BookState>()(
         }
 
         set({ isExtracting: true });
-        for (const { c, i } of failedIndices) {
+        for (const { c } of failedIndices) {
+          if (get().bookId !== bookId) {
+            console.log("Book changed, stopping retry.");
+            break;
+          }
+
           set((state) => {
             const ch = [...state.chapters];
-            ch[i].status = 'process';
-            ch[i].error = undefined;
+            const currentIndex = ch.findIndex(chap => chap.id === c.id);
+            if (currentIndex !== -1) {
+              ch[currentIndex].status = 'process';
+              ch[currentIndex].error = undefined;
+            }
             return { chapters: ch };
           });
           
@@ -662,24 +683,30 @@ export const useBookStore = create<BookState>()(
 
           set((state) => {
             const ch = [...state.chapters];
-            if (res.status === 'success') {
-              ch[i].status = 'done';
-              ch[i].error = undefined;
-              ch[i].json_path = res.output_path;
-            } else {
-              ch[i].status = 'error';
-              ch[i].error = res.message || 'Unknown error occurred.';
+            const currentIndex = ch.findIndex(chap => chap.id === c.id);
+            if (currentIndex !== -1) {
+              if (res.status === 'success') {
+                ch[currentIndex].status = 'done';
+                ch[currentIndex].error = undefined;
+                ch[currentIndex].json_path = res.output_path;
+              } else {
+                ch[currentIndex].status = 'error';
+                ch[currentIndex].error = res.message || 'Unknown error occurred.';
+              }
             }
             return { chapters: ch };
           });
           
-          const updatedChap = get().chapters[i];
-          if (updatedChap.id && bookId) {
-             await upsertChapter({
-                id: updatedChap.id, book_id: bookId, num: updatedChap.num, title: updatedChap.title, pages: updatedChap.pp,
-                status: updatedChap.status, txt_path: updatedChap.path || null, json_path: updatedChap.json_path || null, 
-                error_msg: updatedChap.error || null, updated_at: Date.now()
-             });
+          const currentIndex = get().chapters.findIndex(chap => chap.id === c.id);
+          if (currentIndex !== -1) {
+            const updatedChap = get().chapters[currentIndex];
+            if (updatedChap.id && bookId) {
+               await upsertChapter({
+                  id: updatedChap.id, book_id: bookId, num: updatedChap.num, title: updatedChap.title, pages: updatedChap.pp,
+                  status: updatedChap.status, txt_path: updatedChap.path || null, json_path: updatedChap.json_path || null, 
+                  error_msg: updatedChap.error || null, updated_at: Date.now()
+               });
+            }
           }
         }
         set({ isExtracting: false });
@@ -701,11 +728,18 @@ export const useBookStore = create<BookState>()(
         
         for (const index of validIndices) {
            const chap = chapters[index];
+           if (get().bookId !== bookId) {
+             console.log("Book changed, stopping specific retry.");
+             break;
+           }
            
            set((state) => {
               const newChapters = [...state.chapters];
-              newChapters[index].status = 'process';
-              newChapters[index].error = undefined;
+              const currentIndex = newChapters.findIndex(c => c.id === chap.id);
+              if (currentIndex !== -1) {
+                newChapters[currentIndex].status = 'process';
+                newChapters[currentIndex].error = undefined;
+              }
               return { chapters: newChapters };
            });
            
@@ -727,32 +761,41 @@ export const useBookStore = create<BookState>()(
               
               set((state) => {
                  const newChapters = [...state.chapters];
-                 if (res.status === 'success') {
-                    newChapters[index].status = 'done';
-                    newChapters[index].error = undefined;
-                    newChapters[index].json_path = res.output_path;
-                 } else {
-                    newChapters[index].status = 'error';
-                    newChapters[index].error = res.message || 'Unknown error occurred.';
+                 const currentIndex = newChapters.findIndex(c => c.id === chap.id);
+                 if (currentIndex !== -1) {
+                   if (res.status === 'success') {
+                      newChapters[currentIndex].status = 'done';
+                      newChapters[currentIndex].error = undefined;
+                      newChapters[currentIndex].json_path = res.output_path;
+                   } else {
+                      newChapters[currentIndex].status = 'error';
+                      newChapters[currentIndex].error = res.message || 'Unknown error occurred.';
+                   }
                  }
                  return { chapters: newChapters };
               });
            } catch (e: any) {
               set((state) => {
                  const newChapters = [...state.chapters];
-                 newChapters[index].status = 'error';
-                 newChapters[index].error = e.message || String(e);
+                 const currentIndex = newChapters.findIndex(c => c.id === chap.id);
+                 if (currentIndex !== -1) {
+                   newChapters[currentIndex].status = 'error';
+                   newChapters[currentIndex].error = e.message || String(e);
+                 }
                  return { chapters: newChapters };
               });
            }
            
-           const updatedChap = get().chapters[index];
-           if (updatedChap.id && bookId) {
-             await upsertChapter({
-                id: updatedChap.id, book_id: bookId, num: updatedChap.num, title: updatedChap.title, pages: updatedChap.pp,
-                status: updatedChap.status, txt_path: updatedChap.path || null, json_path: updatedChap.json_path || null, 
-                error_msg: updatedChap.error || null, updated_at: Date.now()
-             });
+           const currentIndex = get().chapters.findIndex(c => c.id === chap.id);
+           if (currentIndex !== -1) {
+             const updatedChap = get().chapters[currentIndex];
+             if (updatedChap.id && bookId) {
+               await upsertChapter({
+                  id: updatedChap.id, book_id: bookId, num: updatedChap.num, title: updatedChap.title, pages: updatedChap.pp,
+                  status: updatedChap.status, txt_path: updatedChap.path || null, json_path: updatedChap.json_path || null, 
+                  error_msg: updatedChap.error || null, updated_at: Date.now()
+               });
+             }
            }
         }
         set({ isExtracting: false });

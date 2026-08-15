@@ -78,8 +78,11 @@ def split_book_into_chapters(pdf_path: str, book_id: str = "") -> Dict[str, Any]
         for i, item in enumerate(lvl1_items):
             level, title, start_page = item
             
-            # End page is the start of the next chapter, or EOF
-            end_page = lvl1_items[i+1][2] if i + 1 < len(lvl1_items) else page_count
+            # End page is the page before the next chapter, or EOF
+            if i + 1 < len(lvl1_items):
+                end_page = max(start_page, lvl1_items[i+1][2] - 1)
+            else:
+                end_page = page_count
             
             # Handle edge case where chapters point to same page
             if end_page < start_page:

@@ -97,7 +97,7 @@ export function PipelineView() {
 
         let pathToRead = chapter.path;
         if (activeTab === 'AI Output' || activeTab === 'Markdown Source') {
-          pathToRead = chapter.path.replace('.txt', '.json');
+          pathToRead = chapter.json_path || (chapter.path ? chapter.path.replace('.txt', '.json') : '');
         }
         
         const res = await invokePython({ command: 'read_file', path: pathToRead });

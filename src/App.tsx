@@ -10,7 +10,6 @@ import { PipelineView } from "./components/views/PipelineView";
 import { AIChatView } from "./components/views/AIChatView";
 import { GlobalSearchModal } from "./components/shared/GlobalSearchModal";
 import { SettingsDialog } from "./components/shared/SettingsDialog";
-import { CopilotOrb } from "./components/copilot/CopilotOrb";
 import { CopilotSidebar } from "./components/copilot/CopilotSidebar";
 import { useShortcuts } from "./hooks/useShortcuts";
 import "pdfjs-dist/web/pdf_viewer.css";
@@ -54,7 +53,9 @@ function App() {
   };
 
   // Determine current chapter based on lastPage
-  const activeChapter = chapters.find(c => {
+  // Search from end to start so that if pages overlap (e.g. 15-26 and 26-35), 
+  // landing on page 26 matches the start of the new chapter rather than the end of the old one.
+  const activeChapter = [...chapters].reverse().find(c => {
     if (!c.pp) return false;
     const [start, end] = c.pp.split('-').map(Number);
     return lastPage >= start && lastPage <= end;
@@ -80,7 +81,6 @@ function App() {
       </main>
       <GlobalSearchModal />
       <SettingsDialog />
-      <CopilotOrb />
       <CopilotSidebar
         bookId={bookId}
         bookTitle={currentBookTitle}

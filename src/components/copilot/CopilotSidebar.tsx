@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { useChatStore, CopilotPersona, ContextMode } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
+import { useUiStore } from '../../stores/uiStore';
 import { ModelSelector } from './ModelSelector';
-import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import './CopilotSidebar.css';
 
@@ -16,11 +18,11 @@ const PRESET_PROMPTS = [
   { icon: '🔗', label: 'Connect to previous', text: 'How does this chapter connect to or build upon the previous chapters in this book?' },
 ];
 
-const PERSONAS: { id: CopilotPersona; icon: string; label: string }[] = [
-  { id: 'scholar',  icon: '🎓', label: 'Scholar' },
-  { id: 'teacher',  icon: '👨‍🏫', label: 'Teacher' },
-  { id: 'coach',    icon: '🔥', label: 'Coach' },
-  { id: 'devil',    icon: '🤔', label: 'Devil\'s Advocate' },
+const PERSONAS: { id: CopilotPersona; icon: string; label: string; description: string }[] = [
+  { id: 'scholar',  icon: '🎓', label: 'Scholar', description: 'Gives you deep, academic, and detailed answers.' },
+  { id: 'teacher',  icon: '👨‍🏫', label: 'Teacher', description: 'Breaks down complex concepts so they are easy to understand.' },
+  { id: 'coach',    icon: '🔥', label: 'Coach', description: 'Gives you highly actionable, motivating advice on how to apply the book\'s concepts to your life.' },
+  { id: 'devil',    icon: '🤔', label: 'Devil\'s Advocate', description: 'Challenges the author\'s ideas, points out flaws, and encourages critical thinking instead of blindly agreeing with the text.' },
 ];
 
 interface CopilotSidebarProps {
@@ -44,6 +46,7 @@ export function CopilotSidebar({
     activeSession, createSession, setActiveSession, deleteSession
   } = useChatStore();
   const { aiModel, setAiModel } = useBookStore();
+  const { copilotSidebarWidth, setCopilotSidebarWidth } = useUiStore();
   const { getKey } = useApiKeys();
 
   const [input, setInput] = useState('');
@@ -52,25 +55,48 @@ export function CopilotSidebar({
   const [copied, setCopied] = useState<string | null>(null);
   const [showPersona, setShowPersona] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
+  const [fontSize, setFontSize] = useState(14);
   
   // Track local context mode
   const session = activeSession();
   const [contextMode, setContextMode] = useState<ContextMode>(session?.contextMode ?? 'chapter');
-  const { isSupported, isListening, transcript, toggleListening, resetTranscript } = useSpeechRecognition();
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Resizing logic
+  const isResizing = useRef(false);
 
-  // Update input when transcript changes
   useEffect(() => {
-    if (transcript) {
-      setInput((prev) => {
-        const spacer = prev && !prev.endsWith(' ') ? ' ' : '';
-        return prev + spacer + transcript;
-      });
-      resetTranscript();
-    }
-  }, [transcript, resetTranscript]);
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!isResizing.current) return;
+      // Sidebar is on the right, so width is (window.innerWidth - e.clientX)
+      const newWidth = Math.max(260, Math.min(600, window.innerWidth - e.clientX));
+      setCopilotSidebarWidth(newWidth);
+    };
+
+    const handlePointerUp = () => {
+      if (isResizing.current) {
+        isResizing.current = false;
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = 'auto';
+      }
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [setCopilotSidebarWidth]);
+
+  const startResizing = (e: React.PointerEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+  };
 
   // Handle Add to Chat Context
   useEffect(() => {
@@ -91,7 +117,6 @@ export function CopilotSidebar({
     if (bookId) loadSessions(bookId);
   }, [bookId, loadSessions]);
 
-  // Auto-scroll to bottom on new messages
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -151,7 +176,7 @@ export function CopilotSidebar({
     setAiModel(modelId);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!session) return;
     const lines: string[] = [
       `# BookSage Copilot — ${bookTitle}`,
@@ -165,12 +190,27 @@ export function CopilotSidebar({
     for (const msg of session.messages) {
       lines.push(`**${msg.role === 'user' ? 'You' : 'Copilot'}:** ${msg.content}`, '');
     }
-    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `BookSage-Chat-${Date.now()}.md`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const content = lines.join('\n');
+    const safeTitle = session.title ? session.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'chat';
+    
+    try {
+      const filePath = await save({
+        defaultPath: `BookSage-${safeTitle}.md`,
+        filters: [{ name: 'Markdown', extensions: ['md'] }]
+      });
+      if (filePath) {
+        await writeTextFile(filePath, content);
+      }
+    } catch (e) {
+      console.error('Failed to export using Tauri', e);
+      // Fallback for browser testing
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `BookSage-${safeTitle}.md`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
   };
 
   const handleNewSession = () => {
@@ -204,11 +244,19 @@ export function CopilotSidebar({
   }
 
   return (
-    <div className="csb-root">
-      {/* ── Header ── */}
-      <div className="csb-header">
+    <>
+      <div 
+        className="csb-root"
+        style={{ width: `${copilotSidebarWidth}px` }}
+      >
+        <div className="csb-resizer" onPointerDown={startResizing}></div>
+        <div className="csb-header">
         <span className="csb-title">✦ Copilot</span>
         <div className="csb-header-actions">
+          {/* Font controls */}
+          <button className="csb-icon-btn" title="Decrease font size" onClick={() => setFontSize(f => Math.max(10, f - 1))}>A-</button>
+          <button className="csb-icon-btn" title="Increase font size" onClick={() => setFontSize(f => Math.min(24, f + 1))}>A+</button>
+          
           {/* Persona picker */}
           <div className="csb-persona-wrap">
             <button
@@ -225,6 +273,7 @@ export function CopilotSidebar({
                     key={p.id}
                     className={`csb-persona-opt ${persona === p.id ? 'csb-persona-opt--active' : ''}`}
                     onClick={() => { setPersona(p.id); setShowPersona(false); }}
+                    title={p.description}
                   >
                     {p.icon} {p.label}
                   </button>
@@ -314,7 +363,7 @@ export function CopilotSidebar({
       </div>
 
       {/* ── Chat thread ── */}
-      <div className="csb-thread">
+      <div className="csb-thread" style={{ fontSize: `${fontSize}px` }}>
         {!session || session.messages.length === 0 ? (
           <div className="csb-empty">
             <span className="csb-empty-icon">✦</span>
@@ -385,15 +434,6 @@ export function CopilotSidebar({
             disabled={!getKey(provider) || isLoading}
           />
           <div className="csb-input-actions">
-            {isSupported && (
-              <button
-                className={`csb-mic-btn ${isListening ? 'listening' : ''}`}
-                onClick={toggleListening}
-                title={isListening ? "Stop listening" : "Voice input (Alt+M)"}
-              >
-                🎤
-              </button>
-            )}
             <button
               className="csb-send"
               onClick={() => handleSend()}
@@ -408,5 +448,6 @@ export function CopilotSidebar({
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { useChatStore, CopilotPersona } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
@@ -105,7 +107,7 @@ export function AIChatView() {
     setAiModel(modelId);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!session) return;
     const lines = [
       `# BookSage Copilot — ${currentBookTitle}`,
@@ -117,12 +119,20 @@ export function AIChatView() {
     for (const msg of session.messages) {
       lines.push(`**${msg.role === 'user' ? 'You' : 'BookSage'}:** ${msg.content}`, '');
     }
-    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `BookSage-Chat-${Date.now()}.md`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    
+    try {
+      const filePath = await save({
+        filters: [{ name: 'Markdown', extensions: ['md'] }],
+        defaultPath: `BookSage-Chat-${Date.now()}.md`
+      });
+      
+      if (filePath) {
+        await writeTextFile(filePath, lines.join('\n'));
+        alert('Chat exported successfully!');
+      }
+    } catch (e: any) {
+      alert(`Export failed: ${e.message || String(e)}`);
+    }
   };
 
   const handleCopy = (content: string, id: string) => {

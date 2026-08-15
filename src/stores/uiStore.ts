@@ -10,6 +10,7 @@ interface UiState {
   isSettingsOpen: boolean;
   isNotesSplitOpen: boolean;
   notesSplitWidth: number;
+  copilotSidebarWidth: number;
   activeSelection: SelectionData | null;
   activeSelectionPages: [number, number] | null;
   ttsHighlight: { pageNum: number; rects: { top: number; left: number; width: number; height: number }[] } | null;
@@ -20,6 +21,7 @@ interface UiState {
   setIsSettingsOpen: (isOpen: boolean) => void;
   toggleNotesSplit: () => void;
   setNotesSplitWidth: (width: number) => void;
+  setCopilotSidebarWidth: (width: number) => void;
   setActiveSelection: (selection: SelectionData | null) => void;
   setActiveSelectionPages: (pages: [number, number] | null) => void;
   setTtsHighlight: (highlight: { pageNum: number; rects: any[] } | null) => void;
@@ -33,6 +35,7 @@ export const useUiStore = create<UiState>((set) => ({
   isSettingsOpen: false,
   isNotesSplitOpen: false,
   notesSplitWidth: 50,
+  copilotSidebarWidth: 320,
   activeSelection: null,
   activeSelectionPages: null,
   ttsHighlight: null,
@@ -43,6 +46,7 @@ export const useUiStore = create<UiState>((set) => ({
   setIsSettingsOpen: (isOpen) => set({ isSettingsOpen: isOpen }),
   toggleNotesSplit: () => set((state) => ({ isNotesSplitOpen: !state.isNotesSplitOpen })),
   setNotesSplitWidth: (width) => set({ notesSplitWidth: width }),
+  setCopilotSidebarWidth: (width) => set({ copilotSidebarWidth: width }),
   setActiveSelection: (selection) => set({ activeSelection: selection }),
   setActiveSelectionPages: (pages) => set({ activeSelectionPages: pages }),
   setTtsHighlight: (highlight) => set({ ttsHighlight: highlight }),
