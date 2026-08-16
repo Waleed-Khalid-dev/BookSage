@@ -331,6 +331,16 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 ### Session 2026-08-17 Notes (AI Chat Font Controls & Reading Chapter Sync)
 - **AI Chat Font Controls:** Added `A-` and `A+` font scaling buttons to `AIChatView.tsx` with scalable relative em units in `AIChatView.css`.
 - **Reading Chapter Context Sync:** Wired `AIChatView` to track active reader chapter via `lastPage`, synced `contextMode` with `chatStore`, passed `activeChapter.path` to Python `chat_with_context`, and added an active chapter header indicator badge.
+
+### Session 2026-08-17 Notes (Timestamps, Custom Chapter Selection, & Polish)
+- **Message Timestamps:** Added subtle formatted timestamps (`formatTime(msg.ts)`) under both user and AI message bubbles in `CopilotSidebar` and `AIChatView`.
+- **Copilot Sidebar Markdown:** Ported full markdown styling (headers `h1-h3`, tables, blockquotes, code blocks `pre`/`code`, lists) from `AIChatView.css` into `CopilotSidebar.css`.
+- **Custom Chapter Selection (AIChatView):** Implemented multi-chapter selection modal/popover in `AIChatView.tsx` with live search, "Select All / Clear All", chapter checkboxes with extraction indicators, and full raw text toggle.
+- **Dynamic Context Warning:** Added real-time warning for 3+ chapters with full raw text, styled with high contrast across Light, Sepia, and Dark themes.
+- **SQLite Persistence:** Stored `custom_chapter_ids` and `include_raw_text` in SQLite `chat_sessions` table with migrations, restoring exact context scope per session.
+- **Python Sidecar Context Engine:** Extended `chat_with_context` in `ai_chat.py` and `main.py` to parse complete structured JSON data + optional raw `.txt` content for custom selected chapters.
+- **Mic Button Cleanup:** Removed microphone button from `AIChatView.tsx` to match sidebar AI cleanup.
 - **Next:** Phase 7 (Library View).
+
 
 

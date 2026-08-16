@@ -67,3 +67,4 @@
 - [reference] Phase 6 Copilot Polish: Fixed overlap bugs, added sidebar resize, tooltips, and fixed Tauri v2 dialog export. Fixed pipeline chapter extraction race condition. → booksage-project.md
 - [session] 2026-08-16 AI Chat & Settings Theme: Complete. Fixed light/sepia contrast in AIChatView.css, added Theme selector with previews in SettingsDialog, and added Regenerate to Copilot/AIChat. → booksage-project.md
 - [session] 2026-08-17 AI Chat Font Controls & Chapter Sync: Complete. Added A-/A+ font scaling in AIChatView and synced active reading chapter context + badge. → booksage-project.md
+- [session] 2026-08-17 AI Chat Timestamps & Custom Chapter Selection: Complete. Added message timestamps to Sidebar/AIChat, enhanced sidebar markdown, implemented multi-chapter custom context picker with SQLite persistence, dynamic context warning with light/sepia contrast, and removed AIChatView mic button. → booksage-project.md
