@@ -19,10 +19,30 @@ const PRESET_PROMPTS = [
 ];
 
 const PERSONAS: { id: CopilotPersona; icon: string; label: string; description: string }[] = [
-  { id: 'scholar',  icon: '🎓', label: 'Scholar', description: 'Gives you deep, academic, and detailed answers.' },
-  { id: 'teacher',  icon: '👨‍🏫', label: 'Teacher', description: 'Breaks down complex concepts so they are easy to understand.' },
-  { id: 'coach',    icon: '🔥', label: 'Coach', description: 'Gives you highly actionable, motivating advice on how to apply the book\'s concepts to your life.' },
-  { id: 'devil',    icon: '🤔', label: 'Devil\'s Advocate', description: 'Challenges the author\'s ideas, points out flaws, and encourages critical thinking instead of blindly agreeing with the text.' },
+  { 
+    id: 'scholar',  
+    icon: '🎓', 
+    label: 'Scholar', 
+    description: 'Deep academic analysis — Gives you deep, academic, and detailed answers.' 
+  },
+  { 
+    id: 'teacher',  
+    icon: '👨‍🏫', 
+    label: 'Teacher', 
+    description: 'Simple explanations — Breaks down complex concepts so they are easy to understand.' 
+  },
+  { 
+    id: 'coach',    
+    icon: '🔥', 
+    label: 'Coach', 
+    description: 'Action-oriented — Gives you highly actionable, motivating advice on how to apply the book\'s concepts to your life.' 
+  },
+  { 
+    id: 'devil',    
+    icon: '🤔', 
+    label: 'Devil\'s Advocate', 
+    description: 'Challenges assumptions — Challenges the author\'s ideas, points out flaws, and encourages critical thinking instead of blindly agreeing with the text.' 
+  },
 ];
 
 interface CopilotSidebarProps {
@@ -282,7 +302,7 @@ export function CopilotSidebar({
           <div className="csb-persona-wrap">
             <button
               className="csb-icon-btn"
-              title="Switch persona"
+              title={`Switch persona (Current: ${PERSONAS.find(p => p.id === persona)?.label})`}
               onClick={() => setShowPersona(v => !v)}
             >
               {PERSONAS.find(p => p.id === persona)?.icon ?? '🎓'}
