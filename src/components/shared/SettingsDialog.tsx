@@ -2,8 +2,18 @@ import { useState, useEffect } from 'react';
 import { useUiStore } from '../../stores/uiStore';
 import { useShortcutStore, ShortcutAction, actionLabels, Shortcut } from '../../stores/shortcutStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
-import { X, RotateCcw, Key, Keyboard, Eye, EyeOff } from 'lucide-react';
+import { useBookStore } from '../../stores/bookStore';
+import { X, RotateCcw, Key, Keyboard, Eye, EyeOff, Palette } from 'lucide-react';
 import './SettingsDialog.css';
+
+const THEMES = [
+  { id: 'dark', label: 'Dark (Default)', bg: '#1a1a1a', panel: '#242424', text: '#d4d4d4', accent: '#009688' },
+  { id: 'light', label: 'Light', bg: '#f4f4f5', panel: '#e8e8ea', text: '#3a3a3a', accent: '#00796b' },
+  { id: 'sepia', label: 'Sepia', bg: '#f4ecd8', panel: '#e6dfc9', text: '#4a3e2a', accent: '#8b5a2b' },
+  { id: 'night', label: 'Night', bg: '#1e1e24', panel: '#26262e', text: '#c2c2c9', accent: '#5e81ac' },
+  { id: 'oled', label: 'OLED', bg: '#000000', panel: '#0a0a0a', text: '#e0e0e0', accent: '#bb86fc' },
+  { id: 'focus', label: 'Focus', bg: '#2a2a2a', panel: '#2a2a2a', text: '#d4d4d4', accent: '#009688' },
+];
 
 const PROVIDERS = [
   { id: 'gemini', label: 'Google Gemini' },
@@ -15,10 +25,11 @@ const PROVIDERS = [
 
 export function SettingsDialog() {
   const { isSettingsOpen, setIsSettingsOpen } = useUiStore();
+  const { readerTheme, setReaderTheme } = useBookStore();
   const { shortcuts, updateShortcut, resetToDefaults } = useShortcutStore();
   
   const { keys, loadKeys, saveKey, isInitialized } = useApiKeys();
-  const [activeTab, setActiveTab] = useState<'shortcuts' | 'apikeys'>('shortcuts');
+  const [activeTab, setActiveTab] = useState<'theme' | 'shortcuts' | 'apikeys'>('theme');
   const [listeningAction, setListeningAction] = useState<ShortcutAction | null>(null);
 
   // Local state for API keys being edited
@@ -90,6 +101,12 @@ export function SettingsDialog() {
         <div className="settings-header">
           <div className="settings-tabs">
             <button 
+              className={`tab-btn ${activeTab === 'theme' ? 'active' : ''}`}
+              onClick={() => setActiveTab('theme')}
+            >
+              <Palette size={18} /> Theme
+            </button>
+            <button 
               className={`tab-btn ${activeTab === 'shortcuts' ? 'active' : ''}`}
               onClick={() => setActiveTab('shortcuts')}
             >
@@ -108,6 +125,40 @@ export function SettingsDialog() {
         </div>
 
         <div className="settings-content">
+          {activeTab === 'theme' && (
+            <>
+              <h4>Theme & Appearance</h4>
+              <p className="settings-desc">Choose your preferred visual theme for reading, notes, and the studio interface.</p>
+              
+              <div className="themes-grid">
+                {THEMES.map((t) => {
+                  const isSelected = readerTheme === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      className={`theme-option-btn ${isSelected ? 'selected' : ''}`}
+                      onClick={() => setReaderTheme(t.id as any)}
+                    >
+                      <div className="theme-swatch" style={{ background: t.bg, borderColor: t.panel }}>
+                        <div className="theme-swatch-header" style={{ background: t.panel }}>
+                          <span className="theme-swatch-dot" style={{ background: t.accent }} />
+                        </div>
+                        <div className="theme-swatch-body">
+                          <div className="theme-swatch-bar" style={{ background: t.text, opacity: 0.85 }} />
+                          <div className="theme-swatch-bar short" style={{ background: t.text, opacity: 0.5 }} />
+                        </div>
+                      </div>
+                      <div className="theme-info">
+                        <span className="theme-label">{t.label}</span>
+                        {isSelected && <span className="theme-active-tag">Active</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
           {activeTab === 'shortcuts' && (
             <>
               <h4>Keyboard Shortcuts</h4>
