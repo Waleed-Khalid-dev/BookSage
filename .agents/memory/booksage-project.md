@@ -328,3 +328,9 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Settings Theme Selector:** Added a new **Theme & Appearance** tab in `SettingsDialog.tsx` with visual preview swatches for all 6 themes (Dark, Light, Sepia, Night, OLED, Focus) wired to `useBookStore`.
 - **Next:** Phase 7 (Library View).
 
+### Session 2026-08-17 Notes (AI Chat Font Controls & Reading Chapter Sync)
+- **AI Chat Font Controls:** Added `A-` and `A+` font scaling buttons to `AIChatView.tsx` with scalable relative em units in `AIChatView.css`.
+- **Reading Chapter Context Sync:** Wired `AIChatView` to track active reader chapter via `lastPage`, synced `contextMode` with `chatStore`, passed `activeChapter.path` to Python `chat_with_context`, and added an active chapter header indicator badge.
+- **Next:** Phase 7 (Library View).
+
+

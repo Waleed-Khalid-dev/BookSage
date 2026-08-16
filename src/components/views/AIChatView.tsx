@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
-import { useChatStore, CopilotPersona } from '../../stores/chatStore';
+import { useChatStore, CopilotPersona, ContextMode } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector } from '../copilot/ModelSelector';
@@ -34,14 +34,22 @@ export function AIChatView() {
     activeSession, createSession, setActiveSession, deleteSession,
     sendMessage, loadSessions, persona, setPersona, regenerateLastMessage
   } = useChatStore();
-  const { bookId, currentBookTitle, aiModel, setAiModel, chapters } = useBookStore();
+  const { bookId, currentBookTitle, aiModel, setAiModel, chapters, lastPage } = useBookStore();
   const { getKey } = useApiKeys();
+
+  // Determine current active chapter based on lastPage in reader
+  const activeChapter = [...chapters].reverse().find(c => {
+    if (!c.pp) return false;
+    const [start, end] = c.pp.split('-').map(Number);
+    return lastPage >= start && lastPage <= end;
+  }) || chapters[0];
 
   const [input, setInput] = useState('');
   const [model, setModel] = useState(aiModel);
   const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek'>('gemini');
   const [copied, setCopied] = useState<string | null>(null);
-  const [contextMode, setContextMode] = useState<'book' | 'chapter'>('book');
+  const [contextMode, setContextMode] = useState<ContextMode>('book');
+  const [fontSize, setFontSize] = useState<number>(14);
   const { isSupported, isListening, transcript, toggleListening, resetTranscript } = useSpeechRecognition();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -65,6 +73,23 @@ export function AIChatView() {
 
   const session = activeSession();
 
+  // Sync context mode from session
+  useEffect(() => {
+    if (session) {
+      setContextMode(session.contextMode || 'book');
+    }
+  }, [session?.id, session?.contextMode]);
+
+  const handleScopeChange = (mode: 'book' | 'chapter') => {
+    setContextMode(mode);
+    if (session) {
+      const updated = { ...session, contextMode: mode, updatedAt: Date.now() };
+      useChatStore.setState(state => ({
+        sessions: state.sessions.map(s => s.id === session.id ? updated : s)
+      }));
+    }
+  };
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [session?.messages.length, isLoading]);
@@ -87,8 +112,8 @@ export function AIChatView() {
 
     setInput('');
     await sendMessage(msg, {
-      mode: sess.contextMode || 'book',
-      chapterPath: undefined,
+      mode: contextMode,
+      chapterPath: activeChapter?.path,
       allJsonPaths: chapters.map(c => c.json_path).filter(Boolean) as string[],
       totalChapters: chapters.length
     }, provider, apiKey, model);
@@ -109,8 +134,8 @@ export function AIChatView() {
     if (!sess) return;
     
     await regenerateLastMessage({
-      mode: sess.contextMode || 'book',
-      chapterPath: undefined,
+      mode: contextMode,
+      chapterPath: activeChapter?.path,
       allJsonPaths: chapters.map(c => c.json_path).filter(Boolean) as string[],
       totalChapters: chapters.length
     }, provider, apiKey, model);
@@ -213,16 +238,27 @@ export function AIChatView() {
           <div className="acv-book-badge">
             <span className="acv-book-icon">📚</span>
             <span className="acv-book-name">{currentBookTitle || 'No book loaded'}</span>
+            {contextMode === 'chapter' && activeChapter && (
+              <span className="acv-chapter-badge" title={activeChapter.title}>› {activeChapter.title}</span>
+            )}
           </div>
           <div className="acv-header-actions">
+            {/* Font controls */}
+            <div className="acv-font-controls">
+              <button className="acv-font-btn" title="Decrease font size" onClick={() => setFontSize(f => Math.max(11, f - 1))}>A-</button>
+              <button className="acv-font-btn" title="Increase font size" onClick={() => setFontSize(f => Math.min(24, f + 1))}>A+</button>
+            </div>
+
             <div className="acv-context-toggle">
               <button
                 className={contextMode === 'book' ? 'active' : ''}
-                onClick={() => setContextMode('book')}
+                onClick={() => handleScopeChange('book')}
               >📚 Full Book</button>
               <button
                 className={contextMode === 'chapter' ? 'active' : ''}
-                onClick={() => setContextMode('chapter')}
+                onClick={() => handleScopeChange('chapter')}
+                disabled={!activeChapter}
+                title={activeChapter ? `Current reading chapter: ${activeChapter.title}` : 'No active chapter'}
               >📄 Chapter</button>
             </div>
             <button className="acv-export-btn" onClick={handleExport} title="Export chat to Markdown">⬇ Export</button>
@@ -230,7 +266,7 @@ export function AIChatView() {
         </div>
 
         {/* Thread */}
-        <div className="acv-thread">
+        <div className="acv-thread" style={{ fontSize: `${fontSize}px` }}>
           {!session || session.messages.length === 0 ? (
             <div className="acv-welcome">
               <div className="acv-welcome-icon">✦</div>
