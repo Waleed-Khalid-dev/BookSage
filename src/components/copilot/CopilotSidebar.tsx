@@ -35,6 +35,12 @@ interface CopilotSidebarProps {
   totalChapters?: number;
 }
 
+const formatTime = (ts?: number) => {
+  if (!ts) return '';
+  const date = new Date(ts);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
 export function CopilotSidebar({
   bookId, bookTitle, chapterTitle, chapterId, chapterPath, allJsonPaths, totalChapters
 }: CopilotSidebarProps) {
@@ -392,11 +398,12 @@ export function CopilotSidebar({
                 {msg.role === 'assistant' ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                 ) : (
-                  <p>{msg.content}</p>
+                  <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{msg.content}</p>
                 )}
               </div>
-              {msg.role === 'assistant' && (
-                <>
+              <div className="csb-msg-meta">
+                {msg.ts && <span className="csb-msg-time">{formatTime(msg.ts)}</span>}
+                {msg.role === 'assistant' && (
                   <div className="csb-msg-actions">
                     <button onClick={() => handleCopyMsg(msg.content, msg.id)}>
                       {copied === msg.id ? '✓ Copied' : '📋 Copy'}
@@ -405,6 +412,10 @@ export function CopilotSidebar({
                       <button onClick={() => handlePinMsg(msg.content)}>📌 Pin</button>
                     )}
                   </div>
+                )}
+              </div>
+              {msg.role === 'assistant' && (
+                <>
                   {/* Regenerate Button if it's the last message */}
                   {index === (session?.messages.length ?? 0) - 1 && (
                     <div style={{ marginTop: '4px' }}>
