@@ -81,15 +81,17 @@ function App() {
       </main>
       <GlobalSearchModal />
       <SettingsDialog />
-      <CopilotSidebar
-        bookId={bookId}
-        bookTitle={currentBookTitle}
-        chapterId={activeChapter?.id || activeChapter?.num.toString()}
-        chapterTitle={activeChapter?.title}
-        chapterPath={activeChapter?.path}
-        allJsonPaths={chapters.map(c => c.json_path).filter(Boolean) as string[]}
-        totalChapters={chapters.length}
-      />
+      {(activeView === "reader" || activeView === "notes") && (
+        <CopilotSidebar
+          bookId={bookId}
+          bookTitle={currentBookTitle}
+          chapterId={activeChapter?.id || activeChapter?.num.toString()}
+          chapterTitle={activeChapter?.title}
+          chapterPath={activeChapter?.path}
+          allJsonPaths={chapters.map(c => c.json_path).filter(Boolean) as string[]}
+          totalChapters={chapters.length}
+        />
+      )}
     </div>
   );
 }

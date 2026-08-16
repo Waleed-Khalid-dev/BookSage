@@ -42,7 +42,7 @@ export function CopilotSidebar({
     isSidebarOpen, toggleSidebar,
     sessions, activeSessionId, isLoading,
     sendMessage, loadSessions, persona, setPersona,
-    pinInsight,
+    pinInsight, regenerateLastMessage,
     activeSession, createSession, setActiveSession, deleteSession
   } = useChatStore();
   const { aiModel, setAiModel } = useBookStore();
@@ -168,6 +168,21 @@ export function CopilotSidebar({
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleRegenerate = async () => {
+    const apiKey = getKey(provider);
+    if (!apiKey) return;
+    
+    let sess = activeSession();
+    if (!sess) return;
+    
+    await regenerateLastMessage({
+      mode: sess.contextMode,
+      chapterPath,
+      allJsonPaths,
+      totalChapters
+    }, provider, apiKey, model);
   };
 
   const handleModelChange = (modelId: string, prov: any) => {
@@ -371,7 +386,7 @@ export function CopilotSidebar({
             <p className="csb-empty-sub">Use the presets above or type your own question.</p>
           </div>
         ) : (
-          session.messages.map((msg) => (
+          session.messages.map((msg, index) => (
             <div key={msg.id} className={`csb-msg csb-msg--${msg.role}`}>
               <div className="csb-msg-content">
                 {msg.role === 'assistant' ? (
@@ -390,6 +405,14 @@ export function CopilotSidebar({
                       <button onClick={() => handlePinMsg(msg.content)}>📌 Pin</button>
                     )}
                   </div>
+                  {/* Regenerate Button if it's the last message */}
+                  {index === (session?.messages.length ?? 0) - 1 && (
+                    <div style={{ marginTop: '4px' }}>
+                      <button className="csb-follow-up-pill" onClick={handleRegenerate} style={{ background: 'var(--bs-surface-hover)' }}>
+                        🔄 Regenerate
+                      </button>
+                    </div>
+                  )}
                   {msg.followUps && msg.followUps.length > 0 && (
                     <div className="csb-follow-ups">
                       {msg.followUps.map((q, i) => (

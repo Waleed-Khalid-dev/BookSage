@@ -32,7 +32,7 @@ export function AIChatView() {
   const {
     sessions, activeSessionId, isLoading,
     activeSession, createSession, setActiveSession, deleteSession,
-    sendMessage, loadSessions, persona, setPersona,
+    sendMessage, loadSessions, persona, setPersona, regenerateLastMessage
   } = useChatStore();
   const { bookId, currentBookTitle, aiModel, setAiModel, chapters } = useBookStore();
   const { getKey } = useApiKeys();
@@ -99,6 +99,21 @@ export function AIChatView() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleRegenerate = async () => {
+    const apiKey = getKey(provider);
+    if (!apiKey) return;
+    
+    let sess = activeSession();
+    if (!sess) return;
+    
+    await regenerateLastMessage({
+      mode: sess.contextMode || 'book',
+      chapterPath: undefined,
+      allJsonPaths: chapters.map(c => c.json_path).filter(Boolean) as string[],
+      totalChapters: chapters.length
+    }, provider, apiKey, model);
   };
 
   const handleModelChange = (modelId: string, prov: any) => {
@@ -239,7 +254,7 @@ export function AIChatView() {
               </div>
             </div>
           ) : (
-            session.messages.map(msg => (
+            session.messages.map((msg, index) => (
               <div key={msg.id} className={`acv-msg acv-msg--${msg.role}`}>
                 <div className="acv-msg-avatar">
                   {msg.role === 'user' ? '👤' : '✦'}
@@ -258,6 +273,14 @@ export function AIChatView() {
                           {copied === msg.id ? '✓ Copied' : '📋 Copy'}
                         </button>
                       </div>
+                      {/* Regenerate Button if it's the last message */}
+                      {index === (session?.messages.length ?? 0) - 1 && (
+                        <div style={{ marginTop: '8px' }}>
+                          <button className="acv-follow-pill" onClick={handleRegenerate}>
+                            🔄 Regenerate
+                          </button>
+                        </div>
+                      )}
                       {msg.followUps && msg.followUps.length > 0 && (
                         <div className="acv-follow-ups">
                           {msg.followUps.map((q, i) => (

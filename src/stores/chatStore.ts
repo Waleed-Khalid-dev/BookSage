@@ -84,6 +84,12 @@ interface ChatState {
     apiKey: string,
     modelName: string
   ) => Promise<void>;
+  regenerateLastMessage: (
+    contextData: { mode: ContextMode; chapterPath?: string; allJsonPaths?: string[]; totalChapters?: number },
+    provider: string,
+    apiKey: string,
+    modelName: string
+  ) => Promise<void>;
   sendQuickAction: (
     action: QuickActionType,
     selectedText: string,
@@ -326,6 +332,86 @@ export const useChatStore = create<ChatState>((set, get) => ({
         ...session,
         messages: finalMessages,
         title,
+        updatedAt: Date.now(),
+        modelName,
+      };
+
+      set(state => ({
+        sessions: state.sessions.map(s => s.id === session!.id ? updated : s),
+        isLoading: false,
+      }));
+
+      saveChatSession(sessionToRecord(updated)).catch(console.error);
+    } catch (e: any) {
+      const errMsg = makeMessage('assistant', `Error: ${e.message ?? String(e)}`);
+      set(state => ({
+        sessions: state.sessions.map(s =>
+          s.id === session!.id
+            ? { ...s, messages: [...updatedMessages, errMsg] }
+            : s
+        ),
+        isLoading: false,
+      }));
+    }
+  },
+
+  regenerateLastMessage: async (contextData, provider, apiKey, modelName) => {
+    const { activeSession, persona } = get();
+    let session = activeSession();
+    if (!session || session.messages.length < 2) return;
+    
+    // Find last user message
+    let lastUserIdx = -1;
+    for (let i = session.messages.length - 1; i >= 0; i--) {
+      if (session.messages[i].role === 'user') {
+        lastUserIdx = i;
+        break;
+      }
+    }
+    if (lastUserIdx === -1) return;
+    
+    // Keep everything up to the user message
+    const updatedMessages = session.messages.slice(0, lastUserIdx + 1);
+    
+    set(state => ({
+      sessions: state.sessions.map(s =>
+        s.id === session!.id ? { ...s, messages: updatedMessages } : s
+      ),
+      isLoading: true,
+    }));
+    
+    const history = updatedMessages.filter(m => !m.content.startsWith('*System Note')).map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
+    
+    const personaPrefix = `${PERSONA_PROMPTS[persona]}\n\n`;
+    
+    try {
+      const res = await invokePython({
+        command: 'chat_message',
+        message: history[history.length - 1].content,
+        history: history.slice(0, -1),
+        context_mode: contextData.mode,
+        chapter_path: contextData.chapterPath,
+        all_json_paths: contextData.allJsonPaths,
+        persona_prefix: personaPrefix,
+        provider,
+        api_key: apiKey,
+        model_name: modelName,
+      });
+
+      const rawResponse = res.status === 'success'
+        ? res.response ?? '(No response)'
+        : `Error: ${res.message}`;
+
+      const { content, followUps } = parseFollowUps(rawResponse);
+      const aiMsg = makeMessage('assistant', content, followUps);
+      const finalMessages = [...updatedMessages, aiMsg];
+
+      const updated: ChatSession = {
+        ...session,
+        messages: finalMessages,
         updatedAt: Date.now(),
         modelName,
       };
