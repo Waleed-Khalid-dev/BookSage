@@ -30,6 +30,8 @@ export interface ChatSession {
   messages: ChatMessage[];
   contextMode: ContextMode;
   modelName: string;
+  customChapterIds?: string[];
+  includeRawText?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -78,6 +80,8 @@ interface ChatState {
       mode: 'book' | 'chapter' | 'custom'; 
       chapterPath?: string; 
       allJsonPaths?: string[]; 
+      rawTextPaths?: string[];
+      includeRawText?: boolean;
       totalChapters?: number; 
     },
     provider: string,
@@ -85,11 +89,19 @@ interface ChatState {
     modelName: string
   ) => Promise<void>;
   regenerateLastMessage: (
-    contextData: { mode: ContextMode; chapterPath?: string; allJsonPaths?: string[]; totalChapters?: number },
+    contextData: { 
+      mode: ContextMode; 
+      chapterPath?: string; 
+      allJsonPaths?: string[]; 
+      rawTextPaths?: string[];
+      includeRawText?: boolean;
+      totalChapters?: number;
+    },
     provider: string,
     apiKey: string,
     modelName: string
   ) => Promise<void>;
+  setSessionCustomScope: (sessionId: string, chapterIds: string[], includeRawText: boolean) => void;
   sendQuickAction: (
     action: QuickActionType,
     selectedText: string,
@@ -177,12 +189,22 @@ function sessionToRecord(s: ChatSession): ChatSessionRecord {
     messages: JSON.stringify(s.messages),
     context_mode: s.contextMode,
     model_name: s.modelName,
+    custom_chapter_ids: s.customChapterIds ? JSON.stringify(s.customChapterIds) : undefined,
+    include_raw_text: s.includeRawText ? 1 : 0,
     created_at: s.createdAt,
     updated_at: s.updatedAt,
   };
 }
 
 function recordToSession(r: ChatSessionRecord): ChatSession {
+  let customChapterIds: string[] | undefined = undefined;
+  if (r.custom_chapter_ids) {
+    try {
+      customChapterIds = JSON.parse(r.custom_chapter_ids);
+    } catch {
+      customChapterIds = undefined;
+    }
+  }
   return {
     id: r.id,
     bookId: r.book_id,
@@ -190,6 +212,8 @@ function recordToSession(r: ChatSessionRecord): ChatSession {
     messages: r.messages ? JSON.parse(r.messages) : [],
     contextMode: r.context_mode,
     modelName: r.model_name ?? 'gemini-3.6-flash',
+    customChapterIds,
+    includeRawText: r.include_raw_text === 1,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -262,6 +286,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
   },
 
+  setSessionCustomScope: (sessionId: string, chapterIds: string[], includeRawText: boolean) => {
+    set(state => {
+      const updatedSessions = state.sessions.map(s => {
+        if (s.id === sessionId) {
+          const updated: ChatSession = {
+            ...s,
+            customChapterIds: chapterIds,
+            includeRawText,
+            updatedAt: Date.now(),
+          };
+          saveChatSession(sessionToRecord(updated)).catch(console.error);
+          return updated;
+        }
+        return s;
+      });
+      return { sessions: updatedSessions };
+    });
+  },
+
   // ── Messaging ───────────────────────────────────────────────────────────────
 
   /**
@@ -309,6 +352,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         context_mode: contextData.mode,
         chapter_path: contextData.chapterPath,
         all_json_paths: contextData.allJsonPaths,
+        raw_text_paths: contextData.rawTextPaths,
+        include_raw_text: contextData.includeRawText ?? false,
         persona_prefix: personaPrefix,
         provider,
         api_key: apiKey,
@@ -395,6 +440,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         context_mode: contextData.mode,
         chapter_path: contextData.chapterPath,
         all_json_paths: contextData.allJsonPaths,
+        raw_text_paths: contextData.rawTextPaths,
+        include_raw_text: contextData.includeRawText ?? false,
         persona_prefix: personaPrefix,
         provider,
         api_key: apiKey,

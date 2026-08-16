@@ -165,14 +165,16 @@ async function initDb(database: Database) {
   // Phase 6 – AI Copilot: chat sessions
   await database.execute(`
     CREATE TABLE IF NOT EXISTS chat_sessions (
-      id           TEXT PRIMARY KEY,
-      book_id      TEXT REFERENCES books(id) ON DELETE CASCADE,
-      title        TEXT NOT NULL DEFAULT 'New Chat',
-      messages     TEXT NOT NULL DEFAULT '[]',
-      context_mode TEXT NOT NULL DEFAULT 'chapter',
-      model_name   TEXT,
-      created_at   INTEGER NOT NULL,
-      updated_at   INTEGER NOT NULL
+      id                 TEXT PRIMARY KEY,
+      book_id            TEXT REFERENCES books(id) ON DELETE CASCADE,
+      title              TEXT NOT NULL DEFAULT 'New Chat',
+      messages           TEXT NOT NULL DEFAULT '[]',
+      context_mode       TEXT NOT NULL DEFAULT 'chapter',
+      model_name         TEXT,
+      custom_chapter_ids TEXT,
+      include_raw_text   INTEGER DEFAULT 0,
+      created_at         INTEGER NOT NULL,
+      updated_at         INTEGER NOT NULL
     );
   `);
 
@@ -188,7 +190,9 @@ async function initDb(database: Database) {
     'ALTER TABLE chapters ADD COLUMN studied INTEGER DEFAULT 0',
     'ALTER TABLE chapters ADD COLUMN steps_progress TEXT',
     // Phase 6 -- AI Copilot columns
-    'ALTER TABLE chapters ADD COLUMN ai_insights TEXT'
+    'ALTER TABLE chapters ADD COLUMN ai_insights TEXT',
+    'ALTER TABLE chat_sessions ADD COLUMN custom_chapter_ids TEXT',
+    'ALTER TABLE chat_sessions ADD COLUMN include_raw_text INTEGER DEFAULT 0'
   ];
 
   for (const query of migrations) {
@@ -574,6 +578,8 @@ export interface ChatSessionRecord {
   messages: string;        // JSON-serialised ChatMessageRecord[]
   context_mode: 'chapter' | 'book' | 'custom';
   model_name: string | null;
+  custom_chapter_ids?: string;
+  include_raw_text?: number;
   created_at: number;
   updated_at: number;
 }
@@ -581,17 +587,21 @@ export interface ChatSessionRecord {
 export async function saveChatSession(session: ChatSessionRecord): Promise<void> {
   const database = await getDb();
   await database.execute(
-    `INSERT INTO chat_sessions (id, book_id, title, messages, context_mode, model_name, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO chat_sessions (id, book_id, title, messages, context_mode, model_name, custom_chapter_ids, include_raw_text, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT(id) DO UPDATE SET
-       title        = excluded.title,
-       messages     = excluded.messages,
-       context_mode = excluded.context_mode,
-       model_name   = excluded.model_name,
-       updated_at   = excluded.updated_at`,
+       title              = excluded.title,
+       messages           = excluded.messages,
+       context_mode       = excluded.context_mode,
+       model_name         = excluded.model_name,
+       custom_chapter_ids = excluded.custom_chapter_ids,
+       include_raw_text   = excluded.include_raw_text,
+       updated_at         = excluded.updated_at`,
     [
       session.id, session.book_id, session.title, session.messages,
       session.context_mode, session.model_name,
+      session.custom_chapter_ids ?? null,
+      session.include_raw_text ?? 0,
       session.created_at, session.updated_at,
     ]
   );

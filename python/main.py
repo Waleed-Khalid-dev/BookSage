@@ -45,6 +45,8 @@ def handle_command(cmd_data):
         context_mode = cmd_data.get("context_mode", "chapter")
         chapter_path = cmd_data.get("chapter_path")
         all_json_paths = cmd_data.get("all_json_paths", [])
+        raw_text_paths = cmd_data.get("raw_text_paths", [])
+        include_raw_text = cmd_data.get("include_raw_text", False)
         persona_prefix = cmd_data.get("persona_prefix", "")
         provider = cmd_data.get("provider", "gemini")
         api_key = cmd_data.get("api_key")
@@ -63,7 +65,9 @@ def handle_command(cmd_data):
             persona_prefix=persona_prefix,
             provider=provider,
             api_key=api_key,
-            model_name=model_name
+            model_name=model_name,
+            raw_text_paths=raw_text_paths,
+            include_raw_text=include_raw_text
         )
         return {"status": "success", "response": response}
     
