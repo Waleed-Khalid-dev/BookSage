@@ -65,3 +65,4 @@
 - [reference] Bug Fixes: Fixed Continuous Mode multi-page selection bug and virtualization unmount bug; added Gapless Scroll feature toggle. → booksage-project.md
 - [session] 2026-08-14 RAG Context Injection: Complete. Upgraded CopilotSidebar to read chapter.txt and chapter_extracted.json directly via Python sidecar for 100% accurate context. Fixed stdout CP1252 encoding crashes. -> booksage-project.md
 - [reference] Phase 6 Copilot Polish: Fixed overlap bugs, added sidebar resize, tooltips, and fixed Tauri v2 dialog export. Fixed pipeline chapter extraction race condition. → booksage-project.md
+- [session] 2026-08-16 AI Chat & Settings Theme: Complete. Fixed light/sepia contrast in AIChatView.css, added Theme selector with previews in SettingsDialog, and added Regenerate to Copilot/AIChat. → booksage-project.md

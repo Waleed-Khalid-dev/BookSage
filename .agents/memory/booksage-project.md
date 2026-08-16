@@ -320,3 +320,11 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Sidebar UX:** Made the Copilot sidebar resizable and bound it to `uiStore` to remember width across sessions.
 - **Pipeline Data Integrity:** Fixed race conditions where chapters were prematurely marked green without generated lessons. Refactored `bookStore.ts` extractions to use ID-based tracking.
 - **Chat Export:** Refactored Tauri Chat Export to properly use Tauri v2's `@tauri-apps/plugin-dialog` and `@tauri-apps/plugin-fs` natively, with dynamic session-title filenames, fixing silent fallback downloads.
+
+### Session 2026-08-16 Notes (AI Chat Theme Contrast & Settings Theme Selector)
+- **Regenerate Response:** Added `regenerateLastMessage` in `chatStore.ts`, providing a 🔄 Regenerate action in `CopilotSidebar` and `AIChatView`.
+- **Sidebar Scope:** Scoped `CopilotSidebar` in `App.tsx` to mount only in Reader and Notes views.
+- **AI Chat Theme Contrast:** Replaced hardcoded dark colors in `AIChatView.css` with `--bs-*` CSS variables, restoring full readability and contrast in Light and Sepia modes.
+- **Settings Theme Selector:** Added a new **Theme & Appearance** tab in `SettingsDialog.tsx` with visual preview swatches for all 6 themes (Dark, Light, Sepia, Night, OLED, Focus) wired to `useBookStore`.
+- **Next:** Phase 7 (Library View).
+
