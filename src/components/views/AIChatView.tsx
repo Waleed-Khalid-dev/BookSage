@@ -21,10 +21,30 @@ const PRESET_PROMPTS = [
 ];
 
 const PERSONAS: { id: CopilotPersona; icon: string; label: string; desc: string }[] = [
-  { id: 'scholar',  icon: '🎓', label: 'Scholar',          desc: 'Deep academic analysis' },
-  { id: 'teacher',  icon: '👨‍🏫', label: 'Teacher',         desc: 'Simple explanations' },
-  { id: 'coach',    icon: '🔥', label: 'Coach',            desc: 'Action-oriented' },
-  { id: 'devil',    icon: '🤔', label: 'Devil\'s Advocate', desc: 'Challenges assumptions' },
+  { 
+    id: 'scholar',  
+    icon: '🎓', 
+    label: 'Scholar',          
+    desc: 'Deep academic analysis — Gives you deep, academic, and detailed answers.' 
+  },
+  { 
+    id: 'teacher',  
+    icon: '👨‍🏫', 
+    label: 'Teacher',         
+    desc: 'Simple explanations — Breaks down complex concepts so they are easy to understand.' 
+  },
+  { 
+    id: 'coach',    
+    icon: '🔥', 
+    label: 'Coach',            
+    desc: 'Action-oriented — Gives you highly actionable, motivating advice on how to apply the book\'s concepts to your life.' 
+  },
+  { 
+    id: 'devil',    
+    icon: '🤔', 
+    label: 'Devil\'s Advocate', 
+    desc: 'Challenges assumptions — Challenges the author\'s ideas, points out flaws, and encourages critical thinking instead of blindly agreeing with the text.' 
+  },
 ];
 
 const formatTime = (ts?: number) => {
