@@ -4,10 +4,9 @@ import remarkGfm from 'remark-gfm';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { useChatStore, CopilotPersona, ContextMode } from '../../stores/chatStore';
-import { useBookStore } from '../../stores/bookStore';
+import { useBookStore, Chapter } from '../../stores/bookStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector } from '../copilot/ModelSelector';
-import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import './AIChatView.css';
 
 const PRESET_PROMPTS = [
@@ -28,11 +27,18 @@ const PERSONAS: { id: CopilotPersona; icon: string; label: string; desc: string 
   { id: 'devil',    icon: '🤔', label: 'Devil\'s Advocate', desc: 'Challenges assumptions' },
 ];
 
+const formatTime = (ts?: number) => {
+  if (!ts) return '';
+  const date = new Date(ts);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
 export function AIChatView() {
   const {
     sessions, activeSessionId, isLoading,
     activeSession, createSession, setActiveSession, deleteSession,
-    sendMessage, loadSessions, persona, setPersona, regenerateLastMessage
+    sendMessage, loadSessions, persona, setPersona, regenerateLastMessage,
+    setSessionCustomScope
   } = useChatStore();
   const { bookId, currentBookTitle, aiModel, setAiModel, chapters, lastPage } = useBookStore();
   const { getKey } = useApiKeys();
@@ -49,22 +55,30 @@ export function AIChatView() {
   const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek'>('gemini');
   const [copied, setCopied] = useState<string | null>(null);
   const [contextMode, setContextMode] = useState<ContextMode>('book');
+  const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
+  const [includeRawText, setIncludeRawText] = useState<boolean>(false);
+  const [showCustomPicker, setShowCustomPicker] = useState<boolean>(false);
+  const [chapterSearch, setChapterSearch] = useState<string>('');
   const [fontSize, setFontSize] = useState<number>(14);
-  const { isSupported, isListening, transcript, toggleListening, resetTranscript } = useSpeechRecognition();
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Update input when transcript changes
+  // Close popover when clicking outside
   useEffect(() => {
-    if (transcript) {
-      setInput((prev) => {
-        const spacer = prev && !prev.endsWith(' ') ? ' ' : '';
-        return prev + spacer + transcript;
-      });
-      resetTranscript();
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setShowCustomPicker(false);
+      }
+    };
+    if (showCustomPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
-  }, [transcript, resetTranscript]);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCustomPicker]);
 
   // Load sessions when view opens
   useEffect(() => {
@@ -73,14 +87,16 @@ export function AIChatView() {
 
   const session = activeSession();
 
-  // Sync context mode from session
+  // Sync context mode and custom chapters from session
   useEffect(() => {
     if (session) {
       setContextMode(session.contextMode || 'book');
+      setSelectedChapterIds(session.customChapterIds || []);
+      setIncludeRawText(session.includeRawText ?? false);
     }
-  }, [session?.id, session?.contextMode]);
+  }, [session?.id, session?.contextMode, session?.customChapterIds, session?.includeRawText]);
 
-  const handleScopeChange = (mode: 'book' | 'chapter') => {
+  const handleScopeChange = (mode: ContextMode) => {
     setContextMode(mode);
     if (session) {
       const updated = { ...session, contextMode: mode, updatedAt: Date.now() };
@@ -90,11 +106,63 @@ export function AIChatView() {
     }
   };
 
+  const getChapKey = (c: Chapter) => c.id || String(c.num);
+
+  const handleToggleChapter = (chapId: string) => {
+    const nextIds = selectedChapterIds.includes(chapId)
+      ? selectedChapterIds.filter(id => id !== chapId)
+      : [...selectedChapterIds, chapId];
+    setSelectedChapterIds(nextIds);
+    if (session) {
+      setSessionCustomScope(session.id, nextIds, includeRawText);
+    }
+  };
+
+  const handleSelectAllChapters = () => {
+    const allIds = chapters.map(getChapKey);
+    setSelectedChapterIds(allIds);
+    if (session) {
+      setSessionCustomScope(session.id, allIds, includeRawText);
+    }
+  };
+
+  const handleClearAllChapters = () => {
+    setSelectedChapterIds([]);
+    if (session) {
+      setSessionCustomScope(session.id, [], includeRawText);
+    }
+  };
+
+  const handleToggleIncludeRawText = (val: boolean) => {
+    setIncludeRawText(val);
+    if (session) {
+      setSessionCustomScope(session.id, selectedChapterIds, val);
+    }
+  };
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [session?.messages.length, isLoading]);
 
+  const getContextPayload = () => {
+    const isCustom = contextMode === 'custom';
+    const activeCustomChapters = isCustom
+      ? chapters.filter(c => selectedChapterIds.includes(getChapKey(c)))
+      : [];
 
+    return {
+      mode: contextMode,
+      chapterPath: contextMode === 'chapter' ? activeChapter?.path : undefined,
+      allJsonPaths: isCustom
+        ? (activeCustomChapters.map(c => c.json_path).filter(Boolean) as string[])
+        : (chapters.map(c => c.json_path).filter(Boolean) as string[]),
+      rawTextPaths: isCustom && includeRawText
+        ? (activeCustomChapters.map(c => c.path).filter(Boolean) as string[])
+        : undefined,
+      includeRawText: isCustom ? includeRawText : false,
+      totalChapters: isCustom ? activeCustomChapters.length : chapters.length,
+    };
+  };
 
   const handleSend = async (text?: string) => {
     const msg = (text ?? input).trim();
@@ -111,12 +179,7 @@ export function AIChatView() {
     if (!sess) return;
 
     setInput('');
-    await sendMessage(msg, {
-      mode: contextMode,
-      chapterPath: activeChapter?.path,
-      allJsonPaths: chapters.map(c => c.json_path).filter(Boolean) as string[],
-      totalChapters: chapters.length
-    }, provider, apiKey, model);
+    await sendMessage(msg, getContextPayload(), provider, apiKey, model);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -133,12 +196,7 @@ export function AIChatView() {
     let sess = activeSession();
     if (!sess) return;
     
-    await regenerateLastMessage({
-      mode: contextMode,
-      chapterPath: activeChapter?.path,
-      allJsonPaths: chapters.map(c => c.json_path).filter(Boolean) as string[],
-      totalChapters: chapters.length
-    }, provider, apiKey, model);
+    await regenerateLastMessage(getContextPayload(), provider, apiKey, model);
   };
 
   const handleModelChange = (modelId: string, prov: any) => {
@@ -152,38 +210,45 @@ export function AIChatView() {
     const lines = [
       `# BookSage Copilot — ${currentBookTitle}`,
       `**Date:** ${new Date().toLocaleDateString()}`,
+      `**Context:** ${contextMode === 'custom' ? `Custom Selection (${selectedChapterIds.length} chapters)` : contextMode === 'chapter' ? `Chapter: ${activeChapter?.title}` : 'Full Book'}`,
+      `**Model:** ${session.modelName}`,
       '',
       '---',
       '',
+      ...session.messages.map(m =>
+        `### ${m.role === 'user' ? '👤 User' : '✦ Copilot'}\n\n${m.content}\n`
+      ),
     ];
-    for (const msg of session.messages) {
-      lines.push(`**${msg.role === 'user' ? 'You' : 'BookSage'}:** ${msg.content}`, '');
-    }
-    
+    const content = lines.join('\n');
     try {
-      const filePath = await save({
+      const path = await save({
+        defaultPath: `${currentBookTitle || 'Chat'}-Copilot.md`,
         filters: [{ name: 'Markdown', extensions: ['md'] }],
-        defaultPath: `BookSage-Chat-${Date.now()}.md`
       });
-      
-      if (filePath) {
-        await writeTextFile(filePath, lines.join('\n'));
-        alert('Chat exported successfully!');
+      if (path) {
+        await writeTextFile(path, content);
       }
-    } catch (e: any) {
-      alert(`Export failed: ${e.message || String(e)}`);
+    } catch (e) {
+      console.error('Export failed:', e);
     }
   };
 
-  const handleCopy = (content: string, id: string) => {
-    navigator.clipboard.writeText(content);
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
     setCopied(id);
     setTimeout(() => setCopied(null), 1800);
   };
 
   const handleNewSession = () => {
-    if (bookId) createSession(bookId, model);
+    if (!bookId) return;
+    createSession(bookId, model);
   };
+
+  const filteredChapters = chapters.filter(c => {
+    if (!chapterSearch.trim()) return true;
+    const q = chapterSearch.toLowerCase();
+    return c.title.toLowerCase().includes(q) || String(c.num).includes(q);
+  });
 
   return (
     <div className="acv-root">
@@ -241,6 +306,11 @@ export function AIChatView() {
             {contextMode === 'chapter' && activeChapter && (
               <span className="acv-chapter-badge" title={activeChapter.title}>› {activeChapter.title}</span>
             )}
+            {contextMode === 'custom' && (
+              <span className="acv-chapter-badge" title={`${selectedChapterIds.length} chapters selected`}>
+                › Custom ({selectedChapterIds.length} {selectedChapterIds.length === 1 ? 'chapter' : 'chapters'})
+              </span>
+            )}
           </div>
           <div className="acv-header-actions">
             {/* Font controls */}
@@ -252,14 +322,115 @@ export function AIChatView() {
             <div className="acv-context-toggle">
               <button
                 className={contextMode === 'book' ? 'active' : ''}
-                onClick={() => handleScopeChange('book')}
+                onClick={() => {
+                  handleScopeChange('book');
+                  setShowCustomPicker(false);
+                }}
               >📚 Full Book</button>
               <button
                 className={contextMode === 'chapter' ? 'active' : ''}
-                onClick={() => handleScopeChange('chapter')}
+                onClick={() => {
+                  handleScopeChange('chapter');
+                  setShowCustomPicker(false);
+                }}
                 disabled={!activeChapter}
                 title={activeChapter ? `Current reading chapter: ${activeChapter.title}` : 'No active chapter'}
               >📄 Chapter</button>
+
+              <div className="acv-custom-toggle-wrap" ref={popoverRef}>
+                <button
+                  className={`acv-custom-toggle-btn ${contextMode === 'custom' ? 'active' : ''}`}
+                  onClick={() => {
+                    handleScopeChange('custom');
+                    setShowCustomPicker(prev => !prev);
+                  }}
+                  title="Select specific chapters for AI context"
+                >
+                  📑 Custom {selectedChapterIds.length > 0 ? `(${selectedChapterIds.length})` : ''} ▾
+                </button>
+
+                {showCustomPicker && (
+                  <div className="acv-custom-popover">
+                    <div className="acv-popover-header">
+                      <div className="acv-popover-title-row">
+                        <span className="acv-popover-title">Select Custom Chapters</span>
+                        <span className="acv-popover-count">{selectedChapterIds.length} of {chapters.length}</span>
+                      </div>
+                      <div className="acv-popover-actions-row">
+                        <button className="acv-popover-link-btn" onClick={handleSelectAllChapters}>Select All</button>
+                        <span className="acv-popover-sep">·</span>
+                        <button className="acv-popover-link-btn" onClick={handleClearAllChapters}>Clear All</button>
+                      </div>
+                    </div>
+
+                    <div className="acv-popover-search">
+                      <input
+                        type="text"
+                        placeholder="Search chapters..."
+                        value={chapterSearch}
+                        onChange={e => setChapterSearch(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="acv-popover-list">
+                      {filteredChapters.length === 0 ? (
+                        <div className="acv-popover-empty">No matching chapters</div>
+                      ) : (
+                        filteredChapters.map(chap => {
+                          const chapKey = getChapKey(chap);
+                          const isChecked = selectedChapterIds.includes(chapKey);
+                          const isExtracted = chap.status === 'done' && Boolean(chap.json_path);
+                          return (
+                            <label key={chapKey} className={`acv-popover-item ${isChecked ? 'selected' : ''}`}>
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleChapter(chapKey)}
+                              />
+                              <div className="acv-popover-item-info">
+                                <div className="acv-popover-item-title">
+                                  <span className="acv-chap-num">Ch {chap.num}:</span> {chap.title}
+                                </div>
+                                <div className="acv-popover-item-sub">
+                                  {chap.pp && <span>pp. {chap.pp}</span>}
+                                  <span className={`acv-chap-status ${isExtracted ? 'done' : 'raw'}`}>
+                                    {isExtracted ? '✅ Summary & Lessons' : '📄 Raw text'}
+                                  </span>
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div className="acv-popover-footer">
+                      <label className="acv-raw-text-toggle" title="Also inject full word-for-word chapter text">
+                        <input
+                          type="checkbox"
+                          checked={includeRawText}
+                          onChange={e => handleToggleIncludeRawText(e.target.checked)}
+                        />
+                        <span>Include Full Raw Text (.txt)</span>
+                      </label>
+
+                      {includeRawText && selectedChapterIds.length >= 3 && (
+                        <div className="acv-context-warning">
+                          ⚠️ <strong>Context Warning:</strong> Including full raw text for {selectedChapterIds.length} chapters may exceed model context window or slow down response.
+                        </div>
+                      )}
+
+                      <button
+                        className="acv-popover-done-btn"
+                        onClick={() => setShowCustomPicker(false)}
+                      >
+                        Apply Context ({selectedChapterIds.length} Selected)
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <button className="acv-export-btn" onClick={handleExport} title="Export chat to Markdown">⬇ Export</button>
           </div>
@@ -299,16 +470,21 @@ export function AIChatView() {
                   <div className="acv-msg-content">
                     {msg.role === 'assistant'
                       ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                      : <p>{msg.content}</p>
+                      : <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{msg.content}</p>
                     }
                   </div>
-                  {msg.role === 'assistant' && (
-                    <>
+                  <div className="acv-msg-meta">
+                    {msg.ts && <span className="acv-msg-time">{formatTime(msg.ts)}</span>}
+                    {msg.role === 'assistant' && (
                       <div className="acv-msg-actions">
                         <button onClick={() => handleCopy(msg.content, msg.id)}>
                           {copied === msg.id ? '✓ Copied' : '📋 Copy'}
                         </button>
                       </div>
+                    )}
+                  </div>
+                  {msg.role === 'assistant' && (
+                    <>
                       {/* Regenerate Button if it's the last message */}
                       {index === (session?.messages.length ?? 0) - 1 && (
                         <div style={{ marginTop: '8px' }}>
@@ -364,15 +540,6 @@ export function AIChatView() {
               disabled={!getKey(provider) || isLoading}
             />
             <div className="acv-input-actions">
-              {isSupported && (
-                <button
-                  className={`acv-mic-btn ${isListening ? 'listening' : ''}`}
-                  onClick={toggleListening}
-                  title={isListening ? "Stop listening" : "Voice input (Alt+M)"}
-                >
-                  🎤
-                </button>
-              )}
               <button
                 className="acv-send"
                 onClick={() => handleSend()}
