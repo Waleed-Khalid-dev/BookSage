@@ -162,6 +162,15 @@
   text-overflow: ellipsis;
   max-width: 300px;
 }
+.acv-chapter-badge {
+  font-size: 0.82rem;
+  color: var(--bs-text-muted);
+  font-weight: 500;
+  max-width: 350px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .acv-header-actions { display: flex; align-items: center; gap: 10px; }
 
 .acv-context-toggle {
@@ -182,11 +191,36 @@
 }
 .acv-context-toggle button.active { background: var(--bs-accent); color: #fff; font-weight: 600; }
 
+.acv-font-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.acv-font-btn {
+  background: none;
+  border: 1px solid var(--bs-border, #333);
+  border-radius: 6px;
+  color: var(--bs-text-muted, #888);
+  padding: 5px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.acv-font-btn:hover {
+  border-color: var(--bs-accent);
+  color: var(--bs-accent);
+  background: rgba(0, 150, 136, 0.08);
+}
+
 .acv-export-btn {
   background: none;
   border: 1px solid var(--bs-border, #333);
   border-radius: 6px;
-  color: #888;
+  color: var(--bs-text-muted, #888);
   padding: 5px 12px;
   font-size: 0.75rem;
   cursor: pointer;
@@ -300,7 +334,7 @@
   padding: 12px 16px;
   border-radius: 12px;
   line-height: 1.65;
-  font-size: 0.875rem;
+  font-size: 1em;
   max-width: 680px;
 }
 
@@ -330,7 +364,7 @@
 .acv-msg--assistant .acv-msg-content li  { margin-bottom: 4px; }
 .acv-msg--assistant .acv-msg-content code {
   background: var(--bs-code-bg, #2a1a1a); color: var(--bs-code-text, #e05252);
-  padding: 1px 5px; border-radius: 4px; font-size: 0.82rem;
+  padding: 1px 5px; border-radius: 4px; font-size: 0.88em;
 }
 .acv-msg--assistant .acv-msg-content pre {
   background: var(--bs-bg, #1a1a1a);
