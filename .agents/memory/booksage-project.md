@@ -340,6 +340,8 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **SQLite Persistence:** Stored `custom_chapter_ids` and `include_raw_text` in SQLite `chat_sessions` table with migrations, restoring exact context scope per session.
 - **Python Sidecar Context Engine:** Extended `chat_with_context` in `ai_chat.py` and `main.py` to parse complete structured JSON data + optional raw `.txt` content for custom selected chapters.
 - **Mic Button Cleanup:** Removed microphone button from `AIChatView.tsx` to match sidebar AI cleanup.
+- **AI Persona Tooltips Parity:** Synchronized rich, descriptive tooltips across all 4 personas (Scholar, Teacher, Coach, Devil's Advocate) in both `AIChatView` and `CopilotSidebar`.
+- **Roadmap & Plan Sync:** Updated `booksage-plan.md` and `copilot-features.md` to reflect 100% completion of Phase 0, Phase 4.5, Phase 5, and Phase 6.
 - **Next:** Phase 7 (Library View).
 
 
