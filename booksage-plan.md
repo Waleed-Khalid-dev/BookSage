@@ -5,12 +5,12 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
 
 ## Tasks
 
-- [ ] **Phase 0 — Scaffold** → Verify: window opens, icon sidebar switches 5 view placeholders
-  - [ ] Init Tauri v2 + React 18 + TypeScript project
-  - [ ] Extend CSS token system with v3 additions (heading red, copilot, nav tokens)
-  - [ ] Build `IconSidebar.tsx` with 5 view icons
-  - [ ] Set up Zustand stores: `bookStore`, `settingsStore`, `uiStore`, `chatStore`
-  - [ ] Configure Python sidecar + `requirements.txt`
+- [x] **Phase 0 — Scaffold** → Verify: window opens, icon sidebar switches 5 view placeholders
+  - [x] Init Tauri v2 + React 18 + TypeScript project
+  - [x] Extend CSS token system with v3 additions (heading red, copilot, nav tokens)
+  - [x] Build `IconSidebar.tsx` with 5 view icons
+  - [x] Set up Zustand stores: `bookStore`, `settingsStore`, `uiStore`, `chatStore`
+  - [x] Configure Python sidecar + `requirements.txt`
 
 - [x] **Phase 1 — PDF Engine** → Verify: CLI splits book into chapter `.txt` files
   - [x] `pdf_handler.py`: text + TOC via PyMuPDF
@@ -38,69 +38,71 @@ Build BookSage Studio: a self-contained Windows desktop app where users read boo
   - [x] TOC sidebar — clickable chapter list inside BookReader, jumps to correct page
   - [x] Remember last read position — save/restore current page to SQLite `books.last_page`
   - [x] Reading progress bar — `currentPage / totalPages` % bar fixed at bottom of reader
-  - [ ] Two-page spread view — side-by-side page mode toggle in `PageControls`
+  - [x] Two-page spread view — side-by-side page mode toggle in `PageControls`
   - **🔴 CORE — Annotations & Highlights**
   - [x] Multi-color text highlighting — 4 color choices (Yellow, Green, Blue, Pink)
   - [x] Highlight persistence — new `highlights` SQLite table; reload on every page draw
-  - [ ] Export annotations to Markdown — "Export Highlights" generates a grouped `.md` file
+  - [x] Export annotations to Markdown — "Export Highlights" generates a grouped `.md` file
   - **🔴 CORE — Search**
   - [x] `Ctrl+F` full-text search within PDF — uses `pdfjs-dist` `getTextContent()`
   - [x] Navigate search matches — Up/Down arrows, match count indicator ("3 of 12")
   - **🔴 CORE — AI Stubs (wired in Phase 6)**
-  - [ ] Select text → AI Explain/Summarize stub pill above selection
-  - [ ] Select text → Simplify language stub pill
+  - [x] Select text → AI Explain/Summarize stub pill above selection
+  - [x] Select text → Simplify language stub pill
   - **🔴 CORE — Layout**
   - [x] Split view (Book + Notes side-by-side) — draggable divider, wire toolbar toggle
   - **🟡 HIGH — Display & Themes**
-  - [ ] Sepia / Warm tone mode — CSS filter toggle in reader toolbar
-  - [ ] Invert PDF colors (night mode) — CSS invert filter toggle
+  - [x] Sepia / Warm tone mode — CSS filter toggle in reader toolbar
+  - [x] Invert PDF colors (night mode) — CSS invert filter toggle
   - **🟡 HIGH — Navigation**
-  - [ ] Thumbnail strip / page preview panel — collapsible left panel, click to jump
-  - [ ] Distraction-free / Focus mode — hide sidebar/toolbar, toggle with F11
+  - [x] Thumbnail strip / page preview panel — collapsible left panel, click to jump
+  - [x] Distraction-free / Focus mode — hide sidebar/toolbar, toggle with F11
   - [x] Bookmarks — star any page, save to `bookmarks` SQLite table
   - **🟡 HIGH — Annotations**
   - [x] Underline / Strikethrough markup modes
   - [x] Sticky note / Pop-up comment on any highlight
   - [x] Annotation sidebar — all highlights listed by page, click to jump
-  - [ ] Search within annotations sidebar
+  - [x] Search within annotations sidebar
   - **🟡 HIGH — AI Stubs**
-  - [ ] Select text → Translate stub
+  - [x] Select text → Translate stub
   - [ ] "Story So Far" AI recap button on book open (if `last_page > 1`)
   - [ ] Inline word definition on `Ctrl+click`
   - **🟡 HIGH — Stats**
   - [x] Reading time estimate (`"~X min left"`) in status bar
   - [x] Pages read today / this week tracker in SQLite
-  - [ ] TTS stub button in toolbar (wire to `SpeechSynthesis`)
+  - [x] TTS stub button in toolbar (wire to `SpeechSynthesis`)
   - **🟢 NICE — Power-user extras**
-  - [ ] True black / OLED mode CSS variant
-  - [ ] Custom background color picker in display settings
+  - [x] True black / OLED mode CSS variant
+  - [x] Custom background color picker in display settings
   - [ ] Minimap scroll indicator in scrollbar gutter
   - [x] Reading streak counter on Library home screen
   - [x] Time spent reading per book (SQLite session tracking)
   - [ ] Vim-style J/K navigation (optional toggle)
-  - [ ] Customizable keyboard shortcuts settings tab
-  - [ ] Adjustable TTS speed slider (0.5× – 2.5×)
+  - [x] Customizable keyboard shortcuts settings tab
+  - [x] Adjustable TTS speed slider (0.5× – 2.5×)
   - [x] Freehand annotation / draw on canvas
   - **Database migrations**
-  - [ ] `ALTER TABLE books ADD COLUMN last_page INTEGER DEFAULT 1`
-  - [ ] `ALTER TABLE books ADD COLUMN reading_time_secs INTEGER DEFAULT 0`
-  - [ ] `ALTER TABLE books ADD COLUMN pages_read_total INTEGER DEFAULT 0`
-  - [ ] Create `highlights` table (id, book_id, page_num, color, rects, text, note, created_at)
-  - [ ] Create `bookmarks` table (id, book_id, page_num, label, created_at)
+  - [x] `ALTER TABLE books ADD COLUMN last_page INTEGER DEFAULT 1`
+  - [x] `ALTER TABLE books ADD COLUMN reading_time_secs INTEGER DEFAULT 0`
+  - [x] `ALTER TABLE books ADD COLUMN pages_read_total INTEGER DEFAULT 0`
+  - [x] Create `highlights` table (id, book_id, page_num, color, rects, text, note, created_at)
+  - [x] Create `bookmarks` table (id, book_id, page_num, label, created_at)
 
-- [ ] **Phase 5 — Notes Viewer** → Verify: chapter `.md` renders with Obsidian visual grammar
-  - [ ] `MarkdownRenderer.tsx` with `react-markdown` + `remark-gfm`
-  - [ ] Custom CSS: red headings, red inline code pills, callout blocks
-  - [ ] `ChapterNav.tsx`: left panel chapter jumping
+- [x] **Phase 5 — Notes Viewer** → Verify: chapter `.md` renders with Obsidian visual grammar
+  - [x] `MarkdownRenderer.tsx` with `react-markdown` + `remark-gfm`
+  - [x] Custom CSS: red headings, red inline code pills, callout blocks
+  - [x] `ChapterNav.tsx`: left panel chapter jumping
 
-- [ ] **Phase 6 — AI Copilot** → Verify: select text → right-click → Summarize → popup response appears
-  - [ ] `ContextMenu.tsx`: right-click menu with Copilot submenu
-  - [ ] `CopilotPopup.tsx`: floating panel anchored to selection
-  - [ ] `ModelSelector.tsx`: all providers + availability dots
-  - [ ] `CopilotSidebar.tsx`: pinned chat panel for deep sessions
-  - [ ] Wire to `ai_chat.py`
+- [x] **Phase 6 — AI Copilot** → Verify: select text → right-click → Summarize → popup response appears
+  - [x] `ContextMenu.tsx`: right-click menu with Copilot submenu
+  - [x] `CopilotPopup.tsx`: floating panel anchored to selection
+  - [x] `ModelSelector.tsx`: all providers + availability dots
+  - [x] `CopilotSidebar.tsx`: pinned chat panel for deep sessions
+  - [x] Wire to `ai_chat.py`
 
 - [ ] **Phase 7 — Library View** → Verify: two processed books show as cards; clicking opens correct view
+  - [ ] `LibraryView.tsx`: book grid with thumbnail, title, progress
+  - [ ] Library index persisted in `BookSage_Projects/library.json`
   - [ ] `LibraryView.tsx`: book grid with thumbnail, title, progress
   - [ ] Library index persisted in `BookSage_Projects/library.json`
 

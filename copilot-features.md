@@ -138,8 +138,8 @@
 ### Multi-Chapter Context Window
 *Inspired by: Elicit multi-doc, Claude 1M context*
 
-- [ ] "Book Summary" context mode: injects all chapter `core_lesson` + `summary` fields (compact, token-efficient)
-- [ ] Auto-truncation when context exceeds estimated token limit (with warning badge)
+- [x] "Book Summary" context mode: injects all chapter `core_lesson` + `summary` fields (compact, token-efficient)
+- [x] Auto-truncation / context limits handling when context exceeds limit (with dynamic warning badge)
 - [ ] Visual token counter in sidebar: `"~4,200 tokens in context"`
 
 ### Suggested Follow-Up Questions
