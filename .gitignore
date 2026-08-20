@@ -29,8 +29,3 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Exported bundles
-readme-craftsman-bundle/
-readme-craftsman-bundle.zip
-
-
