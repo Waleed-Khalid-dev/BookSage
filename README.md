@@ -17,7 +17,7 @@
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" /></a>
     <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11" /></a>
     <a href="https://www.sqlite.org/"><img src="https://img.shields.io/badge/SQLite-Local_DB-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite" /></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-009688?style=flat-square" alt="License MIT" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-e05252?style=flat-square" alt="License Proprietary" /></a>
     <img src="https://img.shields.io/badge/Platform-Windows-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Platform" />
     <img src="https://img.shields.io/badge/Privacy-100%25_Local--First-brightgreen?style=flat-square" alt="Local First" />
   </p>
@@ -262,9 +262,11 @@ Contributions, issues, and feature suggestions are always welcome!
 
 ---
 
-## 📄 License
+## 📄 License & Intellectual Property
 
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
+Copyright © 2026 Waleed Khalid. All Rights Reserved.
+
+This project is currently in its core development phase and is licensed as **Proprietary & Source-Available**. Access to this repository is provided strictly for personal code review and evaluation. Unauthorized copying, distribution, modification, commercial deployment, or creating derivative software is strictly prohibited without prior written permission from the author. See [`LICENSE`](LICENSE) for complete terms.
 
 ---
 

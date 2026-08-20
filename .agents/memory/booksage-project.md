@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-08-20
 ---
 
 # BookSage Project State
@@ -10,12 +10,8 @@ updated: 2026-07-29
 BookSage Studio is a self-contained Windows desktop reading and learning app. Users drop in a PDF book, AI extracts chapter-by-chapter structured notes, and users can read the book, view notes, and chat with an AI copilot — all without leaving the app. Obsidian export is an optional bonus, not the core.
 
 ## Repository
-- GitHub: Public, MIT license
+- GitHub: Public (Source-Available), Proprietary / All Rights Reserved (Building Era)
 - Local path: `d:\[Project]\BookSage`
-- Git status: 3 commits on `main` as of 2026-07-29
-  1. `chore: initial commit — project scaffold + roadmap + GUI assets`
-  2. `docs: expand RoadMap.md to v2.0 — full technical blueprint + project plan`
-  3. `docs: v3 pivot — BookSage Studio (reader + notes viewer + AI copilot in-app)`
 - Branching: `main ← dev ← phase/X-slug`
 
 ## Tech Stack (locked)
