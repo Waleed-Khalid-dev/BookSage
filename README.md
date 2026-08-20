@@ -45,19 +45,16 @@ Drop in any PDF book or document. BookSage automatically splits chapters, extrac
 
 ## 📸 Visual Showcase
 
-> [!TIP]
-> *Drop your high-resolution app screenshots in `assets/screenshots/` to display live visual walkthroughs.*
-
 <div align="center">
 
 | 📖 Immersive PDF Reader (Spread View & Highlights) | 📝 Obsidian-Style Notes & Flashcards |
 | :---: | :---: |
-| <img src="assets/screenshots/reader-spread-view.png" alt="PDF Reader View" width="460" onerror="this.src='assets/logo.png'; this.style.opacity=0.3;"/> | <img src="assets/screenshots/notes-flashcards.png" alt="Notes Studio View" width="460" onerror="this.src='assets/logo.png'; this.style.opacity=0.3;"/> |
+| <img src="assets/screenshots/reader-spread-view.png" alt="PDF Reader View" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> | <img src="assets/screenshots/notes-flashcards.png" alt="Notes Studio View" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> |
 | *Two-page 3D spread, 6 color themes, margin cropping & draw layer* | *Structured chapter summaries, action steps & interactive flashcards* |
 
 | ✦ Context-Aware AI Copilot Sidebar | 💬 Full-Screen AI Chat Studio & Citations |
 | :---: | :---: |
-| <img src="assets/screenshots/copilot-sidebar.png" alt="Copilot Sidebar" width="460" onerror="this.src='assets/logo.png'; this.style.opacity=0.3;"/> | <img src="assets/screenshots/ai-chat-studio.png" alt="AI Chat Studio" width="460" onerror="this.src='assets/logo.png'; this.style.opacity=0.3;"/> |
+| <img src="assets/screenshots/copilot-sidebar.png" alt="Copilot Sidebar" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> | <img src="assets/screenshots/ai-chat-studio.png" alt="AI Chat Studio" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> |
 | *Right-click menu, floating popup, and resizable sidebar assistant* | *Multi-chapter RAG context selector & interactive citation jumping* |
 
 </div>
