@@ -5,8 +5,10 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { useChatStore, CopilotPersona, ContextMode } from '../../stores/chatStore';
 import { useBookStore, Chapter } from '../../stores/bookStore';
+import { useUiStore } from '../../stores/uiStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector } from '../copilot/ModelSelector';
+import { CitationChip, extractCitations } from '../shared/CitationChip';
 import './AIChatView.css';
 
 const PRESET_PROMPTS = [
@@ -489,7 +491,22 @@ export function AIChatView() {
                 <div className="acv-msg-body">
                   <div className="acv-msg-content">
                     {msg.role === 'assistant'
-                      ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                      ? (
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            a: ({ href, children, ...props }) => {
+                              if (href?.startsWith('cite:')) {
+                                const chNum = parseInt(href.replace('cite:', ''), 10);
+                                return <CitationChip chapterNum={chNum} label={String(children)} />;
+                              }
+                              return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+                            }
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      )
                       : <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{msg.content}</p>
                     }
                   </div>
@@ -497,6 +514,26 @@ export function AIChatView() {
                     {msg.ts && <span className="acv-msg-time">{formatTime(msg.ts)}</span>}
                     {msg.role === 'assistant' && (
                       <div className="acv-msg-actions">
+                        {extractCitations(msg.content).map(chNum => (
+                          <button 
+                            key={chNum}
+                            className="bs-jump-source-btn"
+                            onClick={() => {
+                              const chap = chapters.find(c => c.num === chNum);
+                              if (chap?.pp) {
+                                const p = parseInt(chap.pp.split('-')[0].trim(), 10);
+                                if (!isNaN(p)) {
+                                  useBookStore.getState().setLastPage(p);
+                                  window.dispatchEvent(new CustomEvent('booksage-jump-page', { detail: { pageNum: p } }));
+                                }
+                              }
+                              useUiStore.getState().setActiveView('reader');
+                            }}
+                            title={`Jump directly to Chapter ${chNum} in Reader`}
+                          >
+                            📖 Ch. {chNum}
+                          </button>
+                        ))}
                         <button onClick={() => handleCopy(msg.content, msg.id)}>
                           {copied === msg.id ? '✓ Copied' : '📋 Copy'}
                         </button>

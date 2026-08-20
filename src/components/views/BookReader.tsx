@@ -77,6 +77,17 @@ export function BookReader() {
     }
   }, [pdfState.currentPage, lastPage, setLastPage, incrementReadingStats]);
 
+  // Listen for citation jump events
+  useEffect(() => {
+    const handleJump = (e: CustomEvent) => {
+      if (e.detail?.pageNum && pdfState) {
+        pdfState.setPage(e.detail.pageNum);
+      }
+    };
+    window.addEventListener('booksage-jump-page', handleJump as EventListener);
+    return () => window.removeEventListener('booksage-jump-page', handleJump as EventListener);
+  }, [pdfState]);
+
   // Track reading time with idle detection
   useEffect(() => {
     if (!pdfPath) return;

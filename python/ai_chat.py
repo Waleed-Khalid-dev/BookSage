@@ -5,8 +5,9 @@ import os
 
 def format_chapter_json(data: Dict[str, Any], fallback_num: int = 1) -> str:
     """Formats full structured chapter JSON into concise, readable markdown context."""
-    title = data.get('chapter_title', f"Chapter {fallback_num}")
-    parts = [f"### {title}"]
+    num = data.get('chapter_number', fallback_num)
+    title = data.get('chapter_title', f"Chapter {num}")
+    parts = [f"### Chapter {num}: {title}"]
     
     if data.get('summary'):
         parts.append(f"**Summary:** {data['summary']}")
@@ -91,13 +92,22 @@ def chat_with_context(
             context_text = "[Warning: No chapter data was loaded for the selected context.]"
             
     # 2. Build the full system prompt
+    citation_instructions = (
+        "\n\nCITATION INSTRUCTIONS:\n"
+        "- Whenever referencing specific concepts, laws, lessons, or quotes from the book, "
+        "always include a citation link formatted as [Ch. N: Title](cite:N) or [Ch. N](cite:N) "
+        "(e.g., [Ch. 4: Master the Art of Timing](cite:4) or [Ch. 4](cite:4)), where N is the chapter number.\n"
+        "- Place citation links inline right after the relevant sentence.\n"
+    )
+    
     system_prompt = (
         f"{persona_prefix}"
         "You are BookSage Copilot, an intelligent reading assistant. "
         "Your goal is to help the user understand the book they are reading. "
         "Use the following book context to answer the user's questions accurately. "
         "If the user asks something completely unrelated to the book or general knowledge, "
-        "you may answer it, but always prioritize insights from the provided text.\n\n"
+        "you may answer it, but always prioritize insights from the provided text."
+        f"{citation_instructions}\n"
         f"--- BOOK CONTEXT ---\n{context_text}\n--------------------"
     )
     

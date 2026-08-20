@@ -1,0 +1,93 @@
+.bs-citation-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin: 0 3px;
+  background: rgba(0, 150, 136, 0.12);
+  border: 1px solid rgba(0, 150, 136, 0.35);
+  border-radius: 12px;
+  color: var(--bs-accent, #009688);
+  font-size: 0.85em;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 1.4;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.bs-citation-chip:hover {
+  background: var(--bs-accent, #009688);
+  color: #ffffff;
+  border-color: var(--bs-accent, #009688);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 150, 136, 0.3);
+}
+
+.bs-citation-icon {
+  font-size: 0.9em;
+}
+
+.bs-citation-text {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bs-citation-arrow {
+  font-size: 0.8em;
+  opacity: 0.75;
+  transition: transform 0.18s ease;
+}
+
+.bs-citation-chip:hover .bs-citation-arrow {
+  transform: translate(1px, -1px);
+  opacity: 1;
+}
+
+/* ── Jump to Source Action Button in Message Meta ── */
+.bs-jump-source-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid rgba(0, 150, 136, 0.3);
+  color: var(--bs-accent, #009688);
+  font-size: 0.76rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bs-jump-source-btn:hover {
+  background: var(--bs-accent, #009688);
+  color: #ffffff;
+  border-color: var(--bs-accent, #009688);
+}
+
+/* Light / Sepia Mode High-Contrast Overrides */
+[data-reader-theme="light"] .bs-citation-chip {
+  background: #e6f4f1;
+  border-color: #00796b;
+  color: #00796b;
+}
+
+[data-reader-theme="light"] .bs-citation-chip:hover {
+  background: #00796b;
+  color: #ffffff;
+}
+
+[data-reader-theme="sepia"] .bs-citation-chip {
+  background: #e8ded1;
+  border-color: #8c6d48;
+  color: #6b4d24;
+}
+
+[data-reader-theme="sepia"] .bs-citation-chip:hover {
+  background: #8c6d48;
+  color: #ffffff;
+}

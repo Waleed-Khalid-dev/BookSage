@@ -131,9 +131,9 @@
 ### Source-Grounded Answers with Page References
 *Inspired by: Kindle "Ask This Book", Perplexity citations, ChatPDF*
 
-- [ ] AI responses that reference specific chapters: e.g., "According to Chapter 3: Law of Power..."
-- [ ] Inline chapter badges in AI response: clickable `[Ch. 3]` chip that jumps to that chapter in NotesViewer
-- [ ] "Jump to Source" button on any AI response containing chapter reference
+- [x] AI responses that reference specific chapters: e.g., "According to Chapter 3: Law of Power..."
+- [x] Inline chapter badges in AI response: clickable `[Ch. 3]` chip that jumps to that chapter in NotesViewer
+- [x] "Jump to Source" button on any AI response containing chapter reference
 
 ### Multi-Chapter Context Window
 *Inspired by: Elicit multi-doc, Claude 1M context*

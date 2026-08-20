@@ -105,6 +105,17 @@ export function NotesViewer() {
   const doneChapters = chapters.filter(c => c.status === 'done');
   const activeChapter = doneChapters[activeChapterIdx];
 
+  // Listen for citation chapter selection events
+  useEffect(() => {
+    const handleSelect = (e: CustomEvent) => {
+      if (typeof e.detail?.chapterIdx === 'number') {
+        setActiveChapterIdx(e.detail.chapterIdx);
+      }
+    };
+    window.addEventListener('booksage-select-chapter', handleSelect as EventListener);
+    return () => window.removeEventListener('booksage-select-chapter', handleSelect as EventListener);
+  }, []);
+
   // Load chapter JSON
   useEffect(() => {
     if (!activeChapter?.json_path) {
