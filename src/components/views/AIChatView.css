@@ -707,19 +707,34 @@
 .acv-msg-actions button:hover { color: var(--bs-text, #fff); border-color: var(--bs-accent); background: rgba(0,150,136,0.1); }
 
 /* Follow-up pills */
-.acv-follow-ups { display: flex; flex-wrap: wrap; gap: 5px; }
+.acv-follow-ups { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 6px; 
+  margin-top: 6px;
+}
 .acv-follow-pill {
   background: var(--bs-surface);
   border: 1px dashed var(--bs-border, #3a4a4a);
-  border-radius: 14px;
+  border-radius: 12px;
   color: var(--bs-text-muted, #888);
-  padding: 4px 12px;
-  font-size: 0.74rem;
+  padding: 5px 12px;
+  font-size: 0.76rem;
+  line-height: 1.35;
   cursor: pointer;
   transition: all 0.15s;
   text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
 }
-.acv-follow-pill:hover { background: rgba(0,150,136,0.1); border-color: var(--bs-accent); color: var(--bs-text-bright, #fff); }
+.acv-follow-pill:hover { 
+  background: rgba(0,150,136,0.12); 
+  border-color: var(--bs-accent); 
+  border-style: solid;
+  color: var(--bs-text-bright, #fff); 
+}
 
 /* ── Input area ── */
 .acv-input-area {

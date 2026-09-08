@@ -175,8 +175,21 @@ def chat_with_context(
         "2. NEVER output plain text brackets like [Ch. 7] or [Ch. None] without the (cite:N) target.\n"
         "3. If the user asks which chapter they are reading or what page they are on, "
         "answer accurately using the ACTIVE USER READING POSITION provided above!\n"
+    followup_instructions = (
+        "\n\nSUGGESTED FOLLOW-UP QUESTIONS (CRITICAL & MANDATORY):\n"
+        "At the very end of your response, you MUST provide exactly 3 concise, highly relevant follow-up questions "
+        "that the user might want to ask next to explore this chapter, lesson, or topic deeper.\n"
+        "Format each question on its own separate line starting with @@FOLLOWUP:\n"
+        "Example at the end of your response:\n"
+        "@@FOLLOWUP: What is a real-world example of applying this principle?\n"
+        "@@FOLLOWUP: What are the main dangers or common mistakes to avoid?\n"
+        "@@FOLLOWUP: How does this connect to the previous chapter?\n"
+        "Rules:\n"
+        "- Exactly 3 questions.\n"
+        "- Do NOT prefix the line with numbers (1.), bullets (*), or quotes.\n"
+        "- Put them at the very end of the message.\n"
     )
-    
+
     system_prompt = (
         f"{persona_prefix}"
         "You are BookSage Copilot, an intelligent reading assistant. "
@@ -185,7 +198,8 @@ def chat_with_context(
         "If the user asks something completely unrelated to the book or general knowledge, "
         "you may answer it, but always prioritize insights from the provided text."
         f"{reading_context_header}"
-        f"{citation_instructions}\n"
+        f"{citation_instructions}"
+        f"{followup_instructions}\n"
         f"--- BOOK CONTEXT ---\n{context_text}\n--------------------"
     )
     

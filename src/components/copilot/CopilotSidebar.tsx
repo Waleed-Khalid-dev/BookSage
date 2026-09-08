@@ -537,8 +537,8 @@ export function CopilotSidebar({
                   {msg.followUps && msg.followUps.length > 0 && (
                     <div className="csb-follow-ups">
                       {msg.followUps.map((q, i) => (
-                        <button key={i} className="csb-follow-up-pill" onClick={() => handleFollowUp(q)}>
-                          {q}
+                        <button key={i} className="csb-follow-up-pill" onClick={() => handleFollowUp(q)} title="Click to ask this question">
+                          💬 {q}
                         </button>
                       ))}
                     </div>

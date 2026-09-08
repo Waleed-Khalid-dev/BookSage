@@ -588,8 +588,8 @@ export function AIChatView() {
                       {msg.followUps && msg.followUps.length > 0 && (
                         <div className="acv-follow-ups">
                           {msg.followUps.map((q, i) => (
-                            <button key={i} className="acv-follow-pill" onClick={() => { setInput(q); textareaRef.current?.focus(); }}>
-                              {q}
+                            <button key={i} className="acv-follow-pill" onClick={() => handleSend(q)} title="Click to ask this question">
+                              💬 {q}
                             </button>
                           ))}
                         </div>

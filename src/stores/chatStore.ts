@@ -192,13 +192,19 @@ function parseFollowUps(raw: string): { content: string; followUps: string[] } {
   const followUps: string[] = [];
   const rest: string[] = [];
   for (const line of lines) {
-    if (line.startsWith('@@FOLLOWUP:')) {
-      followUps.push(line.replace('@@FOLLOWUP:', '').trim());
+    const match = line.match(/^\s*(?:[-*•]|\d+\.?)?\s*@@FOLLOWUP:\s*(.+)$/i);
+    if (match) {
+      const q = match[1].trim().replace(/^["']|["']$/g, '');
+      if (q && !followUps.includes(q)) {
+        followUps.push(q);
+      }
     } else {
       rest.push(line);
     }
   }
-  return { content: rest.join('\n').trim(), followUps };
+  let content = rest.join('\n').trim();
+  content = content.replace(/(?:\*\*|##+)?\s*(?:suggested\s+)?follow-?up\s+questions?:?\s*(?:\*\*)?$/i, '').trim();
+  return { content, followUps: followUps.slice(0, 3) };
 }
 
 function sessionToRecord(s: ChatSession): ChatSessionRecord {
