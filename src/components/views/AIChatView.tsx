@@ -8,8 +8,15 @@ import { useBookStore, Chapter } from '../../stores/bookStore';
 import { useUiStore } from '../../stores/uiStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector } from '../copilot/ModelSelector';
-import { CitationChip, extractCitations, normalizeCitations } from '../shared/CitationChip';
-import { pinChapterInsight } from '../../services/dbService';
+import { CitationChip, extractCitations, normalizeCitations, CitationItem } from '../shared/CitationChip';
+import {
+  pinChapterInsight,
+  unpinChapterInsight,
+  unpinInsightByMsgIdOrContent,
+  getAllPinnedInsightsForBook,
+  PinnedInsightRecord
+} from '../../services/dbService';
+import { Trash2 } from 'lucide-react';
 import './AIChatView.css';
 
 const PRESET_PROMPTS = [
@@ -63,7 +70,7 @@ export function AIChatView() {
     sendMessage, loadSessions, persona, setPersona, regenerateLastMessage,
     setSessionCustomScope
   } = useChatStore();
-  const { bookId, currentBookTitle, aiModel, setAiModel, chapters, lastPage } = useBookStore();
+  const { bookId, currentBookTitle, aiModel, setAiModel, chapters, lastPage, insightsRefreshCounter } = useBookStore();
   const { getKey } = useApiKeys();
 
   // Determine current active chapter based on lastPage in reader
@@ -77,7 +84,8 @@ export function AIChatView() {
   const [model, setModel] = useState(aiModel);
   const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek'>('gemini');
   const [copied, setCopied] = useState<string | null>(null);
-  const [pinnedId, setPinnedId] = useState<string | null>(null);
+  const [pinnedInsights, setPinnedInsights] = useState<PinnedInsightRecord[]>([]);
+  const [sidebarTab, setSidebarTab] = useState<'chats' | 'pins'>('chats');
   const [contextMode, setContextMode] = useState<ContextMode>('book');
   const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
   const [includeRawText, setIncludeRawText] = useState<boolean>(false);
@@ -104,10 +112,13 @@ export function AIChatView() {
     };
   }, [showCustomPicker]);
 
-  // Load sessions when view opens
+  // Load sessions and pinned insights when view opens
   useEffect(() => {
-    if (bookId) loadSessions(bookId);
-  }, [bookId, loadSessions]);
+    if (bookId) {
+      loadSessions(bookId);
+      getAllPinnedInsightsForBook(bookId).then(setPinnedInsights);
+    }
+  }, [bookId, loadSessions, insightsRefreshCounter]);
 
   const session = activeSession();
 
@@ -269,22 +280,54 @@ export function AIChatView() {
     }
   };
 
+  const handleFollowUp = (q: string) => {
+    handleSend(q);
+  };
+
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopied(id);
     setTimeout(() => setCopied(null), 1800);
   };
 
-  const handlePin = async (content: string, msgId: string) => {
-    const citations = extractCitations(content, chapters);
-    const targetChap = citations[0]?.targetChapter || activeChapter || chapters[0];
-    const targetId = targetChap?.id || targetChap?.num?.toString();
-    if (targetId) {
-      await pinChapterInsight(targetId, content, bookId ?? undefined);
-      useBookStore.getState().triggerInsightsRefresh();
-      setPinnedId(msgId);
-      setTimeout(() => setPinnedId(null), 2000);
+  const handleTogglePin = async (msg: any) => {
+    const isPinned = pinnedInsights.some(p => (msg.id && p.msgId === msg.id) || p.insight === msg.content);
+    if (isPinned) {
+      if (bookId) {
+        await unpinInsightByMsgIdOrContent(bookId, msg.id, msg.content);
+        useBookStore.getState().triggerInsightsRefresh();
+      }
+    } else {
+      const citations = extractCitations(msg.content, chapters);
+      const targetChap = citations[0]?.targetChapter || activeChapter || chapters[0];
+      const targetId = targetChap?.id || targetChap?.num?.toString();
+      if (targetId) {
+        await pinChapterInsight(targetId, msg.content, bookId ?? undefined, {
+          msgId: msg.id,
+          sessionId: session?.id,
+          sessionTitle: session?.title,
+          ts: msg.ts || Date.now()
+        });
+        useBookStore.getState().triggerInsightsRefresh();
+      }
     }
+  };
+
+  const handleJumpToPinnedMessage = (pin: PinnedInsightRecord) => {
+    if (pin.sessionId && pin.sessionId !== activeSessionId) {
+      setActiveSession(pin.sessionId);
+    }
+    setTimeout(() => {
+      const el = (pin.msgId && document.getElementById(`acv-msg-${pin.msgId}`)) ||
+                 Array.from(document.querySelectorAll('.acv-msg')).find(card =>
+                   card.textContent?.includes(pin.insight.slice(0, 35))
+                 );
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('acv-msg-highlight-pulse');
+        setTimeout(() => el.classList.remove('acv-msg-highlight-pulse'), 2500);
+      }
+    }, 200);
   };
 
   const handleNewSession = () => {
@@ -300,30 +343,95 @@ export function AIChatView() {
 
   return (
     <div className="acv-root">
-      {/* ── Left: Session history ── */}
+      {/* ── Left: Session history / Pins ── */}
       <aside className="acv-sidebar">
-        <div className="acv-sidebar-header">
-          <span className="acv-sidebar-title">Chat History</span>
-          <button className="acv-new-btn" onClick={handleNewSession} title="New chat">+ New</button>
+        <div className="acv-sidebar-tabs">
+          <button
+            className={`acv-sidebar-tab ${sidebarTab === 'chats' ? 'acv-sidebar-tab--active' : ''}`}
+            onClick={() => setSidebarTab('chats')}
+          >
+            💬 Chats ({sessions.length})
+          </button>
+          <button
+            className={`acv-sidebar-tab ${sidebarTab === 'pins' ? 'acv-sidebar-tab--active' : ''}`}
+            onClick={() => setSidebarTab('pins')}
+          >
+            📌 Pins ({pinnedInsights.length})
+          </button>
         </div>
 
-        <div className="acv-session-list">
-          {sessions.length === 0 && (
-            <div className="acv-session-empty">No sessions yet</div>
-          )}
-          {sessions.map(s => (
-            <div
-              key={s.id}
-              className={`acv-session-item ${s.id === activeSessionId ? 'acv-session-item--active' : ''}`}
-            >
-              <button className="acv-session-title" onClick={() => setActiveSession(s.id)}>
-                <span className="acv-session-icon">💬</span>
-                <span>{s.title.length > 22 ? s.title.slice(0, 22) + '…' : s.title}</span>
-              </button>
-              <button className="acv-session-del" onClick={() => deleteSession(s.id)} title="Delete">✕</button>
+        {sidebarTab === 'chats' ? (
+          <>
+            <div className="acv-sidebar-header">
+              <span className="acv-sidebar-title">Chat History</span>
+              <button className="acv-new-btn" onClick={handleNewSession} title="New chat">+ New</button>
             </div>
-          ))}
-        </div>
+
+            <div className="acv-session-list">
+              {sessions.length === 0 && (
+                <div className="acv-session-empty">No sessions yet</div>
+              )}
+              {sessions.map(s => (
+                <div
+                  key={s.id}
+                  className={`acv-session-item ${s.id === activeSessionId ? 'acv-session-item--active' : ''}`}
+                >
+                  <button className="acv-session-title" onClick={() => setActiveSession(s.id)}>
+                    <span className="acv-session-icon">💬</span>
+                    <span>{s.title.length > 22 ? s.title.slice(0, 22) + '…' : s.title}</span>
+                  </button>
+                  <button className="acv-session-del" onClick={() => deleteSession(s.id)} title="Delete">✕</button>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="acv-pinned-list">
+            {pinnedInsights.length === 0 ? (
+              <div className="acv-pinned-empty">
+                No pinned messages yet.<br /><br />
+                Click 📌 Pin on any assistant message in chat to save it here.
+              </div>
+            ) : (
+              pinnedInsights.map((pin, idx) => (
+                <div
+                  key={`${pin.chapterId}-${pin.index}-${idx}`}
+                  className="acv-pinned-card"
+                  onClick={() => handleJumpToPinnedMessage(pin)}
+                  title="Click to jump to this message in chat"
+                >
+                  <div className="acv-pinned-card-header">
+                    <span className="acv-pinned-chat-tag">
+                      💬 {pin.sessionTitle || `Ch. ${pin.chapterNum}`}
+                    </span>
+                    <button
+                      className="acv-pinned-card-del"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await unpinChapterInsight(pin.chapterId, pin.index);
+                        useBookStore.getState().triggerInsightsRefresh();
+                      }}
+                      title="Unpin"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                  <div className="acv-pinned-card-body">
+                    {pin.insight}
+                  </div>
+                  <div className="acv-pinned-card-footer">
+                    <span className="acv-pinned-chapter-pill">
+                      Ch. {pin.chapterNum}
+                    </span>
+                    <span className="acv-pinned-jump-hint">
+                      Jump ↗
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Persona selector */}
         <div className="acv-persona-section">
@@ -509,8 +617,10 @@ export function AIChatView() {
               </div>
             </div>
           ) : (
-            session.messages.map((msg, index) => (
-              <div key={msg.id} className={`acv-msg acv-msg--${msg.role}`}>
+            session.messages.map((msg, index) => {
+              const isPinned = pinnedInsights.some(p => (msg.id && p.msgId === msg.id) || p.insight === msg.content);
+              return (
+              <div id={`acv-msg-${msg.id}`} key={msg.id} className={`acv-msg acv-msg--${msg.role}`}>
                 <div className="acv-msg-avatar">
                   {msg.role === 'user' ? '👤' : '✦'}
                 </div>
@@ -563,7 +673,7 @@ export function AIChatView() {
                     {msg.ts && <span className="acv-msg-time">{formatTime(msg.ts)}</span>}
                     {msg.role === 'assistant' && (
                       <div className="acv-msg-actions">
-                        {extractCitations(msg.content, chapters).map(item => (
+                        {extractCitations(msg.content, chapters).map((item: CitationItem) => (
                           <button 
                             key={item.key}
                             className="bs-jump-source-btn"
@@ -587,11 +697,16 @@ export function AIChatView() {
                           {copied === msg.id ? '✓ Copied' : '📋 Copy'}
                         </button>
                         <button
-                          onClick={() => handlePin(msg.content, msg.id)}
-                          style={{ color: pinnedId === msg.id ? 'var(--bs-accent, #009688)' : undefined }}
-                          title="Pin this insight to chapter notes"
+                          onClick={() => handleTogglePin(msg)}
+                          style={{
+                            color: isPinned ? 'var(--bs-accent, #009688)' : undefined,
+                            background: isPinned ? 'rgba(0,150,136,0.12)' : undefined,
+                            borderColor: isPinned ? 'var(--bs-accent, #009688)' : undefined,
+                            fontWeight: isPinned ? 600 : undefined
+                          }}
+                          title={isPinned ? 'Click to unpin this insight' : 'Pin this insight'}
                         >
-                          {pinnedId === msg.id ? '✓ Pinned' : '📌 Pin'}
+                          {isPinned ? '📌 Pinned' : '📌 Pin'}
                         </button>
                       </div>
                     )}
@@ -609,8 +724,8 @@ export function AIChatView() {
                       {msg.followUps && msg.followUps.length > 0 && (
                         <div className="acv-follow-ups">
                           {msg.followUps.map((q, i) => (
-                            <button key={i} className="acv-follow-pill" onClick={() => handleSend(q)} title="Click to ask this question">
-                              💬 {q}
+                            <button key={i} className="acv-follow-pill" onClick={() => handleFollowUp(q)} title="Click to ask this question">
+                              {q} ↗
                             </button>
                           ))}
                         </div>
@@ -619,7 +734,8 @@ export function AIChatView() {
                   )}
                 </div>
               </div>
-            ))
+              );
+            })
           )}
 
           {isLoading && (

@@ -620,6 +620,13 @@ export async function deleteChatSession(id: string): Promise<void> {
   await database.execute('DELETE FROM chat_sessions WHERE id = $1', [id]);
 }
 
+export interface PinnedInsightMeta {
+  msgId?: string;
+  sessionId?: string;
+  sessionTitle?: string;
+  ts?: number;
+}
+
 export interface PinnedInsightRecord {
   chapterId: string;
   chapterNum: number;
@@ -627,9 +634,18 @@ export interface PinnedInsightRecord {
   pages?: string;
   insight: string;
   index: number;
+  msgId?: string;
+  sessionId?: string;
+  sessionTitle?: string;
+  ts?: number;
 }
 
-export async function pinChapterInsight(chapterId: string, insight: string, bookId?: string): Promise<void> {
+export async function pinChapterInsight(
+  chapterId: string,
+  insight: string,
+  bookId?: string,
+  meta?: PinnedInsightMeta
+): Promise<void> {
   const database = await getDb();
   let targetId = chapterId;
 
@@ -639,7 +655,7 @@ export async function pinChapterInsight(chapterId: string, insight: string, book
     [chapterId]
   );
 
-  let existing: string[] = [];
+  let existing: any[] = [];
   if (check.length > 0) {
     targetId = check[0].id;
     existing = check[0].ai_insights ? JSON.parse(check[0].ai_insights) : [];
@@ -657,9 +673,22 @@ export async function pinChapterInsight(chapterId: string, insight: string, book
     }
   }
 
+  const itemToStore = meta && (meta.msgId || meta.sessionId)
+    ? { text: insight, ...meta }
+    : insight;
+
   // Avoid duplicate pins
-  if (!existing.includes(insight)) {
-    existing.push(insight);
+  const alreadyExists = existing.some(e => {
+    if (typeof e === 'string') return e === insight;
+    if (typeof e === 'object' && e !== null) {
+      if (meta?.msgId && e.msgId === meta.msgId) return true;
+      return e.text === insight;
+    }
+    return false;
+  });
+
+  if (!alreadyExists) {
+    existing.push(itemToStore);
   }
 
   await database.execute(
@@ -676,7 +705,7 @@ export async function unpinChapterInsight(chapterId: string, index: number): Pro
   );
   if (result[0]?.ai_insights) {
     try {
-      const existing: string[] = JSON.parse(result[0].ai_insights);
+      const existing: any[] = JSON.parse(result[0].ai_insights);
       existing.splice(index, 1);
       await database.execute(
         'UPDATE chapters SET ai_insights = $1 WHERE id = $2',
@@ -688,13 +717,51 @@ export async function unpinChapterInsight(chapterId: string, index: number): Pro
   }
 }
 
+export async function unpinInsightByMsgIdOrContent(bookId: string, msgId?: string, content?: string): Promise<void> {
+  const database = await getDb();
+  const rows = await database.select<{ id: string; ai_insights: string | null }[]>(
+    'SELECT id, ai_insights FROM chapters WHERE book_id = $1 AND ai_insights IS NOT NULL',
+    [bookId]
+  );
+  for (const row of rows) {
+    if (!row.ai_insights) continue;
+    try {
+      const existing: any[] = JSON.parse(row.ai_insights);
+      const filtered = existing.filter(item => {
+        if (typeof item === 'string') {
+          return item !== content;
+        }
+        if (typeof item === 'object' && item !== null) {
+          if (msgId && item.msgId === msgId) return false;
+          if (content && item.text === content) return false;
+        }
+        return true;
+      });
+      if (filtered.length !== existing.length) {
+        await database.execute(
+          'UPDATE chapters SET ai_insights = $1 WHERE id = $2',
+          [JSON.stringify(filtered), row.id]
+        );
+      }
+    } catch (e) {
+      console.error('Failed to unpin insight by id/content', e);
+    }
+  }
+}
+
 export async function getChapterInsights(chapterId: string): Promise<string[]> {
   const database = await getDb();
   const result = await database.select<{ ai_insights: string | null }[]>(
     'SELECT ai_insights FROM chapters WHERE id = $1',
     [chapterId]
   );
-  return result[0]?.ai_insights ? JSON.parse(result[0].ai_insights) : [];
+  if (!result[0]?.ai_insights) return [];
+  try {
+    const list: any[] = JSON.parse(result[0].ai_insights);
+    return list.map(item => (typeof item === 'object' && item !== null ? item.text || '' : String(item)));
+  } catch {
+    return [];
+  }
 }
 
 export async function getAllPinnedInsightsForBook(bookId: string): Promise<PinnedInsightRecord[]> {
@@ -708,15 +775,21 @@ export async function getAllPinnedInsightsForBook(bookId: string): Promise<Pinne
   for (const row of rows) {
     if (!row.ai_insights) continue;
     try {
-      const list: string[] = JSON.parse(row.ai_insights);
-      list.forEach((text, idx) => {
+      const list: any[] = JSON.parse(row.ai_insights);
+      list.forEach((item, idx) => {
+        const isObj = typeof item === 'object' && item !== null;
+        const text = isObj ? item.text || '' : String(item);
         results.push({
           chapterId: row.id,
           chapterNum: row.num,
           chapterTitle: row.title,
           pages: row.pages || undefined,
           insight: text,
-          index: idx
+          index: idx,
+          msgId: isObj ? item.msgId : undefined,
+          sessionId: isObj ? item.sessionId : undefined,
+          sessionTitle: isObj ? item.sessionTitle : undefined,
+          ts: isObj ? item.ts : undefined,
         });
       });
     } catch (e) {

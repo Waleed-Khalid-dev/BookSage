@@ -17,6 +17,173 @@ import { ThumbnailList } from './ThumbnailList';
 import { copyExportToClipboard, saveExportToFile } from '../../services/exportService';
 import { Download, Copy, Check, Search, Trash2 } from 'lucide-react';
 import { useSearchStore } from '../../stores/searchStore';
+
+function PinnedInsightItem({
+  item,
+  startPage,
+  onJump,
+  onUnpin
+}: {
+  item: PinnedInsightRecord;
+  startPage: number;
+  onJump: (page: number) => void;
+  onUnpin: () => void;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isLong = item.insight.length > 150;
+
+  // Clean prompt boilerplate preamble if present
+  let displayContent = item.insight;
+  if (displayContent.startsWith('Based on your ACTIVE USER READING POSITION') || displayContent.startsWith('Based on the book context')) {
+    const lines = displayContent.split('\n');
+    const contentStartIdx = lines.findIndex(l => 
+      l.includes('Main Takeaways') || l.includes('Takeaways') || l.includes('Key Lessons') || l.includes('Core Lessons')
+    );
+    if (contentStartIdx !== -1) {
+      displayContent = lines.slice(contentStartIdx).join('\n');
+    }
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.35rem',
+        background: 'var(--bs-panel)',
+        border: '1px solid var(--bs-border)',
+        borderLeft: '3px solid var(--bs-accent, #009688)',
+        borderRadius: '6px',
+        padding: '0.55rem 0.65rem',
+        transition: 'all 0.15s ease'
+      }}
+    >
+      {/* Header with Chapter badge, page jump pill, and delete */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+        <div 
+          onClick={() => onJump(startPage)}
+          style={{ display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', flex: 1, cursor: 'pointer' }}
+          title={`Jump to ${item.chapterTitle} (p.${startPage})`}
+        >
+          <span style={{
+            background: 'rgba(0, 150, 136, 0.15)',
+            color: 'var(--bs-accent, #009688)',
+            padding: '1px 5px',
+            borderRadius: '3px',
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            whiteSpace: 'nowrap'
+          }}>
+            Ch. {item.chapterNum}
+          </span>
+          <span
+            style={{
+              fontSize: '0.76rem',
+              fontWeight: 600,
+              color: 'var(--bs-text)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}
+          >
+            {item.chapterTitle}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+          <button
+            onClick={() => onJump(startPage)}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--bs-border)',
+              borderRadius: '3px',
+              padding: '1px 5px',
+              fontSize: '0.68rem',
+              color: 'var(--bs-muted)',
+              cursor: 'pointer'
+            }}
+            title={`Jump to page ${startPage}`}
+          >
+            p.{startPage} ↗
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onUnpin();
+            }}
+            style={{
+              padding: '2px 4px',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--bs-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--bs-danger, #ef4444)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--bs-muted)')}
+            title="Unpin Insight"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* Content Preview without ugly scrollbars */}
+      <div
+        style={{
+          fontSize: '0.78rem',
+          color: 'var(--bs-text)',
+          lineHeight: '1.42',
+          wordBreak: 'break-word',
+          opacity: 0.9,
+          ...(isExpanded ? {} : {
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden'
+          })
+        }}
+      >
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            a: ({ children }) => (
+              <span style={{ color: 'var(--bs-accent, #009688)', fontWeight: 500 }}>{children}</span>
+            ),
+            p: ({ children }) => <p style={{ margin: '0 0 0.2rem 0' }}>{children}</p>,
+            ul: ({ children }) => <ul style={{ margin: '0 0 0.2rem 0', paddingLeft: '1rem' }}>{children}</ul>,
+            ol: ({ children }) => <ol style={{ margin: '0 0 0.2rem 0', paddingLeft: '1rem' }}>{children}</ol>,
+            li: ({ children }) => <li style={{ margin: '0 0 0.1rem 0' }}>{children}</li>,
+          }}
+        >
+          {displayContent}
+        </ReactMarkdown>
+      </div>
+
+      {/* Show more toggle */}
+      {isLong && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          style={{
+            alignSelf: 'flex-start',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--bs-accent, #009688)',
+            fontSize: '0.7rem',
+            cursor: 'pointer',
+            padding: 0,
+            marginTop: '1px',
+            fontWeight: 500
+          }}
+        >
+          {isExpanded ? 'Show less ▴' : 'Show more ▾'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function SidebarTabs() {
   const [activeTab, setActiveTab] = useState<'toc' | 'thumbnails' | 'annotations'>('toc');
   const { chapters, bookId, highlightsRefreshCounter, bookmarksRefreshCounter, insightsRefreshCounter } = useBookStore();
@@ -315,17 +482,21 @@ export function SidebarTabs() {
 
             {/* Pinned AI Insights Section */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <h4 style={{ margin: 0, color: 'var(--bs-heading)', fontSize: '0.9rem', textTransform: 'uppercase' }}>
-                  Pinned Insights ({pinnedInsights.length})
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                <h4 style={{ margin: 0, color: 'var(--bs-heading)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span>📌</span> Pinned Insights
                 </h4>
+                <span style={{ background: 'var(--bs-panel)', border: '1px solid var(--bs-border)', borderRadius: '10px', padding: '1px 7px', fontSize: '0.72rem', color: 'var(--bs-accent)' }}>
+                  {pinnedInsights.length}
+                </span>
               </div>
+
               {pinnedInsights.length === 0 ? (
-                <p style={{ color: 'var(--bs-muted)', fontSize: '0.8rem', lineHeight: '1.4' }}>
-                  No pinned AI insights yet. Click 📌 Pin on any Copilot message to save insights here.
+                <p style={{ color: 'var(--bs-muted)', fontSize: '0.8rem', lineHeight: '1.45', margin: 0 }}>
+                  No pinned AI insights yet. Click 📌 Pin on any Copilot message to save key takeaways here.
                 </p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                   {pinnedInsights.map((item, idx) => {
                     let startPage = 1;
                     if (item.pages) {
@@ -338,70 +509,16 @@ export function SidebarTabs() {
                     }
 
                     return (
-                      <div
+                      <PinnedInsightItem
                         key={`${item.chapterId}-${item.index}-${idx}`}
-                        style={{
-                          display: 'flex',
-                          gap: '0.5rem',
-                          alignItems: 'flex-start',
-                          background: 'var(--bs-panel)',
-                          border: '1px solid var(--bs-border)',
-                          borderLeft: '4px solid var(--bs-accent, #009688)',
-                          borderRadius: '4px',
-                          padding: '0.5rem'
+                        item={item}
+                        startPage={startPage}
+                        onJump={handlePageJump}
+                        onUnpin={async () => {
+                          await unpinChapterInsight(item.chapterId, item.index);
+                          useBookStore.getState().triggerInsightsRefresh();
                         }}
-                      >
-                        <div
-                          onClick={() => handlePageJump(startPage)}
-                          style={{
-                            flex: 1,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.35rem'
-                          }}
-                          title={`Jump to Ch. ${item.chapterNum} (p.${startPage})`}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--bs-accent, #009688)' }}>
-                              📌 Ch. {item.chapterNum}: {item.chapterTitle}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--bs-muted)' }}>p.{startPage}</span>
-                          </div>
-                          <div
-                            style={{
-                              fontSize: '0.82rem',
-                              color: 'var(--bs-text)',
-                              lineHeight: '1.45',
-                              maxHeight: '160px',
-                              overflowY: 'auto',
-                              wordBreak: 'break-word'
-                            }}
-                          >
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {item.insight}
-                            </ReactMarkdown>
-                          </div>
-                        </div>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await unpinChapterInsight(item.chapterId, item.index);
-                            useBookStore.getState().triggerInsightsRefresh();
-                          }}
-                          style={{
-                            padding: '0.25rem',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--bs-danger, #ef4444)',
-                            cursor: 'pointer',
-                            alignSelf: 'flex-start'
-                          }}
-                          title="Unpin Insight"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
+                      />
                     );
                   })}
                 </div>
