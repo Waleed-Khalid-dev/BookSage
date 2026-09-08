@@ -620,20 +620,72 @@ export async function deleteChatSession(id: string): Promise<void> {
   await database.execute('DELETE FROM chat_sessions WHERE id = $1', [id]);
 }
 
-export async function pinChapterInsight(chapterId: string, insight: string): Promise<void> {
+export interface PinnedInsightRecord {
+  chapterId: string;
+  chapterNum: number;
+  chapterTitle: string;
+  pages?: string;
+  insight: string;
+  index: number;
+}
+
+export async function pinChapterInsight(chapterId: string, insight: string, bookId?: string): Promise<void> {
+  const database = await getDb();
+  let targetId = chapterId;
+
+  // Check if chapterId exists as UUID
+  const check = await database.select<{ id: string; ai_insights: string | null }[]>(
+    'SELECT id, ai_insights FROM chapters WHERE id = $1',
+    [chapterId]
+  );
+
+  let existing: string[] = [];
+  if (check.length > 0) {
+    targetId = check[0].id;
+    existing = check[0].ai_insights ? JSON.parse(check[0].ai_insights) : [];
+  } else if (bookId) {
+    const num = parseInt(chapterId, 10);
+    if (!isNaN(num)) {
+      const byNum = await database.select<{ id: string; ai_insights: string | null }[]>(
+        'SELECT id, ai_insights FROM chapters WHERE book_id = $1 AND num = $2',
+        [bookId, num]
+      );
+      if (byNum.length > 0) {
+        targetId = byNum[0].id;
+        existing = byNum[0].ai_insights ? JSON.parse(byNum[0].ai_insights) : [];
+      }
+    }
+  }
+
+  // Avoid duplicate pins
+  if (!existing.includes(insight)) {
+    existing.push(insight);
+  }
+
+  await database.execute(
+    'UPDATE chapters SET ai_insights = $1 WHERE id = $2',
+    [JSON.stringify(existing), targetId]
+  );
+}
+
+export async function unpinChapterInsight(chapterId: string, index: number): Promise<void> {
   const database = await getDb();
   const result = await database.select<{ ai_insights: string | null }[]>(
     'SELECT ai_insights FROM chapters WHERE id = $1',
     [chapterId]
   );
-  const existing: string[] = result[0]?.ai_insights
-    ? JSON.parse(result[0].ai_insights)
-    : [];
-  existing.push(insight);
-  await database.execute(
-    'UPDATE chapters SET ai_insights = $1 WHERE id = $2',
-    [JSON.stringify(existing), chapterId]
-  );
+  if (result[0]?.ai_insights) {
+    try {
+      const existing: string[] = JSON.parse(result[0].ai_insights);
+      existing.splice(index, 1);
+      await database.execute(
+        'UPDATE chapters SET ai_insights = $1 WHERE id = $2',
+        [JSON.stringify(existing), chapterId]
+      );
+    } catch (e) {
+      console.error('Failed to unpin insight:', e);
+    }
+  }
 }
 
 export async function getChapterInsights(chapterId: string): Promise<string[]> {
@@ -643,4 +695,33 @@ export async function getChapterInsights(chapterId: string): Promise<string[]> {
     [chapterId]
   );
   return result[0]?.ai_insights ? JSON.parse(result[0].ai_insights) : [];
+}
+
+export async function getAllPinnedInsightsForBook(bookId: string): Promise<PinnedInsightRecord[]> {
+  const database = await getDb();
+  const rows = await database.select<{ id: string; num: number; title: string; pages: string | null; ai_insights: string | null }[]>(
+    "SELECT id, num, title, pages, ai_insights FROM chapters WHERE book_id = $1 AND ai_insights IS NOT NULL AND ai_insights != '[]' AND ai_insights != '' ORDER BY num ASC",
+    [bookId]
+  );
+
+  const results: PinnedInsightRecord[] = [];
+  for (const row of rows) {
+    if (!row.ai_insights) continue;
+    try {
+      const list: string[] = JSON.parse(row.ai_insights);
+      list.forEach((text, idx) => {
+        results.push({
+          chapterId: row.id,
+          chapterNum: row.num,
+          chapterTitle: row.title,
+          pages: row.pages || undefined,
+          insight: text,
+          index: idx
+        });
+      });
+    } catch (e) {
+      console.error('Error parsing ai_insights for chapter', row.id, e);
+    }
+  }
+  return results;
 }

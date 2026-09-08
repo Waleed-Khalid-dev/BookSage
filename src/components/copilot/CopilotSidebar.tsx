@@ -9,6 +9,7 @@ import { useUiStore } from '../../stores/uiStore';
 import { ModelSelector } from './ModelSelector';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { CitationChip, extractCitations, normalizeCitations } from '../shared/CitationChip';
+import { pinChapterInsight } from '../../services/dbService';
 import './CopilotSidebar.css';
 
 const PRESET_PROMPTS = [
@@ -69,7 +70,7 @@ export function CopilotSidebar({
     isSidebarOpen, toggleSidebar,
     sessions, activeSessionId, isLoading,
     sendMessage, loadSessions, persona, setPersona,
-    pinInsight, regenerateLastMessage,
+    regenerateLastMessage,
     activeSession, createSession, setActiveSession, deleteSession
   } = useChatStore();
   const { aiModel, setAiModel, chapters, lastPage } = useBookStore();
@@ -80,6 +81,7 @@ export function CopilotSidebar({
   const [model, setModel] = useState(aiModel);
   const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek'>('gemini');
   const [copied, setCopied] = useState<string | null>(null);
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [showPersona, setShowPersona] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
   const [fontSize, setFontSize] = useState(14);
@@ -306,8 +308,24 @@ export function CopilotSidebar({
     setTimeout(() => setCopied(null), 1800);
   };
 
-  const handlePinMsg = async (content: string) => {
-    if (chapterId) await pinInsight(chapterId, content);
+  const handlePinMsg = async (content: string, msgId: string) => {
+    const citations = extractCitations(content, chapters);
+    const activeChap = chapters.find(c => c.id === chapterId || c.num.toString() === chapterId) ||
+                       citations[0]?.targetChapter ||
+                       chapters.find(c => {
+                         if (!c.pp) return false;
+                         const [start, end] = c.pp.split('-').map(Number);
+                         return lastPage >= start && lastPage <= end;
+                       }) ||
+                       chapters[0];
+
+    const targetId = activeChap?.id || activeChap?.num.toString() || chapterId;
+    if (targetId) {
+      await pinChapterInsight(targetId, content, bookId ?? undefined);
+      useBookStore.getState().triggerInsightsRefresh();
+      setPinnedId(msgId);
+      setTimeout(() => setPinnedId(null), 2000);
+    }
   };
 
   const handleFollowUp = (q: string) => {
@@ -518,9 +536,13 @@ export function CopilotSidebar({
                     <button onClick={() => handleCopyMsg(msg.content, msg.id)}>
                       {copied === msg.id ? '✓ Copied' : '📋 Copy'}
                     </button>
-                    {chapterId && (
-                      <button onClick={() => handlePinMsg(msg.content)}>📌 Pin</button>
-                    )}
+                    <button
+                      onClick={() => handlePinMsg(msg.content, msg.id)}
+                      style={{ color: pinnedId === msg.id ? 'var(--bs-accent, #009688)' : undefined }}
+                      title="Pin this insight to chapter notes"
+                    >
+                      {pinnedId === msg.id ? '✓ Pinned' : '📌 Pin'}
+                    </button>
                   </div>
                 )}
               </div>

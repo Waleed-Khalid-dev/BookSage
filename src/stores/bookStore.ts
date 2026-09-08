@@ -46,6 +46,7 @@ interface BookState {
   highlightsRefreshCounter: number;
   bookmarksRefreshCounter: number;
   drawingsRefreshCounter: number;
+  insightsRefreshCounter: number;
   lastPage: number;
   readingTimeSecs: number;
   pagesReadTotal: number;
@@ -83,6 +84,7 @@ interface BookState {
   triggerHighlightsRefresh: () => void;
   triggerBookmarksRefresh: () => void;
   triggerDrawingsRefresh: () => void;
+  triggerInsightsRefresh: () => void;
   deleteHighlightAction: (id: string) => Promise<void>;
   toggleBookmarkAction: (pageNum: number) => Promise<void>;
   setLastPage: (page: number) => Promise<void>;
@@ -151,6 +153,7 @@ export const useBookStore = create<BookState>()(
       highlightsRefreshCounter: 0,
       bookmarksRefreshCounter: 0,
       drawingsRefreshCounter: 0,
+      insightsRefreshCounter: 0,
       lastPage: 1,
       readingTimeSecs: 0,
       pagesReadTotal: 0,
@@ -179,6 +182,7 @@ export const useBookStore = create<BookState>()(
       triggerHighlightsRefresh: () => set(state => ({ highlightsRefreshCounter: state.highlightsRefreshCounter + 1 })),
       triggerBookmarksRefresh: () => set(state => ({ bookmarksRefreshCounter: state.bookmarksRefreshCounter + 1 })),
       triggerDrawingsRefresh: () => set(state => ({ drawingsRefreshCounter: state.drawingsRefreshCounter + 1 })),
+      triggerInsightsRefresh: () => set(state => ({ insightsRefreshCounter: state.insightsRefreshCounter + 1 })),
       
       setIsDrawingMode: (mode: boolean) => set({ isDrawingMode: mode }),
       setDrawingColor: (color: string) => set({ drawingColor: color }),

@@ -7,9 +7,10 @@ import { useUiStore } from '../../stores/uiStore';
 import { useChatStore } from '../../stores/chatStore';
 import { open } from '@tauri-apps/plugin-dialog';
 import {
-  getChapterUserData, saveChapterUserData, getStudiedCountForBook
+  getChapterUserData, saveChapterUserData, getStudiedCountForBook,
+  getChapterInsights, unpinChapterInsight
 } from '../../services/dbService';
-import { ChevronRight, ChevronDown, BookOpen, Lightbulb, Quote, ListChecks, Copy, GraduationCap, FileText, Tag, Maximize2, Zap, Search } from 'lucide-react';
+import { ChevronRight, ChevronDown, BookOpen, Lightbulb, Quote, ListChecks, Copy, GraduationCap, FileText, Tag, Maximize2, Zap, Search, Trash2 } from 'lucide-react';
 import { AudioToolbar } from '../reader/AudioToolbar';
 import { NotesSearchBar } from './NotesSearchBar';
 import { CopilotPopup } from '../copilot/CopilotPopup';
@@ -66,7 +67,7 @@ function SkeletonLoader() {
 }
 
 export function NotesViewer() {
-  const { chapters, bookId, currentBookTitle } = useBookStore();
+  const { chapters, bookId, currentBookTitle, insightsRefreshCounter } = useBookStore();
   const { setActiveView, setFocusedPanel } = useUiStore();
   const { setSelection: setCopilotSelection, openContextMenu } = useChatStore();
 
@@ -96,6 +97,8 @@ export function NotesViewer() {
   const [toast, setToast] = useState('');
   const [chapterDiffs, setChapterDiffs] = useState<Record<number, string>>({});
   const [chapterInsights, setChapterInsights] = useState<Record<number, string>>({});
+  const [pinnedInsights, setPinnedInsights] = useState<string[]>([]);
+  const [pinnedOpen, setPinnedOpen] = useState(true);
   // Selection pill is no longer a separate state — handled by CopilotPopup via chatStore
   // (kept as minimal ref for backward compat)
 
@@ -169,6 +172,15 @@ export function NotesViewer() {
   }, [bookId]);
 
   useEffect(() => { refreshStudied(); }, [refreshStudied, studied]);
+
+  // Load pinned insights for active chapter
+  useEffect(() => {
+    if (activeChapter?.id) {
+      getChapterInsights(activeChapter.id).then(setPinnedInsights);
+    } else {
+      setPinnedInsights([]);
+    }
+  }, [activeChapter?.id, insightsRefreshCounter]);
 
   // Load difficulty + core_lesson from each chapter for sidebar heatmap & key insights
   useEffect(() => {
@@ -500,6 +512,75 @@ export function NotesViewer() {
                   <CopyButton text={q} onToast={showToast} />
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pinned AI Insights */}
+        <div className="notes-reflections" style={{ marginTop: '1.25rem' }}>
+          <div className="notes-reflections-header" onClick={() => setPinnedOpen(o => !o)}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              📌 Pinned AI Insights {pinnedInsights.length > 0 ? `(${pinnedInsights.length})` : ''}
+            </span>
+            <ChevronDown size={15} style={{ transform: pinnedOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </div>
+          {pinnedOpen && (
+            <div className="notes-reflections-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {pinnedInsights.length === 0 ? (
+                <div style={{ color: 'var(--bs-muted)', fontSize: '0.85rem', fontStyle: 'italic', padding: '0.5rem 0' }}>
+                  No pinned insights for this chapter yet. Click 📌 Pin on any Copilot message to save key takeaways here.
+                </div>
+              ) : (
+                pinnedInsights.map((insight, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      position: 'relative',
+                      background: 'var(--bs-surface)',
+                      border: '1px solid var(--bs-border)',
+                      borderLeft: '4px solid var(--bs-accent, #009688)',
+                      borderRadius: '6px',
+                      padding: '0.75rem 1rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--bs-accent, #009688)' }}>
+                        Insight #{idx + 1}
+                      </span>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <CopyButton text={insight} onToast={showToast} />
+                        <button
+                          onClick={async () => {
+                            if (activeChapter?.id) {
+                              await unpinChapterInsight(activeChapter.id, idx);
+                              useBookStore.getState().triggerInsightsRefresh();
+                              showToast('Insight unpinned');
+                            }
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--bs-danger, #ef4444)',
+                            cursor: 'pointer',
+                            padding: '2px',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                          title="Unpin this insight"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--bs-text)' }}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>

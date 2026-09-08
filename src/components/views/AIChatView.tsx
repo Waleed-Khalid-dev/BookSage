@@ -9,6 +9,7 @@ import { useUiStore } from '../../stores/uiStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector } from '../copilot/ModelSelector';
 import { CitationChip, extractCitations, normalizeCitations } from '../shared/CitationChip';
+import { pinChapterInsight } from '../../services/dbService';
 import './AIChatView.css';
 
 const PRESET_PROMPTS = [
@@ -76,6 +77,7 @@ export function AIChatView() {
   const [model, setModel] = useState(aiModel);
   const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek'>('gemini');
   const [copied, setCopied] = useState<string | null>(null);
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [contextMode, setContextMode] = useState<ContextMode>('book');
   const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
   const [includeRawText, setIncludeRawText] = useState<boolean>(false);
@@ -271,6 +273,18 @@ export function AIChatView() {
     navigator.clipboard.writeText(text);
     setCopied(id);
     setTimeout(() => setCopied(null), 1800);
+  };
+
+  const handlePin = async (content: string, msgId: string) => {
+    const citations = extractCitations(content, chapters);
+    const targetChap = citations[0]?.targetChapter || activeChapter || chapters[0];
+    const targetId = targetChap?.id || targetChap?.num?.toString();
+    if (targetId) {
+      await pinChapterInsight(targetId, content, bookId ?? undefined);
+      useBookStore.getState().triggerInsightsRefresh();
+      setPinnedId(msgId);
+      setTimeout(() => setPinnedId(null), 2000);
+    }
   };
 
   const handleNewSession = () => {
@@ -571,6 +585,13 @@ export function AIChatView() {
                         ))}
                         <button onClick={() => handleCopy(msg.content, msg.id)}>
                           {copied === msg.id ? '✓ Copied' : '📋 Copy'}
+                        </button>
+                        <button
+                          onClick={() => handlePin(msg.content, msg.id)}
+                          style={{ color: pinnedId === msg.id ? 'var(--bs-accent, #009688)' : undefined }}
+                          title="Pin this insight to chapter notes"
+                        >
+                          {pinnedId === msg.id ? '✓ Pinned' : '📌 Pin'}
                         </button>
                       </div>
                     )}

@@ -1,4 +1,4 @@
-import { getHighlightsForBook, getDrawingsForBook, getDb, BookRecord } from './dbService';
+import { getHighlightsForBook, getDrawingsForBook, getAllPinnedInsightsForBook, getDb, BookRecord } from './dbService';
 import { save, message } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
 
@@ -16,6 +16,7 @@ export async function generateMarkdownExport(bookId: string): Promise<string> {
 
   const highlights = await getHighlightsForBook(bookId);
   const drawings = await getDrawingsForBook(bookId);
+  const pinnedInsights = await getAllPinnedInsightsForBook(bookId);
 
   // Combine and sort by page number, then by creation time
   const allAnnotations = [
@@ -26,8 +27,8 @@ export async function generateMarkdownExport(bookId: string): Promise<string> {
     return a.created - b.created;
   });
 
-  if (allAnnotations.length === 0) {
-    return `# ${book.title}\n\nNo annotations found for this book.`;
+  if (allAnnotations.length === 0 && pinnedInsights.length === 0) {
+    return `# ${book.title}\n\nNo annotations or pinned insights found for this book.`;
   }
 
   let md = `# ${book.title}\n\n`;
@@ -57,6 +58,14 @@ export async function generateMarkdownExport(bookId: string): Promise<string> {
         // Just a placeholder reference
         md += `*[Drawing on Page ${pageNum}]*\n\n`;
       }
+    }
+  }
+
+  if (pinnedInsights.length > 0) {
+    md += `## 📌 Pinned AI Insights\n\n`;
+    for (const pin of pinnedInsights) {
+      md += `### Ch. ${pin.chapterNum}: ${pin.chapterTitle} ${pin.pages ? `(pp. ${pin.pages})` : ''}\n\n`;
+      md += `${pin.insight.trim()}\n\n---\n\n`;
     }
   }
 

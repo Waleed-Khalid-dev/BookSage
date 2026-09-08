@@ -1,18 +1,31 @@
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useBookStore } from '../../stores/bookStore';
-import { getBookmarksForBook, getHighlightsForBook, deleteBookmark, deleteHighlight, BookmarkRecord, HighlightRecord } from '../../services/dbService';
+import {
+  getBookmarksForBook,
+  getHighlightsForBook,
+  deleteBookmark,
+  deleteHighlight,
+  getAllPinnedInsightsForBook,
+  unpinChapterInsight,
+  BookmarkRecord,
+  HighlightRecord,
+  PinnedInsightRecord
+} from '../../services/dbService';
 import { ThumbnailList } from './ThumbnailList';
 import { copyExportToClipboard, saveExportToFile } from '../../services/exportService';
 import { Download, Copy, Check, Search, Trash2 } from 'lucide-react';
 import { useSearchStore } from '../../stores/searchStore';
 export function SidebarTabs() {
   const [activeTab, setActiveTab] = useState<'toc' | 'thumbnails' | 'annotations'>('toc');
-  const { chapters, bookId, highlightsRefreshCounter, bookmarksRefreshCounter } = useBookStore();
+  const { chapters, bookId, highlightsRefreshCounter, bookmarksRefreshCounter, insightsRefreshCounter } = useBookStore();
   const { setSearchModalOpen } = useSearchStore();
 
   
   const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
   const [highlights, setHighlights] = useState<HighlightRecord[]>([]);
+  const [pinnedInsights, setPinnedInsights] = useState<PinnedInsightRecord[]>([]);
   const [isCopied, setIsCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -20,8 +33,9 @@ export function SidebarTabs() {
     if (activeTab === 'annotations' && bookId) {
       getBookmarksForBook(bookId).then(setBookmarks);
       getHighlightsForBook(bookId).then(setHighlights);
+      getAllPinnedInsightsForBook(bookId).then(setPinnedInsights);
     }
-  }, [activeTab, bookId, highlightsRefreshCounter, bookmarksRefreshCounter]);
+  }, [activeTab, bookId, highlightsRefreshCounter, bookmarksRefreshCounter, insightsRefreshCounter]);
 
   useEffect(() => {
     const handleOpenNote = (e: Event) => {
@@ -51,6 +65,8 @@ export function SidebarTabs() {
   }, []);
 
   const handlePageJump = (page: number) => {
+    useBookStore.getState().setLastPage(page);
+    window.dispatchEvent(new CustomEvent('booksage-jump-page', { detail: { pageNum: page } }));
     window.dispatchEvent(new CustomEvent('booksage-jump-page', { detail: page }));
   };
 
@@ -291,6 +307,103 @@ export function SidebarTabs() {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid var(--bs-border)' }} />
+
+            {/* Pinned AI Insights Section */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <h4 style={{ margin: 0, color: 'var(--bs-heading)', fontSize: '0.9rem', textTransform: 'uppercase' }}>
+                  Pinned Insights ({pinnedInsights.length})
+                </h4>
+              </div>
+              {pinnedInsights.length === 0 ? (
+                <p style={{ color: 'var(--bs-muted)', fontSize: '0.8rem', lineHeight: '1.4' }}>
+                  No pinned AI insights yet. Click 📌 Pin on any Copilot message to save insights here.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {pinnedInsights.map((item, idx) => {
+                    let startPage = 1;
+                    if (item.pages) {
+                      startPage = parseInt(item.pages.split('-')[0], 10) || 1;
+                    } else {
+                      const ch = chapters.find(c => c.id === item.chapterId || c.num === item.chapterNum);
+                      if (ch?.pp) {
+                        startPage = parseInt(ch.pp.split('-')[0], 10) || 1;
+                      }
+                    }
+
+                    return (
+                      <div
+                        key={`${item.chapterId}-${item.index}-${idx}`}
+                        style={{
+                          display: 'flex',
+                          gap: '0.5rem',
+                          alignItems: 'flex-start',
+                          background: 'var(--bs-panel)',
+                          border: '1px solid var(--bs-border)',
+                          borderLeft: '4px solid var(--bs-accent, #009688)',
+                          borderRadius: '4px',
+                          padding: '0.5rem'
+                        }}
+                      >
+                        <div
+                          onClick={() => handlePageJump(startPage)}
+                          style={{
+                            flex: 1,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.35rem'
+                          }}
+                          title={`Jump to Ch. ${item.chapterNum} (p.${startPage})`}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--bs-accent, #009688)' }}>
+                              📌 Ch. {item.chapterNum}: {item.chapterTitle}
+                            </span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--bs-muted)' }}>p.{startPage}</span>
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '0.82rem',
+                              color: 'var(--bs-text)',
+                              lineHeight: '1.45',
+                              maxHeight: '160px',
+                              overflowY: 'auto',
+                              wordBreak: 'break-word'
+                            }}
+                          >
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {item.insight}
+                            </ReactMarkdown>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await unpinChapterInsight(item.chapterId, item.index);
+                            useBookStore.getState().triggerInsightsRefresh();
+                          }}
+                          style={{
+                            padding: '0.25rem',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--bs-danger, #ef4444)',
+                            cursor: 'pointer',
+                            alignSelf: 'flex-start'
+                          }}
+                          title="Unpin Insight"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

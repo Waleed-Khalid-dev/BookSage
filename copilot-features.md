@@ -153,7 +153,9 @@
 *Inspired by: Readwise AI-Enhanced Annotations*
 
 - [x] "Pin" any AI response to a special "Insights" collection
-- [ ] Pinned insights visible in the NotesViewer alongside chapter content
+- [x] Pinned insights visible in the NotesViewer alongside chapter content
+- [x] Pinned insights visible in BookReader Notes tab sidebar with jump-to-page & unpin
+- [x] Pinned insights included in Markdown annotations export
 - [x] Pinned to `chapters.ai_insights TEXT` SQLite column (new migration)
 
 ### Quick-Access Toolbar Presets
