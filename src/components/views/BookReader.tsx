@@ -369,8 +369,8 @@ export function BookReader() {
     
     const handleBookSageJump = (e: any) => {
       const state = readerStateRef.current;
-      if (typeof e.detail === 'number') {
-        const page = e.detail;
+      const page = typeof e.detail === 'number' ? e.detail : e.detail?.pageNum;
+      if (page) {
         if (state.viewMode === 'single' || state.viewMode === 'spread') {
           if (state.viewMode === 'single' && state.isTtsPlaying && state.isWordHighlightingEnabled) return;
           if (page >= 1 && page <= state.totalPages) {
