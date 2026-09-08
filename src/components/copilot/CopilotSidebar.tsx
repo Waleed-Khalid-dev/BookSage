@@ -8,7 +8,7 @@ import { useBookStore } from '../../stores/bookStore';
 import { useUiStore } from '../../stores/uiStore';
 import { ModelSelector } from './ModelSelector';
 import { useApiKeys } from '../../stores/apiKeysStore';
-import { CitationChip, extractCitations } from '../shared/CitationChip';
+import { CitationChip, extractCitations, normalizeCitations } from '../shared/CitationChip';
 import './CopilotSidebar.css';
 
 const PRESET_PROMPTS = [
@@ -72,7 +72,7 @@ export function CopilotSidebar({
     pinInsight, regenerateLastMessage,
     activeSession, createSession, setActiveSession, deleteSession
   } = useChatStore();
-  const { aiModel, setAiModel } = useBookStore();
+  const { aiModel, setAiModel, chapters, lastPage } = useBookStore();
   const { copilotSidebarWidth, setCopilotSidebarWidth } = useUiStore();
   const { getKey } = useApiKeys();
 
@@ -181,11 +181,23 @@ export function CopilotSidebar({
     }
     if (!sess) return;
     
+    const activeChap = chapters.find(c => c.id === chapterId || c.num.toString() === chapterId) ||
+                       chapters.find(c => {
+                         if (!c.pp) return false;
+                         const [start, end] = c.pp.split('-').map(Number);
+                         return lastPage >= start && lastPage <= end;
+                       });
+
     await sendMessage(msg, {
       mode: sess.contextMode,
       chapterPath,
       allJsonPaths,
-      totalChapters
+      totalChapters,
+      currentPage: lastPage,
+      currentChapterNum: activeChap?.num,
+      currentChapterTitle: activeChap?.title || chapterTitle,
+      currentChapterPages: activeChap?.pp,
+      bookTitle: bookTitle,
     }, provider, apiKey, model);
     setInput('');
   };
@@ -204,11 +216,23 @@ export function CopilotSidebar({
     let sess = activeSession();
     if (!sess) return;
     
+    const activeChap = chapters.find(c => c.id === chapterId || c.num.toString() === chapterId) ||
+                       chapters.find(c => {
+                         if (!c.pp) return false;
+                         const [start, end] = c.pp.split('-').map(Number);
+                         return lastPage >= start && lastPage <= end;
+                       });
+
     await regenerateLastMessage({
       mode: sess.contextMode,
       chapterPath,
       allJsonPaths,
-      totalChapters
+      totalChapters,
+      currentPage: lastPage,
+      currentChapterNum: activeChap?.num,
+      currentChapterTitle: activeChap?.title || chapterTitle,
+      currentChapterPages: activeChap?.pp,
+      bookTitle: bookTitle,
     }, provider, apiKey, model);
   };
 
@@ -421,15 +445,38 @@ export function CopilotSidebar({
                     remarkPlugins={[remarkGfm]}
                     components={{
                       a: ({ href, children, ...props }) => {
+                        const childStr = String(children || '');
                         if (href?.startsWith('cite:')) {
                           const chNum = parseInt(href.replace('cite:', ''), 10);
-                          return <CitationChip chapterNum={chNum} label={String(children)} />;
+                          return <CitationChip chapterNum={chNum} label={childStr} />;
                         }
+
+                        // Also catch links that refer to chapters/laws (e.g. [Ch. 7](Ch. 7) or href="7")
+                        const chMatch = href?.match(/(?:cite:)?(?:ch(?:apter)?\.?|law)?\s*(\d+)/i) ||
+                                        childStr.match(/(?:ch(?:apter)?\.?|law)\s*(\d+)/i);
+                        if (chMatch) {
+                          const chNum = parseInt(chMatch[1], 10);
+                          return <CitationChip chapterNum={chNum} label={childStr} />;
+                        }
+
+                        // Prevent internal or relative links from ever navigating to localhost:1420
+                        const isExternal = href?.startsWith('http://') || href?.startsWith('https://') || href?.startsWith('mailto:');
+                        if (!isExternal) {
+                          return (
+                            <span 
+                              style={{ color: 'var(--bs-accent, #009688)', cursor: 'default' }}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                            >
+                              {children}
+                            </span>
+                          );
+                        }
+
                         return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
                       }
                     }}
                   >
-                    {msg.content}
+                    {normalizeCitations(msg.content, chapters)}
                   </ReactMarkdown>
                 ) : (
                   <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{msg.content}</p>
@@ -439,12 +486,15 @@ export function CopilotSidebar({
                 {msg.ts && <span className="csb-msg-time">{formatTime(msg.ts)}</span>}
                 {msg.role === 'assistant' && (
                   <div className="csb-msg-actions">
-                    {extractCitations(msg.content).map(chNum => (
+                    {extractCitations(msg.content, chapters).map(chNum => (
                       <button 
                         key={chNum}
                         className="bs-jump-source-btn"
                         onClick={() => {
-                          const chap = useBookStore.getState().chapters.find(c => c.num === chNum);
+                          const num = Number(chNum);
+                          const chap = chapters.find(c => c.num === num) ||
+                                       chapters.find(c => (c.title || '').toLowerCase().includes(`chapter ${num}`) ||
+                                                          (c.title || '').toLowerCase().includes(`law ${num}`));
                           if (chap?.pp) {
                             const p = parseInt(chap.pp.split('-')[0].trim(), 10);
                             if (!isNaN(p)) {

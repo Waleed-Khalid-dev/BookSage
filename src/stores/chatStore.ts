@@ -82,7 +82,12 @@ interface ChatState {
       allJsonPaths?: string[]; 
       rawTextPaths?: string[];
       includeRawText?: boolean;
-      totalChapters?: number; 
+      totalChapters?: number;
+      currentPage?: number;
+      currentChapterNum?: number;
+      currentChapterTitle?: string;
+      currentChapterPages?: string;
+      bookTitle?: string;
     },
     provider: string,
     apiKey: string,
@@ -96,6 +101,11 @@ interface ChatState {
       rawTextPaths?: string[];
       includeRawText?: boolean;
       totalChapters?: number;
+      currentPage?: number;
+      currentChapterNum?: number;
+      currentChapterTitle?: string;
+      currentChapterPages?: string;
+      bookTitle?: string;
     },
     provider: string,
     apiKey: string,
@@ -354,6 +364,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
         all_json_paths: contextData.allJsonPaths,
         raw_text_paths: contextData.rawTextPaths,
         include_raw_text: contextData.includeRawText ?? false,
+        current_page: contextData.currentPage,
+        current_chapter_num: contextData.currentChapterNum,
+        current_chapter_title: contextData.currentChapterTitle,
+        current_chapter_pages: contextData.currentChapterPages,
+        book_title: contextData.bookTitle,
         persona_prefix: personaPrefix,
         provider,
         api_key: apiKey,
@@ -442,6 +457,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
         all_json_paths: contextData.allJsonPaths,
         raw_text_paths: contextData.rawTextPaths,
         include_raw_text: contextData.includeRawText ?? false,
+        current_page: contextData.currentPage,
+        current_chapter_num: contextData.currentChapterNum,
+        current_chapter_title: contextData.currentChapterTitle,
+        current_chapter_pages: contextData.currentChapterPages,
+        book_title: contextData.bookTitle,
         persona_prefix: personaPrefix,
         provider,
         api_key: apiKey,

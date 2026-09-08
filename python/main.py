@@ -51,6 +51,11 @@ def handle_command(cmd_data):
         provider = cmd_data.get("provider", "gemini")
         api_key = cmd_data.get("api_key")
         model_name = cmd_data.get("model_name", "gemini-3.6-flash")
+        current_page = cmd_data.get("current_page")
+        current_chapter_num = cmd_data.get("current_chapter_num")
+        current_chapter_title = cmd_data.get("current_chapter_title")
+        current_chapter_pages = cmd_data.get("current_chapter_pages")
+        book_title = cmd_data.get("book_title")
         
         if not message or not api_key:
             return {"status": "error", "message": "Missing 'message' or 'api_key'."}
@@ -67,7 +72,12 @@ def handle_command(cmd_data):
             api_key=api_key,
             model_name=model_name,
             raw_text_paths=raw_text_paths,
-            include_raw_text=include_raw_text
+            include_raw_text=include_raw_text,
+            current_page=current_page,
+            current_chapter_num=current_chapter_num,
+            current_chapter_title=current_chapter_title,
+            current_chapter_pages=current_chapter_pages,
+            book_title=book_title
         )
         return {"status": "success", "response": response}
     

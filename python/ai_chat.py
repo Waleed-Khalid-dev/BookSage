@@ -5,8 +5,9 @@ import os
 
 def format_chapter_json(data: Dict[str, Any], fallback_num: int = 1) -> str:
     """Formats full structured chapter JSON into concise, readable markdown context."""
-    num = data.get('chapter_number', fallback_num)
-    title = data.get('chapter_title', f"Chapter {num}")
+    raw_num = data.get('chapter_number')
+    num = raw_num if (isinstance(raw_num, int) and raw_num > 0) else fallback_num
+    title = data.get('chapter_title') or f"Chapter {num}"
     parts = [f"### Chapter {num}: {title}"]
     
     if data.get('summary'):
@@ -42,7 +43,12 @@ def chat_with_context(
     api_key: str,
     model_name: str = "gemini-3.6-flash",
     raw_text_paths: Optional[List[str]] = None,
-    include_raw_text: bool = False
+    include_raw_text: bool = False,
+    current_page: Optional[int] = None,
+    current_chapter_num: Optional[int] = None,
+    current_chapter_title: Optional[str] = None,
+    current_chapter_pages: Optional[str] = None,
+    book_title: Optional[str] = None
 ) -> str:
     """
     Sends a chat message to the AI provider, using the provided RAG files 
@@ -54,7 +60,16 @@ def chat_with_context(
     if context_mode == "chapter" and chapter_path and os.path.exists(chapter_path):
         try:
             with open(chapter_path, 'r', encoding='utf-8', errors='replace') as f:
-                context_text = f.read()
+                raw_chapter_content = f.read()
+            
+            # Format clean chapter header with number, title and page range
+            ch_num_disp = current_chapter_num or 1
+            ch_title_disp = current_chapter_title or f"Chapter {ch_num_disp}"
+            header_prefix = f"### Chapter {ch_num_disp}: {ch_title_disp}"
+            if current_chapter_pages:
+                header_prefix += f" (Pages {current_chapter_pages})"
+            
+            context_text = f"{header_prefix}\n\n{raw_chapter_content}"
         except Exception as e:
             print(f"[ai_chat] Error reading chapter file: {e}")
             context_text = "[Error: Could not read chapter file]"
@@ -91,13 +106,42 @@ def chat_with_context(
         if not context_text:
             context_text = "[Warning: No chapter data was loaded for the selected context.]"
             
-    # 2. Build the full system prompt
+    # 2. Build reading position header if available
+    reading_context_parts = []
+    if book_title:
+        reading_context_parts.append(f"- Book Title: {book_title}")
+    if current_chapter_num is not None:
+        ch_desc = f"Chapter {current_chapter_num}"
+        if current_chapter_title:
+            ch_desc += f": {current_chapter_title}"
+        if current_chapter_pages:
+            ch_desc += f" (Pages {current_chapter_pages})"
+        reading_context_parts.append(f"- Currently Reading Chapter: {ch_desc}")
+    if current_page:
+        reading_context_parts.append(f"- Currently Viewing Page: Page {current_page}")
+
+    reading_context_header = ""
+    if reading_context_parts:
+        reading_context_header = (
+            "\n--- ACTIVE USER READING POSITION ---\n"
+            + "\n".join(reading_context_parts) + "\n"
+            + "------------------------------------\n"
+        )
+
+    # 3. Build the full system prompt
     citation_instructions = (
-        "\n\nCITATION INSTRUCTIONS:\n"
-        "- Whenever referencing specific concepts, laws, lessons, or quotes from the book, "
-        "always include a citation link formatted as [Ch. N: Title](cite:N) or [Ch. N](cite:N) "
-        "(e.g., [Ch. 4: Master the Art of Timing](cite:4) or [Ch. 4](cite:4)), where N is the chapter number.\n"
-        "- Place citation links inline right after the relevant sentence.\n"
+        "\n\nCITATION INSTRUCTIONS (CRITICAL & MANDATORY):\n"
+        "1. Whenever referencing a chapter, law, teaching, or concept from the book, "
+        "ALWAYS format it as a markdown citation link:\n"
+        "   [Ch. N: Chapter Title](cite:N) or [Ch. N](cite:N)\n"
+        "   Examples:\n"
+        "   - [Ch. 7: Get Others to Do the Work for You](cite:7)\n"
+        "   - [Ch. 1: Never Outshine the Master](cite:1)\n"
+        "   - [Ch. 4](cite:4)\n"
+        "   Where N is the integer chapter number.\n"
+        "2. NEVER output plain text brackets like [Ch. 7] or [Ch. None] without the (cite:N) target.\n"
+        "3. If the user asks which chapter they are reading or what page they are on, "
+        "answer accurately using the ACTIVE USER READING POSITION provided above!\n"
     )
     
     system_prompt = (
@@ -107,6 +151,7 @@ def chat_with_context(
         "Use the following book context to answer the user's questions accurately. "
         "If the user asks something completely unrelated to the book or general knowledge, "
         "you may answer it, but always prioritize insights from the provided text."
+        f"{reading_context_header}"
         f"{citation_instructions}\n"
         f"--- BOOK CONTEXT ---\n{context_text}\n--------------------"
     )
