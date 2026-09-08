@@ -175,6 +175,8 @@ def chat_with_context(
         "2. NEVER output plain text brackets like [Ch. 7] or [Ch. None] without the (cite:N) target.\n"
         "3. If the user asks which chapter they are reading or what page they are on, "
         "answer accurately using the ACTIVE USER READING POSITION provided above!\n"
+    )
+
     followup_instructions = (
         "\n\nSUGGESTED FOLLOW-UP QUESTIONS (CRITICAL & MANDATORY):\n"
         "At the very end of your response, you MUST provide exactly 3 concise, highly relevant follow-up questions "
