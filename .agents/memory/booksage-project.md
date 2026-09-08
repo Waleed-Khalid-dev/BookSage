@@ -363,6 +363,17 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - TypeScript and Vite build passing with 0 errors (`✓ built in 12.01s`).
   - All changes staged, committed, and pushed to `origin/main`.
 
-
-
-
+### Session 2026-09-09 Follow-up (Persistent Pin State, Cross-Chat Pins Viewer, & Redesigned Reader Cards)
+- **Persistent Pin State & Toggle:**
+  - Removed temporary 2-second timeout; pin button state is reactively derived from SQLite via `pinnedInsights`.
+  - Buttons persistently show `📌 Pinned` with teal accent styling. Clicking again toggles unpin via `unpinInsightByMsgIdOrContent`.
+- **Cross-Chat Pinned Messages Viewer (Full AI Chat):**
+  - Added `💬 Chats ({sessions.length})` and `📌 Pins ({pinnedInsights.length})` tabs to the `AIChatView` left sidebar.
+  - Pin cards display source chat title, chapter badge, clean preview text, and jump button.
+  - Clicking any pin navigates to that specific chat session (`setActiveSession`), smoothly scrolls to `acv-msg-${msgId}`, and pulses with a 2.5s highlight glow (`acv-msg-highlight-pulse`).
+- **Redesigned Reader Notes Tab Cards:**
+  - Replaced cramped 160px scrollboxes with clean 3-line CSS clamp and expandable "Show more / Show less" toggle.
+  - Overrode `ReactMarkdown` link rendering to match `--bs-accent` (eliminating ugly purple links).
+  - Cleaned verbose prompt boilerplate (`"Based on your ACTIVE USER READING POSITION..."`) to show high-value takeaways immediately.
+- **Build & Git Status:**
+  - `tsc && vite build` clean with 0 errors. Pushed to `origin/main` (`ee71814`).
