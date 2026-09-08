@@ -188,6 +188,13 @@ export function AIChatView() {
       currentChapterTitle: activeChapter?.title,
       currentChapterPages: activeChapter?.pp,
       bookTitle: currentBookTitle,
+      chaptersMeta: chapters.map(c => ({
+        num: c.num,
+        title: c.title,
+        pages: c.pp,
+        json_path: c.json_path,
+        txt_path: c.path,
+      })),
     };
   };
 
@@ -542,34 +549,24 @@ export function AIChatView() {
                     {msg.ts && <span className="acv-msg-time">{formatTime(msg.ts)}</span>}
                     {msg.role === 'assistant' && (
                       <div className="acv-msg-actions">
-                        {extractCitations(msg.content, chapters).map(chNum => (
+                        {extractCitations(msg.content, chapters).map(item => (
                           <button 
-                            key={chNum}
+                            key={item.key}
                             className="bs-jump-source-btn"
                             onClick={() => {
-                              const num = Number(chNum);
-                              const chap = chapters.find(c => c.num === num) ||
-                                           chapters.find(c => (c.title || '').toLowerCase().includes(`chapter ${num}`) ||
-                                                              (c.title || '').toLowerCase().includes(`law ${num}`));
-                              if (chap?.pp) {
-                                const p = parseInt(chap.pp.split('-')[0].trim(), 10);
-                                if (!isNaN(p)) {
-                                  useBookStore.getState().setLastPage(p);
-                                }
+                              if (item.startPage) {
+                                useBookStore.getState().setLastPage(item.startPage);
                               }
                               useUiStore.getState().setActiveView('reader');
-                              if (chap?.pp) {
-                                const p = parseInt(chap.pp.split('-')[0].trim(), 10);
-                                if (!isNaN(p)) {
-                                  setTimeout(() => {
-                                    window.dispatchEvent(new CustomEvent('booksage-jump-page', { detail: { pageNum: p } }));
-                                  }, 60);
-                                }
+                              if (item.startPage) {
+                                setTimeout(() => {
+                                  window.dispatchEvent(new CustomEvent('booksage-jump-page', { detail: { pageNum: item.startPage } }));
+                                }, 60);
                               }
                             }}
-                            title={`Jump directly to Chapter ${chNum} in Reader`}
+                            title={`Jump directly to ${item.displayLabel} in Reader`}
                           >
-                            📖 Ch. {chNum}
+                            📖 {item.displayLabel}
                           </button>
                         ))}
                         <button onClick={() => handleCopy(msg.content, msg.id)}>

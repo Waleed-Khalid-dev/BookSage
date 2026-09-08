@@ -8,13 +8,94 @@ interface CitationChipProps {
   label?: string;
 }
 
+export interface CitationItem {
+  key: string;
+  displayLabel: string;
+  chapterNum: number;
+  startPage: number | null;
+  targetChapter: Chapter | null;
+}
+
+/**
+ * Robust multi-tier resolver that maps citations (e.g. "Law 1", "Ch. 1", "Never Outshine the Master")
+ * to the correct TOC chapter and PDF page, taking into account books with front matter offsets.
+ */
+export function findTargetChapter(
+  chapterNum: number,
+  label?: string,
+  chapters: Chapter[] = []
+): { chapter: Chapter | null; startPage: number | null } {
+  if (!chapters || chapters.length === 0) {
+    return { chapter: null, startPage: null };
+  }
+
+  const num = Number(chapterNum);
+  const cleanLabel = (label || '').trim();
+
+  // Helper to extract start page from chapter.pp (e.g. "26-35" -> 26)
+  const getPage = (c?: Chapter): number | null => {
+    if (!c?.pp) return null;
+    const p = parseInt(c.pp.split('-')[0].trim(), 10);
+    return isNaN(p) || p <= 0 ? null : p;
+  };
+
+  // ── Strategy 1: Title keyword matching from label ──
+  // E.g. label has "Never Outshine the Master" -> match chapter whose title contains this
+  if (cleanLabel) {
+    const coreText = cleanLabel
+      .replace(/^\[?cite:\d+\]?/i, '')
+      .replace(/^\[?(?:ch(?:apter)?\.?|law|rule|habit|principle|strategy|lesson|part)\s*\d+[:\s\-]*/i, '')
+      .replace(/\]$/, '')
+      .trim()
+      .toLowerCase();
+
+    if (coreText.length > 3) {
+      const match = chapters.find(c => {
+        const cTitle = (c.title || '').toLowerCase();
+        return cTitle.includes(coreText) || coreText.includes(cTitle);
+      });
+      if (match) {
+        return { chapter: match, startPage: getPage(match) };
+      }
+    }
+  }
+
+  // ── Strategy 2: Look for subdivision like "Law N", "Rule N", "Habit N", "Chapter N" in label ──
+  const subInLabelMatch = cleanLabel.match(/\b(?:law|rule|habit|principle|strategy|lesson|part|chapter)\s*(\d+)\b/i);
+  if (subInLabelMatch) {
+    const targetSubNum = parseInt(subInLabelMatch[1], 10);
+    const match = chapters.find(c => {
+      const cTitle = (c.title || '').toLowerCase();
+      return new RegExp(`\\b(?:law|rule|habit|principle|strategy|lesson|part|chapter)\\s*${targetSubNum}\\b`, 'i').test(cTitle);
+    });
+    if (match) {
+      return { chapter: match, startPage: getPage(match) };
+    }
+  }
+
+  // ── Strategy 3: Look for subdivision number in chapter titles matching chapterNum ──
+  // If chapterNum is 1, see if a chapter title explicitly has "LAW 1", "RULE 1", "HABIT 1", etc.
+  if (!isNaN(num) && num > 0) {
+    const matchByTitleNum = chapters.find(c => {
+      const cTitle = (c.title || '').toLowerCase();
+      return new RegExp(`\\b(?:law|rule|habit|principle|strategy|lesson|part|chapter)\\s*${num}\\b`, 'i').test(cTitle);
+    });
+    if (matchByTitleNum) {
+      return { chapter: matchByTitleNum, startPage: getPage(matchByTitleNum) };
+    }
+  }
+
+  // ── Strategy 4: Exact TOC index matching (c.num === num) ──
+  const exactMatch = chapters.find(c => c.num === num);
+  if (exactMatch) {
+    return { chapter: exactMatch, startPage: getPage(exactMatch) };
+  }
+
+  return { chapter: null, startPage: null };
+}
+
 /**
  * Normalizes all AI chapter references into standardized markdown link citations: [Label](cite:N)
- * Handles:
- * - [Ch. 1: Law 1: Never Outshine the Master] -> [Ch. 1: Law 1: Never Outshine the Master](cite:1)
- * - [Ch. 7] or [Chapter 7] or [Law 7] -> [Ch. 7](cite:7)
- * - [Ch. 7](Ch. 7) or [Ch. 7](#) or [Ch. 7](7) -> [Ch. 7](cite:7)
- * - [Ch. None: Dedication] -> resolved to actual chapter number from chapters store
  */
 export function normalizeCitations(text: string, chapters: Chapter[] = []): string {
   if (!text) return '';
@@ -27,7 +108,7 @@ export function normalizeCitations(text: string, chapters: Chapter[] = []): stri
     return numMatch ? `[${p1}](cite:${numMatch[1]})` : match;
   });
 
-  // 2. Fix [Ch. N: Title] or [Law N: Title] or [Ch. N] without any link parenthesis
+  // 2. Fix [Ch. N: Title] or [Law N: Title] or [Ch. N] without link parentheses
   result = result.replace(/\[((?:ch(?:apter)?\.?|law)\s*(\d+)[^\]]*)\](?!\()/gi, (_, fullLabel, num) => {
     return `[${fullLabel}](cite:${num})`;
   });
@@ -49,32 +130,60 @@ export function normalizeCitations(text: string, chapters: Chapter[] = []): stri
 }
 
 /**
- * Extracts all cited chapter numbers from text, supporting cite:N, [Ch. N], and [Law N].
+ * Extracts all cited chapters and returns structured CitationItem objects with resolved start pages.
  */
-export function extractCitations(text: string, chapters: Chapter[] = []): number[] {
+export function extractCitations(text: string, chapters: Chapter[] = []): CitationItem[] {
   if (!text) return [];
-  const matches: number[] = [];
-  
+  const items: CitationItem[] = [];
+  const seenKeys = new Set<string>();
+
+  const addMatch = (rawNum: number, rawLabel: string) => {
+    const { chapter, startPage } = findTargetChapter(rawNum, rawLabel, chapters);
+    const resolvedNum = chapter ? chapter.num : rawNum;
+    const key = `${resolvedNum}_${startPage ?? 0}`;
+
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+
+      // Format a clean label for the button (e.g. "Law 1 (p. 26)" or "Ch. 8 (p. 26)")
+      let displayLabel = `Ch. ${resolvedNum}`;
+      if (chapter?.title) {
+        const subMatch = chapter.title.match(/^((?:law|rule|habit|principle|strategy|lesson|part|chapter)\s*\d+)/i);
+        if (subMatch) {
+          displayLabel = subMatch[1].toUpperCase();
+        } else {
+          const shortTitle = chapter.title.length > 22 ? chapter.title.slice(0, 20) + '…' : chapter.title;
+          displayLabel = `Ch. ${resolvedNum}: ${shortTitle}`;
+        }
+      }
+      if (startPage) {
+        displayLabel += ` (p. ${startPage})`;
+      }
+
+      items.push({
+        key,
+        displayLabel,
+        chapterNum: resolvedNum,
+        startPage,
+        targetChapter: chapter
+      });
+    }
+  };
+
   // 1. Match [label](cite:N)
   const citeRegex = /\[([^\]]+)\]\(cite:(\d+)\)/g;
   let m;
   while ((m = citeRegex.exec(text)) !== null) {
-    const num = parseInt(m[2], 10);
-    if (!isNaN(num) && !matches.includes(num)) {
-      matches.push(num);
-    }
+    addMatch(parseInt(m[2], 10), m[1]);
   }
 
   // 2. Match [Ch. N...] or [Law N...]
-  const bracketRegex = /\[(?:ch(?:apter)?\.?|law)\s*(\d+)[^\]]*\]/gi;
+  const bracketRegex = /\[((?:ch(?:apter)?\.?|law)\s*(\d+)[^\]]*)\]/gi;
   while ((m = bracketRegex.exec(text)) !== null) {
-    const num = parseInt(m[1], 10);
-    if (!isNaN(num) && !matches.includes(num)) {
-      matches.push(num);
-    }
+    addMatch(parseInt(m[2], 10), m[1]);
   }
 
-  // 3. Match [Ch. None: Title] against known chapters
+  // 3. Match [Ch. None: Title]
   if (chapters && chapters.length > 0) {
     const noneRegex = /\[(?:ch(?:apter)?\.?\s*(?:none|null))[:\s]*([^\]]+)\]/gi;
     while ((m = noneRegex.exec(text)) !== null) {
@@ -83,32 +192,20 @@ export function extractCitations(text: string, chapters: Chapter[] = []): number
         const cTitle = (c.title || '').toLowerCase();
         return cTitle.includes(titleQuery) || titleQuery.includes(cTitle);
       });
-      if (found && !matches.includes(found.num)) {
-        matches.push(found.num);
+      if (found) {
+        addMatch(found.num, found.title);
       }
     }
   }
 
-  return matches;
+  return items;
 }
 
 export function CitationChip({ chapterNum, label }: CitationChipProps) {
   const { chapters, setLastPage } = useBookStore();
   const { activeView, setActiveView } = useUiStore();
 
-  const num = Number(chapterNum);
-  const chapter = chapters.find(c => c.num === num) ||
-                  chapters.find(c => {
-                    const title = (c.title || '').toLowerCase();
-                    return title.includes(`chapter ${num}`) || title.includes(`law ${num}`);
-                  });
-  
-  // Extract starting page
-  let startPage: number | null = null;
-  if (chapter?.pp) {
-    const p = parseInt(chapter.pp.split('-')[0].trim(), 10);
-    if (!isNaN(p) && p > 0) startPage = p;
-  }
+  const { chapter, startPage } = findTargetChapter(chapterNum, label, chapters);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -123,7 +220,8 @@ export function CitationChip({ chapterNum, label }: CitationChipProps) {
         window.dispatchEvent(new CustomEvent('booksage-jump-page', { detail: { pageNum: startPage } }));
       }
     } else if (activeView === 'notes') {
-      const idx = chapters.filter(c => c.status === 'done').findIndex(c => c.num === num);
+      const targetNum = chapter ? chapter.num : chapterNum;
+      const idx = chapters.filter(c => c.status === 'done').findIndex(c => c.num === targetNum);
       if (idx !== -1) {
         window.dispatchEvent(new CustomEvent('booksage-select-chapter', { detail: { chapterIdx: idx } }));
       } else if (startPage) {
@@ -147,12 +245,18 @@ export function CitationChip({ chapterNum, label }: CitationChipProps) {
     }
   };
 
-  const cleanLabel = label && label !== `cite:${chapterNum}` 
-    ? label 
-    : (chapter ? `Ch. ${chapter.num}: ${chapter.title}` : `Ch. ${chapterNum}`);
+  // Build clean display label
+  let cleanLabel = label && label !== `cite:${chapterNum}` ? label : '';
+  if (!cleanLabel) {
+    if (chapter?.title) {
+      cleanLabel = `Ch. ${chapter.num}: ${chapter.title}`;
+    } else {
+      cleanLabel = `Ch. ${chapterNum}`;
+    }
+  }
 
   const tooltipText = chapter 
-    ? `Chapter ${chapter.num}: ${chapter.title}${chapter.pp ? ` (Pages ${chapter.pp})` : ''} • Click to jump to source`
+    ? `${chapter.title}${chapter.pp ? ` (Pages ${chapter.pp})` : ''} • Click to jump to source`
     : `Chapter ${chapterNum} • Click to jump to source`;
 
   return (

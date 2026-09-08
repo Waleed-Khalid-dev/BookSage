@@ -198,6 +198,13 @@ export function CopilotSidebar({
       currentChapterTitle: activeChap?.title || chapterTitle,
       currentChapterPages: activeChap?.pp,
       bookTitle: bookTitle,
+      chaptersMeta: chapters.map(c => ({
+        num: c.num,
+        title: c.title,
+        pages: c.pp,
+        json_path: c.json_path,
+        txt_path: c.path,
+      })),
     }, provider, apiKey, model);
     setInput('');
   };
@@ -233,6 +240,13 @@ export function CopilotSidebar({
       currentChapterTitle: activeChap?.title || chapterTitle,
       currentChapterPages: activeChap?.pp,
       bookTitle: bookTitle,
+      chaptersMeta: chapters.map(c => ({
+        num: c.num,
+        title: c.title,
+        pages: c.pp,
+        json_path: c.json_path,
+        txt_path: c.path,
+      })),
     }, provider, apiKey, model);
   };
 
@@ -486,26 +500,19 @@ export function CopilotSidebar({
                 {msg.ts && <span className="csb-msg-time">{formatTime(msg.ts)}</span>}
                 {msg.role === 'assistant' && (
                   <div className="csb-msg-actions">
-                    {extractCitations(msg.content, chapters).map(chNum => (
+                    {extractCitations(msg.content, chapters).map(item => (
                       <button 
-                        key={chNum}
+                        key={item.key}
                         className="bs-jump-source-btn"
                         onClick={() => {
-                          const num = Number(chNum);
-                          const chap = chapters.find(c => c.num === num) ||
-                                       chapters.find(c => (c.title || '').toLowerCase().includes(`chapter ${num}`) ||
-                                                          (c.title || '').toLowerCase().includes(`law ${num}`));
-                          if (chap?.pp) {
-                            const p = parseInt(chap.pp.split('-')[0].trim(), 10);
-                            if (!isNaN(p)) {
-                              useBookStore.getState().setLastPage(p);
-                              window.dispatchEvent(new CustomEvent('booksage-jump-page', { detail: { pageNum: p } }));
-                            }
+                          if (item.startPage) {
+                            useBookStore.getState().setLastPage(item.startPage);
+                            window.dispatchEvent(new CustomEvent('booksage-jump-page', { detail: { pageNum: item.startPage } }));
                           }
                         }}
-                        title={`Jump directly to Chapter ${chNum} source page`}
+                        title={`Jump directly to ${item.displayLabel}`}
                       >
-                        📖 Ch. {chNum}
+                        📖 {item.displayLabel}
                       </button>
                     ))}
                     <button onClick={() => handleCopyMsg(msg.content, msg.id)}>

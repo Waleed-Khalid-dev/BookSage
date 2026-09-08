@@ -41,6 +41,14 @@ export interface SelectionAnchor {
   rect: DOMRect;
 }
 
+export interface ChapterMeta {
+  num: number;
+  title: string;
+  pages?: string;
+  json_path?: string;
+  txt_path?: string;
+}
+
 // ─── Store interface ──────────────────────────────────────────────────────────
 
 interface ChatState {
@@ -88,6 +96,7 @@ interface ChatState {
       currentChapterTitle?: string;
       currentChapterPages?: string;
       bookTitle?: string;
+      chaptersMeta?: ChapterMeta[];
     },
     provider: string,
     apiKey: string,
@@ -106,6 +115,7 @@ interface ChatState {
       currentChapterTitle?: string;
       currentChapterPages?: string;
       bookTitle?: string;
+      chaptersMeta?: ChapterMeta[];
     },
     provider: string,
     apiKey: string,
@@ -369,6 +379,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         current_chapter_title: contextData.currentChapterTitle,
         current_chapter_pages: contextData.currentChapterPages,
         book_title: contextData.bookTitle,
+        chapters_meta: contextData.chaptersMeta,
         persona_prefix: personaPrefix,
         provider,
         api_key: apiKey,
@@ -462,6 +473,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         current_chapter_title: contextData.currentChapterTitle,
         current_chapter_pages: contextData.currentChapterPages,
         book_title: contextData.bookTitle,
+        chapters_meta: contextData.chaptersMeta,
         persona_prefix: personaPrefix,
         provider,
         api_key: apiKey,

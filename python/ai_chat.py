@@ -1,14 +1,22 @@
 import json
+import os
+import re
 from typing import Dict, Any, List, Optional
 from ai_clients import get_ai_client
-import os
 
-def format_chapter_json(data: Dict[str, Any], fallback_num: int = 1) -> str:
-    """Formats full structured chapter JSON into concise, readable markdown context."""
-    raw_num = data.get('chapter_number')
-    num = raw_num if (isinstance(raw_num, int) and raw_num > 0) else fallback_num
-    title = data.get('chapter_title') or f"Chapter {num}"
-    parts = [f"### Chapter {num}: {title}"]
+def format_chapter_json(
+    data: Dict[str, Any], 
+    toc_num: int, 
+    toc_title: Optional[str] = None,
+    toc_pages: Optional[str] = None
+) -> str:
+    """Formats full structured chapter JSON into concise, readable markdown context aligned with the book TOC."""
+    title = toc_title or data.get('chapter_title') or f"Chapter {toc_num}"
+    
+    header = f"### Chapter {toc_num}: {title}"
+    if toc_pages:
+        header += f" (Pages {toc_pages})"
+    parts = [header]
     
     if data.get('summary'):
         parts.append(f"**Summary:** {data['summary']}")
@@ -48,11 +56,12 @@ def chat_with_context(
     current_chapter_num: Optional[int] = None,
     current_chapter_title: Optional[str] = None,
     current_chapter_pages: Optional[str] = None,
-    book_title: Optional[str] = None
+    book_title: Optional[str] = None,
+    chapters_meta: Optional[List[Dict[str, Any]]] = None
 ) -> str:
     """
     Sends a chat message to the AI provider, using the provided RAG files 
-    as the system context for the conversation.
+    as the system context for the conversation, aligned with TOC chapter metadata.
     """
     client = get_ai_client(provider, api_key, model_name)
     context_text = ""
@@ -76,15 +85,36 @@ def chat_with_context(
             
     elif context_mode in ["book", "custom"] and all_json_paths:
         combined_sections = []
+
+        # Build fast lookup map from chapters_meta
+        meta_by_json: Dict[str, Dict[str, Any]] = {}
+        if chapters_meta:
+            for c in chapters_meta:
+                jp = c.get("json_path")
+                if jp:
+                    meta_by_json[os.path.normpath(jp).lower()] = c
+
         for idx, jpath in enumerate(all_json_paths):
             if not jpath or not os.path.exists(jpath):
                 continue
             try:
+                norm_jpath = os.path.normpath(jpath).lower()
+                c_meta = meta_by_json.get(norm_jpath)
+
+                # Derive toc_num from c_meta or filename prefix (e.g. "008_..." -> 8)
+                fname = os.path.basename(jpath)
+                m_num = re.match(r"^(\d+)", fname)
+                derived_toc_num = int(m_num.group(1)) if m_num else (idx + 1)
+
+                toc_num = c_meta.get("num", derived_toc_num) if c_meta else derived_toc_num
+                toc_title = c_meta.get("title") if c_meta else None
+                toc_pages = c_meta.get("pages") if c_meta else None
+
                 with open(jpath, 'r', encoding='utf-8', errors='replace') as f:
                     data = json.load(f)
                     if isinstance(data, list) and len(data) > 0:
                         data = data[0]
-                    formatted = format_chapter_json(data, idx + 1)
+                    formatted = format_chapter_json(data, toc_num, toc_title, toc_pages)
                     if formatted:
                         combined_sections.append(formatted)
             except Exception as e:
@@ -131,14 +161,17 @@ def chat_with_context(
     # 3. Build the full system prompt
     citation_instructions = (
         "\n\nCITATION INSTRUCTIONS (CRITICAL & MANDATORY):\n"
-        "1. Whenever referencing a chapter, law, teaching, or concept from the book, "
+        "1. Whenever referencing a chapter, law, rule, habit, principle, teaching, or concept from the book, "
         "ALWAYS format it as a markdown citation link:\n"
-        "   [Ch. N: Chapter Title](cite:N) or [Ch. N](cite:N)\n"
+        "   [Ch. N: Title](cite:N) or [Subdivision: Title](cite:N)\n"
         "   Examples:\n"
-        "   - [Ch. 7: Get Others to Do the Work for You](cite:7)\n"
-        "   - [Ch. 1: Never Outshine the Master](cite:1)\n"
-        "   - [Ch. 4](cite:4)\n"
-        "   Where N is the integer chapter number.\n"
+        "   - [Ch. 8: Law 1: Never Outshine the Master](cite:8)\n"
+        "   - [Ch. 15: Law 8: Make Other People Come to You](cite:15)\n"
+        "   - [Ch. 22: Law 15: Crush Your Enemy Totally](cite:22)\n"
+        "   Where N is the exact integer chapter number from the '### Chapter N' header in the BOOK CONTEXT.\n"
+        "   CRITICAL RULE: Many books have front-matter sections (prefaces, author bios, etc.) before Chapter 1, "
+        "   so the internal subdivision number (like 'Law 1' or 'Rule 1') may differ from the TOC Chapter index N. "
+        "   Always cite using the exact Chapter index N from the '### Chapter N' section header as the (cite:N) target!\n"
         "2. NEVER output plain text brackets like [Ch. 7] or [Ch. None] without the (cite:N) target.\n"
         "3. If the user asks which chapter they are reading or what page they are on, "
         "answer accurately using the ACTIVE USER READING POSITION provided above!\n"
@@ -157,4 +190,3 @@ def chat_with_context(
     )
     
     return client.chat(user_message, history, system_prompt)
-
