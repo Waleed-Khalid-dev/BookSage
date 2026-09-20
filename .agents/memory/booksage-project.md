@@ -394,3 +394,18 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - Logged in `copilot-features.md` that Phase 7 (Library View) will connect this recap directly to the book cards on the library grid upon opening an in-progress book.
 - **Verification:**
   - `npm run build` clean (`✓ built in 21.54s`) with 0 errors.
+
+### Session 2026-09-20 Follow-up (AI Writing Assistant Actions Implementation)
+- **New Quick Action Types & Prompts:**
+  - Added `continue_writing` and `extract_data` to `QuickActionType` in `chatStore.ts`.
+  - Configured prompt templates for seamless logical text continuation, stylistic rephrasing, and structured factual entity extraction (People, Dates, Numbers, Locations).
+- **ContextMenu Integration:**
+  - Added `🎨 Rephrase` and `✍️ Continue Writing` into the `Rewrite ▶` submenu.
+  - Added `📊 Extract Key Data` into the `Study Tools ▶` submenu.
+- **CopilotPopup Integration:**
+  - Added `🎨 Rephrase`, `✍️ Continue`, and `📊 Extract Data` quick-action chips directly to the selection popup for one-click access.
+- **Tracker:**
+  - Checked off all three items under `AI Writing Assistant Actions` in `copilot-features.md`.
+- **Verification:**
+  - `npm run build` clean (`✓ built in 11.24s`) with 0 errors.
+

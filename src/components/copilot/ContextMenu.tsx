@@ -184,6 +184,9 @@ export function ContextMenu({ onSaveHighlight }: ContextMenuProps) {
         <span className="ctx-arrow">▶</span>
         {showRewriteSub && (
           <div className="ctx-submenu">
+            <button className="ctx-item" onClick={() => doQuickAction('rephrase')}>🎨 Rephrase</button>
+            <button className="ctx-item" onClick={() => doQuickAction('continue_writing')}>✍️ Continue Writing</button>
+            <div className="ctx-separator" />
             <button className="ctx-item" onClick={() => doQuickAction('professional')}>Professional</button>
             <button className="ctx-item" onClick={() => doQuickAction('casual')}>Friendly / Casual</button>
             <button className="ctx-item" onClick={() => doQuickAction('academic')}>Academic</button>
@@ -207,6 +210,7 @@ export function ContextMenu({ onSaveHighlight }: ContextMenuProps) {
           <span className="ctx-arrow">▶</span>
           {showStudySub && (
             <div className="ctx-submenu">
+              <button className="ctx-item" onClick={() => doQuickAction('extract_data')}>📊 Extract Key Data</button>
               <button className="ctx-item" onClick={() => doQuickAction('takeaways')}>Key Takeaways</button>
               <button className="ctx-item" onClick={() => doQuickAction('flashcard')}>Generate Flashcard</button>
             </div>

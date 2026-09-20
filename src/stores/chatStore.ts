@@ -14,6 +14,7 @@ import {
 export type ContextMode = 'chapter' | 'book' | 'custom';
 export type QuickActionType = 
   | 'summarize' | 'eli5' | 'explain' | 'shorten' | 'lengthen' | 'grammar' | 'rephrase'
+  | 'continue_writing' | 'extract_data'
   | 'define' | 'encyclopedia'
   | 'professional' | 'casual' | 'concise' | 'academic'
   | 'takeaways' | 'flashcard';
@@ -168,8 +169,10 @@ const QUICK_ACTION_PROMPTS: Record<QuickActionType, string> = {
   explain:   'Provide a detailed explanation of the following text, including context and implications:\n\n',
   shorten:   'Rewrite the following text in a shorter, more concise form, preserving the core meaning:\n\n',
   lengthen:  'Expand and elaborate on the following text with more detail, examples, and context:\n\n',
-  grammar:   'Fix all grammar, spelling, and punctuation issues in the following text. Return only the corrected text:\n\n',
-  rephrase:  'Rephrase the following text in a different style while preserving the meaning:\n\n',
+  grammar:          'Fix all grammar, spelling, and punctuation issues in the following text. Return only the corrected text:\n\n',
+  rephrase:         'Rephrase the following text into fresh, alternative phrasing with maximum clarity and natural flow while strictly preserving the original core meaning:\n\n',
+  continue_writing: 'Continue writing from the following text seamlessly. Maintain the exact same style, tone, and perspective, extending the argument or narrative logically for 1-2 insightful paragraphs:\n\n',
+  extract_data:     'Analyze the following text and extract all key factual data into clean, categorized markdown bullet points (include: Key Figures & People, Dates & Timeframes, Statistics & Numbers, Locations & Organizations if mentioned):\n\n',
   define:       'Provide a concise dictionary definition for the following term, including its part of speech:\n\n',
   encyclopedia: 'Provide a brief, Wikipedia-style encyclopedia summary for the following person, place, or concept:\n\n',
   professional: 'Rewrite the following text in a highly professional, formal business tone:\n\n',

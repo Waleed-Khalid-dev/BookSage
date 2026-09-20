@@ -219,9 +219,9 @@
 ### AI Writing Assistant Actions
 *Inspired by: Notion AI, Grammarly, Jasper*
 
-- [ ] Right-click → "✍️ Continue Writing" — AI extends the selected text
-- [ ] Right-click → "🎨 Rephrase" — rewrites the text in a different style
-- [ ] Right-click → "📊 Extract Key Data" — pulls out names, dates, numbers
+- [x] Right-click → "✍️ Continue Writing" — AI extends the selected text
+- [x] Right-click → "🎨 Rephrase" — rewrites the text in a different style
+- [x] Right-click → "📊 Extract Key Data" — pulls out names, dates, numbers
 
 ### Inline Word Definition
 *Inspired by: Kindle X-Ray, Apple Dictionary, Readwise*

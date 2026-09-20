@@ -280,6 +280,9 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
         <div className="cpp-quick-actions">
           <button onClick={() => handleQuickAction('summarize')}>📋 Summarize</button>
           <button onClick={() => handleQuickAction('eli5')}>🧠 ELI5</button>
+          <button onClick={() => handleQuickAction('rephrase')}>🎨 Rephrase</button>
+          <button onClick={() => handleQuickAction('continue_writing')}>✍️ Continue</button>
+          <button onClick={() => handleQuickAction('extract_data')}>📊 Extract Data</button>
           <button onClick={() => handleQuickAction('explain')}>💡 Explain</button>
           <button onClick={() => handleQuickAction('shorten')}>✂️ Shorter</button>
           <div className="cpp-translate-wrap">
