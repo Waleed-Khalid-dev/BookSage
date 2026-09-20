@@ -206,3 +206,91 @@ def chat_with_context(
     )
     
     return client.chat(user_message, history, system_prompt)
+
+
+def generate_story_so_far(
+    book_title: str,
+    current_chapter_num: int,
+    current_chapter_title: Optional[str],
+    current_page: Optional[int],
+    all_json_paths: List[str],
+    chapters_meta: Optional[List[Dict[str, Any]]],
+    provider: str,
+    api_key: str,
+    model_name: str = "gemini-3.6-flash"
+) -> str:
+    """
+    Generates a spoiler-free 'Story So Far' recap covering all chapters read prior
+    to the current active reading chapter.
+    """
+    client = get_ai_client(provider, api_key, model_name)
+    
+    # 1. Filter chapters to those strictly preceding current_chapter_num
+    meta_by_json: Dict[str, Dict[str, Any]] = {}
+    if chapters_meta:
+        for c in chapters_meta:
+            jp = c.get("json_path")
+            if jp:
+                meta_by_json[os.path.normpath(jp).lower()] = c
+
+    studied_sections = []
+    for idx, jpath in enumerate(all_json_paths):
+        if not jpath or not os.path.exists(jpath):
+            continue
+        try:
+            norm_jpath = os.path.normpath(jpath).lower()
+            c_meta = meta_by_json.get(norm_jpath)
+            fname = os.path.basename(jpath)
+            m_num = re.match(r"^(\d+)", fname)
+            derived_toc_num = int(m_num.group(1)) if m_num else (idx + 1)
+            toc_num = c_meta.get("num", derived_toc_num) if c_meta else derived_toc_num
+            toc_title = c_meta.get("title") if c_meta else None
+            toc_pages = c_meta.get("pages") if c_meta else None
+
+            # Only include chapters before the current active chapter
+            if toc_num >= current_chapter_num:
+                continue
+
+            with open(jpath, 'r', encoding='utf-8', errors='replace') as f:
+                data = json.load(f)
+                if isinstance(data, list) and len(data) > 0:
+                    data = data[0]
+                formatted = format_chapter_json(data, toc_num, toc_title, toc_pages)
+                if formatted:
+                    studied_sections.append(formatted)
+        except Exception as e:
+            print(f"[ai_chat] Error reading JSON for recap {jpath}: {e}")
+
+    if not studied_sections:
+        return (
+            f"You are currently at the beginning of **{book_title}** (Chapter {current_chapter_num}). "
+            "No prior chapters have been completed yet. Continue reading to build your 'Story So Far' recap!"
+        )
+
+    context_text = "\n".join(studied_sections)
+
+    target_chapter_desc = f"Chapter {current_chapter_num}"
+    if current_chapter_title:
+        target_chapter_desc += f": {current_chapter_title}"
+    if current_page:
+        target_chapter_desc += f" (Page {current_page})"
+
+    prompt = (
+        f"You are the BookSage Reading Companion.\n"
+        f"The reader is reading '{book_title}' and is about to resume reading on {target_chapter_desc}.\n"
+        f"Generate an engaging, insightful, and structured 'Story So Far' recap of what the reader has read so far.\n\n"
+        f"CRITICAL FORMATTING GUIDELINES:\n"
+        f"1. Structure your response with clean Markdown:\n"
+        f"   - ## 📚 The Journey So Far (2-3 punchy sentences summarizing the overarching premise and trajectory established across previous chapters)\n"
+        f"   - ## 🔑 Key Milestones & Lessons (Bulleted breakdown of the core insights and takeaways covered so far, citing chapters as [Ch. N: Title](cite:N))\n"
+        f"   - ## 🌉 The Bridge to {target_chapter_desc} (1-2 sentences highlighting how the lessons learned so far set the stage for what comes next)\n"
+        f"2. Strict Spoiler-Free Rule: Focus ONLY on the concepts from the completed chapters provided in the context below. Do NOT reveal what happens in {target_chapter_desc} or future chapters.\n"
+        f"3. Make it inspiring, crystal-clear, and quick to read (~250-400 words) so the reader can jump right back into reading feeling refreshed.\n"
+        f"4. Citation Format: When referencing any chapter, always format it as `[Ch. N: Title](cite:N)` where N is the integer chapter number.\n\n"
+        f"--- PREVIOUS CHAPTERS EXTRACTED NOTES ---\n"
+        f"{context_text}\n"
+        f"-----------------------------------------"
+    )
+
+    return client.chat(prompt, [], "You are a concise, world-class reading synthesizer.")
+

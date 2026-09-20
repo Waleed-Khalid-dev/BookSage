@@ -172,10 +172,11 @@
 ### "Story So Far" Book Recap
 *Inspired by: Kindle Recaps, Kindle "Story So Far"*
 
-- [ ] When opening a book that has `last_page > 1` AND studied chapters, offer:
-  - [ ] "📚 Resume Reading — Get a recap of what you've read so far"
-  - [ ] AI generates a spoiler-free summary of all studied chapters
-  - [ ] Shows in a modal before switching to BookReader
+- [x] When opening a book that has `last_page > 1` AND studied chapters, offer:
+  - [x] "📚 Resume Reading — Get a recap of what you've read so far"
+  - [x] AI generates a spoiler-free summary of all studied chapters
+  - [x] Shows in a modal/banner upon resuming in BookReader, plus on-demand toolbar & Copilot preset button
+  - [ ] **NOTE (Phase 7 Milestone):** When implementing Phase 7 (Library View), wire this "Resume Reading / Story So Far" prompt directly into the book card click/hover actions when selecting an in-progress book from the Library grid.
 
 ### Voice Input (Web Speech API)
 *Inspired by: Perplexity voice search, ChatGPT voice mode*

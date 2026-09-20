@@ -82,6 +82,34 @@ def handle_command(cmd_data):
             chapters_meta=chapters_meta
         )
         return {"status": "success", "response": response}
+
+    elif command == "story_so_far_recap":
+        book_title = cmd_data.get("book_title", "Current Book")
+        current_chapter_num = cmd_data.get("current_chapter_num", 1)
+        current_chapter_title = cmd_data.get("current_chapter_title")
+        current_page = cmd_data.get("current_page")
+        all_json_paths = cmd_data.get("all_json_paths", [])
+        chapters_meta = cmd_data.get("chapters_meta", [])
+        provider = cmd_data.get("provider", "gemini")
+        api_key = cmd_data.get("api_key")
+        model_name = cmd_data.get("model_name", "gemini-3.6-flash")
+
+        if not api_key:
+            return {"status": "error", "message": "Missing 'api_key'."}
+
+        from ai_chat import generate_story_so_far
+        recap = generate_story_so_far(
+            book_title=book_title,
+            current_chapter_num=current_chapter_num,
+            current_chapter_title=current_chapter_title,
+            current_page=current_page,
+            all_json_paths=all_json_paths,
+            chapters_meta=chapters_meta,
+            provider=provider,
+            api_key=api_key,
+            model_name=model_name
+        )
+        return {"status": "success", "recap": recap}
     
     elif command == "search_pdf":
         pdf_path = cmd_data.get("path")

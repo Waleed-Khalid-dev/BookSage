@@ -377,3 +377,20 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - Cleaned verbose prompt boilerplate (`"Based on your ACTIVE USER READING POSITION..."`) to show high-value takeaways immediately.
 - **Build & Git Status:**
   - `tsc && vite build` clean with 0 errors. Pushed to `origin/main` (`ee71814`).
+
+### Session 2026-09-20 Notes ("Story So Far" Book Recap Implementation)
+- **Zero Thunder Symbols:** Removed all thunder/lightning symbols across UI and presets; styled with clean book iconography (`BookOpen` / `📚`).
+- **Python Sidecar Recap Engine:**
+  - Implemented `generate_story_so_far` in `python/ai_chat.py` and `story_so_far_recap` in `python/main.py`.
+  - Gathers prior chapter notes (`summary`, `core_lesson`, `teachings`), generates spoiler-free recap with executive overview, milestone lessons, citation links (`[Ch. N: Title](cite:N)`), and a forward transition into the active chapter.
+- **SQLite Token Cache:**
+  - Created `book_recaps` table in SQLite (`dbService.ts`) with `getCachedBookRecap` & `saveCachedBookRecap` to eliminate redundant API token cost when reopening recaps.
+- **Interactive StorySoFarModal:**
+  - Authored `StorySoFarModal.tsx` & `.css` with Markdown rendering, CitationChip jumps, Copy button, Regenerate button, and "Discuss in Copilot" action.
+- **Welcome-Back Resume Banner & Header Button:**
+  - Added session-dismissable banner in `BookReader.tsx` when `last_page > 1` and prior chapters exist: *"Welcome back! Resuming on Chapter X (Page Y)..."*.
+  - Added on-demand `Story So Far` header button in `BookReader.tsx` and preset prompt in `CopilotSidebar.tsx`.
+- **Phase 7 Integration Note:**
+  - Logged in `copilot-features.md` that Phase 7 (Library View) will connect this recap directly to the book cards on the library grid upon opening an in-progress book.
+- **Verification:**
+  - `npm run build` clean (`✓ built in 21.54s`) with 0 errors.

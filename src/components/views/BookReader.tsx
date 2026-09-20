@@ -17,7 +17,8 @@ import { SearchBar } from '../reader/SearchBar';
 import { ReadingStats } from '../reader/ReadingStats';
 import { CopilotPopup } from '../copilot/CopilotPopup';
 import { ContextMenu as AiContextMenu } from '../copilot/ContextMenu';
-import { Search, ChevronRight, PenTool, Undo, Redo, Eraser, Maximize, Minimize } from 'lucide-react';
+import { Search, ChevronRight, PenTool, Undo, Redo, Eraser, Maximize, Minimize, BookOpen } from 'lucide-react';
+import { StorySoFarModal } from '../shared/StorySoFarModal';
 
 const hexToRgbNormalized = (hex: string) => {
   const h = hex.replace('#', '');
@@ -34,7 +35,8 @@ export function BookReader() {
     isDrawingMode, drawingColor, setIsDrawingMode, setDrawingColor, 
     undoDrawingAction, redoDrawingAction, undoStack, redoStack,
     drawingTool, setDrawingTool, eraserSize, setEraserSize, penSize, setPenSize,
-    pdfTintColor, pdfTextColor, isWordHighlightingEnabled
+    pdfTintColor, pdfTextColor, isWordHighlightingEnabled,
+    bookId, chapters, aiModel
   } = useBookStore();
   const { isTtsPlaying, setActiveSelection, setFocusedPanel } = useUiStore();
   const { setSelection: setCopilotSelection, openContextMenu } = useChatStore();
@@ -44,6 +46,35 @@ export function BookReader() {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [selection, setSelection] = useState<SelectionData | null>(null);
   
+  // "Story So Far" Recap states & helpers
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
+  const [showResumeBanner, setShowResumeBanner] = useState(() => {
+    if (!bookId || lastPage <= 1) return false;
+    const dismissed = sessionStorage.getItem(`booksage_ssf_dismissed_${bookId}`);
+    return !dismissed;
+  });
+
+  const handleDismissBanner = () => {
+    setShowResumeBanner(false);
+    if (bookId) {
+      sessionStorage.setItem(`booksage_ssf_dismissed_${bookId}`, 'true');
+    }
+  };
+
+  const handleDiscussRecapInCopilot = (recapText: string) => {
+    useChatStore.setState({ isSidebarOpen: true });
+    window.dispatchEvent(new CustomEvent('append-chat-input', {
+      detail: `Let's discuss the key takeaways from the Story So Far recap:\n\n${recapText}\n\nWhat are the most crucial principles I should keep in mind as I resume reading?`
+    }));
+  };
+
+  // Determine current active chapter based on lastPage
+  const currentChapter = [...chapters].reverse().find(c => {
+    if (!c.pp) return false;
+    const [start, end] = c.pp.split('-').map(Number);
+    return lastPage >= start && lastPage <= end;
+  });
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollAccumulator = useRef(0);
   const lastActivityTime = useRef(Date.now());
@@ -598,7 +629,33 @@ export function BookReader() {
       
       {!isFocusMode && (
         <header className="view-header" style={{ padding: '1rem', borderBottom: '1px solid var(--bs-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <h2 style={{ color: 'var(--bs-heading)', margin: 0, maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={currentBookTitle}>{currentBookTitle}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <h2 style={{ color: 'var(--bs-heading)', margin: 0, maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={currentBookTitle}>{currentBookTitle}</h2>
+            {currentChapter && currentChapter.num > 1 && (
+              <button
+                className="btn-toggle"
+                onClick={() => setIsStoryModalOpen(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '4px',
+                  border: '1px solid var(--bs-accent, #009688)',
+                  background: 'rgba(0, 150, 136, 0.12)',
+                  color: 'var(--bs-accent, #009688)',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Story So Far: catch up on what you've read so far"
+              >
+                <BookOpen size={13} />
+                Story So Far
+              </button>
+            )}
+          </div>
         
         <div className="view-toggles" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button 
@@ -745,6 +802,36 @@ export function BookReader() {
           <DisplaySettings />
         </div>
       </header>
+      )}
+
+      {showResumeBanner && currentChapter && currentChapter.num > 1 && (
+        <div className="story-so-far-resume-banner">
+          <div className="story-so-far-resume-left">
+            <BookOpen size={16} color="var(--bs-accent, #009688)" />
+            <span>
+              Welcome back! You're resuming on <strong>Chapter {currentChapter.num}: {currentChapter.title}</strong> (Page {lastPage}).
+            </span>
+          </div>
+          <div className="story-so-far-resume-actions">
+            <button 
+              className="story-so-far-resume-btn"
+              onClick={() => {
+                handleDismissBanner();
+                setIsStoryModalOpen(true);
+              }}
+            >
+              <BookOpen size={12} />
+              Get "Story So Far" Recap
+            </button>
+            <button 
+              className="story-so-far-resume-dismiss"
+              onClick={handleDismissBanner}
+              title="Dismiss"
+            >
+              ✕ Dismiss
+            </button>
+          </div>
+        </div>
       )}
       
       <PageControls 
@@ -1160,6 +1247,19 @@ export function BookReader() {
           {isDrawingMode && drawingTool === 'eraser' ? <Eraser size={24} /> : <PenTool size={24} />}
         </button>
       </div>
+
+      <StorySoFarModal
+        isOpen={isStoryModalOpen}
+        onClose={() => setIsStoryModalOpen(false)}
+        bookId={bookId}
+        bookTitle={currentBookTitle}
+        currentChapterNum={currentChapter?.num || 1}
+        currentChapterTitle={currentChapter?.title}
+        currentPage={lastPage}
+        chapters={chapters}
+        aiModel={aiModel}
+        onDiscussInCopilot={handleDiscussRecapInCopilot}
+      />
 
       </div>
     </PDFContext.Provider>

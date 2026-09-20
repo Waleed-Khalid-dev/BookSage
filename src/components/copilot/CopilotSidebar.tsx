@@ -18,6 +18,7 @@ import {
 import './CopilotSidebar.css';
 
 const PRESET_PROMPTS = [
+  { icon: '📚', label: 'Story So Far', text: 'Give me a concise "Story So Far" recap of everything covered in the book up to my current chapter. Summarize the major themes, core lessons, and how they lead into what I am about to read next, without spoiling future chapters.' },
   { icon: '📖', label: 'What is this chapter about?', text: 'Give me a comprehensive overview of what this chapter is about.' },
   { icon: '🎯', label: 'Core lesson?', text: 'What is the single most important lesson or insight from this chapter?' },
   { icon: '🧪', label: '3 real-world examples', text: 'Give me 3 concrete, real-world examples that illustrate the key concepts in this chapter.' },

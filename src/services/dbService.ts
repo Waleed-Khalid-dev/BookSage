@@ -176,6 +176,14 @@ async function initDb(database: Database) {
       created_at         INTEGER NOT NULL,
       updated_at         INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS book_recaps (
+      book_id       TEXT NOT NULL,
+      up_to_chapter INTEGER NOT NULL,
+      recap_text    TEXT NOT NULL,
+      updated_at    INTEGER NOT NULL,
+      PRIMARY KEY (book_id, up_to_chapter)
+    );
   `);
 
   // Migrations for existing databases
@@ -797,4 +805,34 @@ export async function getAllPinnedInsightsForBook(bookId: string): Promise<Pinne
     }
   }
   return results;
+}
+
+export async function getCachedBookRecap(bookId: string, upToChapter: number): Promise<string | null> {
+  const database = await getDb();
+  try {
+    const rows = await database.select<{ recap_text: string }[]>(
+      'SELECT recap_text FROM book_recaps WHERE book_id = $1 AND up_to_chapter = $2 LIMIT 1',
+      [bookId, upToChapter]
+    );
+    return rows[0]?.recap_text || null;
+  } catch (e) {
+    console.error('Error fetching cached book recap:', e);
+    return null;
+  }
+}
+
+export async function saveCachedBookRecap(bookId: string, upToChapter: number, recapText: string): Promise<void> {
+  const database = await getDb();
+  try {
+    await database.execute(
+      `INSERT INTO book_recaps (book_id, up_to_chapter, recap_text, updated_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT(book_id, up_to_chapter) DO UPDATE SET
+       recap_text = excluded.recap_text,
+       updated_at = excluded.updated_at`,
+      [bookId, upToChapter, recapText, Date.now()]
+    );
+  } catch (e) {
+    console.error('Error saving cached book recap:', e);
+  }
 }
