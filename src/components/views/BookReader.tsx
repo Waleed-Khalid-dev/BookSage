@@ -20,6 +20,7 @@ import { ContextMenu as AiContextMenu } from '../copilot/ContextMenu';
 import { Search, ChevronRight, PenTool, Undo, Redo, Eraser, Maximize, Minimize, BookOpen } from 'lucide-react';
 import { StorySoFarModal } from '../shared/StorySoFarModal';
 import { WordDefinitionTooltip, WordDefinitionTarget } from '../shared/WordDefinitionTooltip';
+import { BookCoverDrawer } from '../reader/BookCoverDrawer';
 import { getWordAtPoint } from '../../utils/wordSelection';
 
 const hexToRgbNormalized = (hex: string) => {
@@ -893,6 +894,14 @@ export function BookReader() {
       />
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+          {/* Draggable Book Cover Popup & Downward Slide Showcase */}
+          <BookCoverDrawer
+            currentBookTitle={currentBookTitle}
+            currentPage={pdfState.currentPage}
+            totalPages={pdfState.totalPages}
+            currentChapter={currentChapter ? { num: currentChapter.num, title: currentChapter.title } : null}
+            onJumpToPage={(p) => handlePageChangeRequest(p)}
+          />
           
           {/* Left annotation sidebar */}
           <div style={{
