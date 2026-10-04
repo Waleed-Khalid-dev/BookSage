@@ -8,6 +8,7 @@ import {
   ChatMessageRecord,
   ChatSessionRecord,
 } from '../services/dbService';
+import { useBookStore } from './bookStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -262,7 +263,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   showContextMenu: false,
   contextMenuPos: { x: 0, y: 0 },
   selection: null,
-  persona: 'scholar',
+  persona: (typeof window !== 'undefined' && useBookStore.getState?.()?.copilotPersona) ? useBookStore.getState().copilotPersona : 'scholar',
   popupSize: { w: 400, h: 300 },
   popupFontSize: 0, // 0 means dynamic based on width
   pendingQuickAction: null,
@@ -527,12 +528,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   sendQuickAction: async (action, selectedText, provider, apiKey, modelName) => {
+    const { persona } = get();
+    const applyTone = useBookStore.getState?.()?.applyPersonaToQuickActions ?? false;
+    const personaPrefix = applyTone ? `${PERSONA_PROMPTS[persona]}\n\n` : '';
     const prompt = QUICK_ACTION_PROMPTS[action] + selectedText;
     const res = await invokePython({
       command: 'chat_message',
       message: prompt,
       history: [],
       context_text: '',
+      persona_prefix: personaPrefix,
       provider,
       api_key: apiKey,
       model_name: modelName,
@@ -588,7 +593,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
   }),
   openContextMenu: (x, y) => set({ showContextMenu: true, contextMenuPos: { x, y } }),
   closeContextMenu: () => set({ showContextMenu: false }),
-  setPersona: (p) => set({ persona: p }),
+  setPersona: (p) => {
+    set({ persona: p });
+    try {
+      useBookStore.getState().setCopilotPersona(p);
+    } catch (_) {}
+  },
   setPopupSize: (w, h) => set({ popupSize: { w, h } }),
   setPopupFontSize: (size) => set({ popupFontSize: size }),
   setPendingQuickAction: (action) => set({ pendingQuickAction: action }),

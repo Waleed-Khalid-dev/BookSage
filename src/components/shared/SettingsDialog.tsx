@@ -3,7 +3,9 @@ import { useUiStore } from '../../stores/uiStore';
 import { useShortcutStore, ShortcutAction, actionLabels, Shortcut } from '../../stores/shortcutStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { useBookStore } from '../../stores/bookStore';
-import { X, RotateCcw, Key, Keyboard, Eye, EyeOff, Palette } from 'lucide-react';
+import { useChatStore } from '../../stores/chatStore';
+import { X, RotateCcw, Key, Keyboard, Eye, EyeOff, Palette, Bot } from 'lucide-react';
+import { COPILOT_PERSONAS } from '../copilot/CopilotPersonaSelector';
 import './SettingsDialog.css';
 
 const THEMES = [
@@ -25,11 +27,19 @@ const PROVIDERS = [
 
 export function SettingsDialog() {
   const { isSettingsOpen, setIsSettingsOpen } = useUiStore();
-  const { readerTheme, setReaderTheme } = useBookStore();
+  const {
+    readerTheme,
+    setReaderTheme,
+    copilotPersona,
+    setCopilotPersona,
+    applyPersonaToQuickActions,
+    setApplyPersonaToQuickActions,
+  } = useBookStore();
+  const { setPersona } = useChatStore();
   const { shortcuts, updateShortcut, resetToDefaults } = useShortcutStore();
   
   const { keys, loadKeys, saveKey, isInitialized } = useApiKeys();
-  const [activeTab, setActiveTab] = useState<'theme' | 'shortcuts' | 'apikeys'>('theme');
+  const [activeTab, setActiveTab] = useState<'theme' | 'copilot' | 'shortcuts' | 'apikeys'>('theme');
   const [listeningAction, setListeningAction] = useState<ShortcutAction | null>(null);
 
   // Local state for API keys being edited
@@ -107,6 +117,12 @@ export function SettingsDialog() {
               <Palette size={18} /> Theme
             </button>
             <button 
+              className={`tab-btn ${activeTab === 'copilot' ? 'active' : ''}`}
+              onClick={() => setActiveTab('copilot')}
+            >
+              <Bot size={18} /> AI Copilot
+            </button>
+            <button 
               className={`tab-btn ${activeTab === 'shortcuts' ? 'active' : ''}`}
               onClick={() => setActiveTab('shortcuts')}
             >
@@ -155,6 +171,58 @@ export function SettingsDialog() {
                     </button>
                   );
                 })}
+              </div>
+            </>
+          )}
+
+          {activeTab === 'copilot' && (
+            <>
+              <h4>AI Copilot & Persona</h4>
+              <p className="settings-desc">Customize your reading copilot's tone, analytical perspective, and behavior.</p>
+
+              <div className="settings-section">
+                <label className="settings-subheading">Active Copilot Persona</label>
+                <p className="settings-subdesc">Select the default analytical role and conversational style of BookSage Copilot.</p>
+                <div className="persona-grid">
+                  {COPILOT_PERSONAS.map(p => {
+                    const isSelected = copilotPersona === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={`persona-card ${isSelected ? 'selected' : ''}`}
+                        onClick={() => {
+                          setCopilotPersona(p.id);
+                          setPersona(p.id);
+                        }}
+                      >
+                        <div className="persona-card-header">
+                          <span className="persona-card-icon">{p.icon}</span>
+                          <span className="persona-card-title">{p.label}</span>
+                          {isSelected && <span className="persona-card-badge">Active</span>}
+                        </div>
+                        <p className="persona-card-desc">{p.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="settings-section settings-toggle-row">
+                <div className="settings-toggle-info">
+                  <span className="settings-toggle-title">Apply Persona Tone to Quick Actions</span>
+                  <p className="settings-toggle-desc">
+                    When enabled, one-click quick actions (Summarize, Explain, ELI5) in text selection popups will be styled by your chosen persona instead of remaining strictly neutral.
+                  </p>
+                </div>
+                <label className="settings-switch">
+                  <input
+                    type="checkbox"
+                    checked={applyPersonaToQuickActions}
+                    onChange={e => setApplyPersonaToQuickActions(e.target.checked)}
+                  />
+                  <span className="settings-slider" />
+                </label>
               </div>
             </>
           )}

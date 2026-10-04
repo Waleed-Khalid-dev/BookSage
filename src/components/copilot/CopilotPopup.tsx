@@ -5,6 +5,7 @@ import { useChatStore, QuickActionType, parseFollowUps } from '../../stores/chat
 import { useBookStore } from '../../stores/bookStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector, getProviderForModel } from './ModelSelector';
+import { CopilotPersonaSelector } from './CopilotPersonaSelector';
 import './CopilotPopup.css';
 
 const TRANSLATE_LANGS = [
@@ -264,6 +265,7 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
         <span className="cpp-drag-icon">⠿</span>
         <span className="cpp-title">✦ BookSage Copilot</span>
         <div className="cpp-header-actions" onMouseDown={(e) => e.stopPropagation()}>
+          <CopilotPersonaSelector size="compact" menuPlacement="bottom-right" />
           <button 
             className="cpp-font-btn" 
             title="Decrease Font Size"

@@ -1,0 +1,195 @@
+/* src/components/copilot/CopilotPersonaSelector.css */
+
+.bs-persona-selector {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+}
+
+/* ── Pill Button ── */
+.bs-persona-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bs-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.12));
+  color: var(--bs-text, #e2e8f0);
+  border-radius: 9999px;
+  padding: 3px 9px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.bs-persona-pill:hover {
+  background: var(--bs-surface-hover, rgba(255, 255, 255, 0.1));
+  border-color: var(--bs-border-hover, rgba(255, 255, 255, 0.22));
+  color: var(--bs-text-primary, #ffffff);
+}
+
+.bs-persona-pill--open {
+  background: var(--bs-surface-hover, rgba(255, 255, 255, 0.12));
+  border-color: var(--bs-accent, #3b82f6);
+  box-shadow: 0 0 0 1px var(--bs-accent, #3b82f6);
+}
+
+.bs-persona-pill-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.bs-persona-pill-label {
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.bs-persona-pill-chevron {
+  opacity: 0.6;
+  transition: transform 0.15s ease;
+}
+
+.bs-persona-pill-chevron.rotate {
+  transform: rotate(180deg);
+}
+
+/* ── Compact Variant (for Selection Popup) ── */
+.bs-persona-selector--compact .bs-persona-pill {
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  gap: 4px;
+}
+
+.bs-persona-selector--compact .bs-persona-pill-icon {
+  font-size: 0.78rem;
+}
+
+/* ── Dropdown Menu ── */
+.bs-persona-menu {
+  position: absolute;
+  background: var(--bs-panel, #1e1e24);
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.15));
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+  width: 250px;
+  z-index: 10000;
+  overflow: hidden;
+  animation: bs-persona-fade-in 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 4px;
+}
+
+@keyframes bs-persona-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Menu Placements */
+.bs-persona-menu--bottom-right {
+  top: calc(100% + 5px);
+  right: 0;
+}
+
+.bs-persona-menu--bottom-left {
+  top: calc(100% + 5px);
+  left: 0;
+}
+
+.bs-persona-menu--top-right {
+  bottom: calc(100% + 5px);
+  right: 0;
+}
+
+.bs-persona-menu--top-left {
+  bottom: calc(100% + 5px);
+  left: 0;
+}
+
+.bs-persona-menu-header {
+  padding: 6px 8px 4px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bs-text-muted, #94a3b8);
+  border-bottom: 1px solid var(--bs-border-subtle, rgba(255, 255, 255, 0.06));
+  margin-bottom: 3px;
+}
+
+.bs-persona-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── Menu Item ── */
+.bs-persona-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+  color: var(--bs-text, #cbd5e1);
+}
+
+.bs-persona-item:hover {
+  background: var(--bs-surface-hover, rgba(255, 255, 255, 0.08));
+  color: var(--bs-text-primary, #ffffff);
+}
+
+.bs-persona-item--active {
+  background: var(--bs-surface-active, rgba(59, 130, 246, 0.12));
+  color: var(--bs-accent, #60a5fa);
+}
+
+.bs-persona-item-icon {
+  font-size: 1.05rem;
+  line-height: 1.2;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.bs-persona-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bs-persona-item-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.bs-persona-item-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+.bs-persona-item-check {
+  color: var(--bs-accent, #60a5fa);
+  flex-shrink: 0;
+}
+
+.bs-persona-item-desc {
+  font-size: 0.68rem;
+  line-height: 1.28;
+  color: var(--bs-text-muted, #94a3b8);
+}

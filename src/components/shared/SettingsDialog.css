@@ -12,7 +12,7 @@
   background: var(--bs-panel);
   border: 1px solid var(--bs-border-strong);
   border-radius: 8px;
-  width: 500px;
+  width: 540px;
   max-width: 90vw;
   max-height: 85vh;
   display: flex;
@@ -351,4 +351,167 @@
   border-radius: 4px;
   border: 1px solid var(--bs-accent);
 }
+
+/* ── AI Copilot Settings ── */
+.settings-section {
+  margin-top: 20px;
+}
+
+.settings-subheading {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--bs-text-bright, #f8fafc);
+  margin-bottom: 4px;
+}
+
+.settings-subdesc {
+  font-size: 0.82rem;
+  color: var(--bs-text-muted, #94a3b8);
+  margin: 0 0 12px 0;
+  line-height: 1.35;
+}
+
+.persona-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.persona-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px;
+  background: var(--bs-surface, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.persona-card:hover {
+  background: var(--bs-surface-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--bs-border-hover, rgba(255, 255, 255, 0.2));
+}
+
+.persona-card.selected {
+  background: var(--bs-surface-active, rgba(59, 130, 246, 0.09));
+  border-color: var(--bs-accent, #3b82f6);
+  box-shadow: 0 0 0 1px var(--bs-accent, #3b82f6);
+}
+
+.persona-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.persona-card-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.persona-card-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--bs-text-bright, #ffffff);
+}
+
+.persona-card-badge {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--bs-accent, #60a5fa);
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid var(--bs-accent, #3b82f6);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.persona-card-desc {
+  font-size: 0.76rem;
+  color: var(--bs-text-muted, #94a3b8);
+  margin: 0;
+  line-height: 1.32;
+}
+
+/* ── Toggle Switch ── */
+.settings-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  background: var(--bs-surface, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+}
+
+.settings-toggle-info {
+  flex: 1;
+}
+
+.settings-toggle-title {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--bs-text-bright, #f8fafc);
+  margin-bottom: 3px;
+}
+
+.settings-toggle-desc {
+  font-size: 0.78rem;
+  color: var(--bs-text-muted, #94a3b8);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.settings-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.settings-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.settings-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--bs-border-strong, #475569);
+  transition: 0.2s ease;
+  border-radius: 22px;
+}
+
+.settings-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s ease;
+  border-radius: 50%;
+}
+
+.settings-switch input:checked + .settings-slider {
+  background-color: var(--bs-accent, #3b82f6);
+}
+
+.settings-switch input:checked + .settings-slider:before {
+  transform: translateX(18px);
+}
+
 

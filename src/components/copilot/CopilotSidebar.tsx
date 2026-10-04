@@ -3,10 +3,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
-import { useChatStore, CopilotPersona, ContextMode } from '../../stores/chatStore';
+import { useChatStore, ContextMode } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
 import { useUiStore } from '../../stores/uiStore';
 import { ModelSelector } from './ModelSelector';
+import { CopilotPersonaSelector } from './CopilotPersonaSelector';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { CitationChip, extractCitations, normalizeCitations } from '../shared/CitationChip';
 import {
@@ -26,32 +27,7 @@ const PRESET_PROMPTS = [
   { icon: '🔗', label: 'Connect to previous', text: 'How does this chapter connect to or build upon the previous chapters in this book?' },
 ];
 
-const PERSONAS: { id: CopilotPersona; icon: string; label: string; description: string }[] = [
-  { 
-    id: 'scholar',  
-    icon: '🎓', 
-    label: 'Scholar', 
-    description: 'Deep academic analysis — Gives you deep, academic, and detailed answers.' 
-  },
-  { 
-    id: 'teacher',  
-    icon: '👨‍🏫', 
-    label: 'Teacher', 
-    description: 'Simple explanations — Breaks down complex concepts so they are easy to understand.' 
-  },
-  { 
-    id: 'coach',    
-    icon: '🔥', 
-    label: 'Coach', 
-    description: 'Action-oriented — Gives you highly actionable, motivating advice on how to apply the book\'s concepts to your life.' 
-  },
-  { 
-    id: 'devil',    
-    icon: '🤔', 
-    label: 'Devil\'s Advocate', 
-    description: 'Challenges assumptions — Challenges the author\'s ideas, points out flaws, and encourages critical thinking instead of blindly agreeing with the text.' 
-  },
-];
+
 
 interface CopilotSidebarProps {
   bookId: string | null;
@@ -75,7 +51,7 @@ export function CopilotSidebar({
   const {
     isSidebarOpen, toggleSidebar,
     sessions, activeSessionId, isLoading,
-    sendMessage, loadSessions, persona, setPersona,
+    sendMessage, loadSessions,
     regenerateLastMessage,
     activeSession, createSession, setActiveSession, deleteSession
   } = useChatStore();
@@ -88,7 +64,6 @@ export function CopilotSidebar({
   const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'ollama' | 'groq' | 'deepseek'>('gemini');
   const [copied, setCopied] = useState<string | null>(null);
   const [pinnedInsights, setPinnedInsights] = useState<PinnedInsightRecord[]>([]);
-  const [showPersona, setShowPersona] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   
@@ -380,29 +355,7 @@ export function CopilotSidebar({
           <button className="csb-icon-btn" title="Increase font size" onClick={() => setFontSize(f => Math.min(24, f + 1))}>A+</button>
           
           {/* Persona picker */}
-          <div className="csb-persona-wrap">
-            <button
-              className="csb-icon-btn"
-              title={`Switch persona (Current: ${PERSONAS.find(p => p.id === persona)?.label})`}
-              onClick={() => setShowPersona(v => !v)}
-            >
-              {PERSONAS.find(p => p.id === persona)?.icon ?? '🎓'}
-            </button>
-            {showPersona && (
-              <div className="csb-persona-menu">
-                {PERSONAS.map(p => (
-                  <button
-                    key={p.id}
-                    className={`csb-persona-opt ${persona === p.id ? 'csb-persona-opt--active' : ''}`}
-                    onClick={() => { setPersona(p.id); setShowPersona(false); }}
-                    title={p.description}
-                  >
-                    {p.icon} {p.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <CopilotPersonaSelector size="compact" menuPlacement="bottom-right" />
 
           {/* Sessions list */}
           <div className="csb-sessions-wrap">

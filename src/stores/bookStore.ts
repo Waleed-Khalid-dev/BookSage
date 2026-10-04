@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invokePython } from '../services/pythonService';
 import { upsertBook, upsertChapter, getBook, getChaptersForBook, getBookByPdfPath } from '../services/dbService';
+import type { CopilotPersona } from './chatStore';
 
 export interface Chapter {
   id?: string;
@@ -38,6 +39,8 @@ interface BookState {
   pdfTintColor: string;
   pdfTextColor: string;
   pdfMarginCrop: number;
+  copilotPersona: CopilotPersona;
+  applyPersonaToQuickActions: boolean;
   highlightOpacity: number;
   textSelectionColor: string;
   penColor: string;
@@ -72,6 +75,8 @@ interface BookState {
   // Display State
   continuousGapless: boolean;
   setContinuousGapless: (gapless: boolean) => void;
+  setCopilotPersona: (persona: CopilotPersona) => void;
+  setApplyPersonaToQuickActions: (apply: boolean) => void;
   
   setAiModel: (model: string) => void;
   setPdfPath: (path: string) => Promise<void>;
@@ -145,6 +150,8 @@ export const useBookStore = create<BookState>()(
       pdfTintColor: '',
       pdfTextColor: '',
       pdfMarginCrop: 0,
+      copilotPersona: 'scholar',
+      applyPersonaToQuickActions: false,
       highlightOpacity: 0.4,
       textSelectionColor: '',
       penColor: '#e05252',
@@ -405,6 +412,8 @@ export const useBookStore = create<BookState>()(
       
       setIsWordHighlightingEnabled: (enabled) => set({ isWordHighlightingEnabled: enabled }),
       setContinuousGapless: (gapless) => set({ continuousGapless: gapless }),
+      setCopilotPersona: (persona) => set({ copilotPersona: persona }),
+      setApplyPersonaToQuickActions: (apply) => set({ applyPersonaToQuickActions: apply }),
       setAiModel: (model: string) => set({ aiModel: model }),
 
       setPdfPath: async (path: string) => {
@@ -893,6 +902,8 @@ export const useBookStore = create<BookState>()(
         pdfTintColor: state.pdfTintColor,
         pdfTextColor: state.pdfTextColor,
         pdfMarginCrop: state.pdfMarginCrop,
+        copilotPersona: state.copilotPersona,
+        applyPersonaToQuickActions: state.applyPersonaToQuickActions,
       }),
     }
   )

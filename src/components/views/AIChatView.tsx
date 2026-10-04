@@ -3,11 +3,12 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
-import { useChatStore, CopilotPersona, ContextMode } from '../../stores/chatStore';
+import { useChatStore, ContextMode } from '../../stores/chatStore';
 import { useBookStore, Chapter } from '../../stores/bookStore';
 import { useUiStore } from '../../stores/uiStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector } from '../copilot/ModelSelector';
+import { CopilotPersonaSelector, COPILOT_PERSONAS } from '../copilot/CopilotPersonaSelector';
 import { CitationChip, extractCitations, normalizeCitations, CitationItem } from '../shared/CitationChip';
 import {
   pinChapterInsight,
@@ -30,32 +31,7 @@ const PRESET_PROMPTS = [
   { icon: '📝', label: 'Study quiz',              text: 'Generate 10 multiple-choice quiz questions to test my understanding of this book.' },
 ];
 
-const PERSONAS: { id: CopilotPersona; icon: string; label: string; desc: string }[] = [
-  { 
-    id: 'scholar',  
-    icon: '🎓', 
-    label: 'Scholar',          
-    desc: 'Deep academic analysis — Gives you deep, academic, and detailed answers.' 
-  },
-  { 
-    id: 'teacher',  
-    icon: '👨‍🏫', 
-    label: 'Teacher',         
-    desc: 'Simple explanations — Breaks down complex concepts so they are easy to understand.' 
-  },
-  { 
-    id: 'coach',    
-    icon: '🔥', 
-    label: 'Coach',            
-    desc: 'Action-oriented — Gives you highly actionable, motivating advice on how to apply the book\'s concepts to your life.' 
-  },
-  { 
-    id: 'devil',    
-    icon: '🤔', 
-    label: 'Devil\'s Advocate', 
-    desc: 'Challenges assumptions — Challenges the author\'s ideas, points out flaws, and encourages critical thinking instead of blindly agreeing with the text.' 
-  },
-];
+
 
 const formatTime = (ts?: number) => {
   if (!ts) return '';
@@ -437,12 +413,12 @@ export function AIChatView() {
         <div className="acv-persona-section">
           <div className="acv-persona-label">AI Persona</div>
           <div className="acv-persona-grid">
-            {PERSONAS.map(p => (
+            {COPILOT_PERSONAS.map(p => (
               <button
                 key={p.id}
                 className={`acv-persona-btn ${persona === p.id ? 'acv-persona-btn--active' : ''}`}
                 onClick={() => setPersona(p.id)}
-                title={p.desc}
+                title={p.description}
               >
                 <span>{p.icon}</span>
                 <span>{p.label}</span>
@@ -469,6 +445,7 @@ export function AIChatView() {
             )}
           </div>
           <div className="acv-header-actions">
+            <CopilotPersonaSelector size="normal" menuPlacement="bottom-right" />
             {/* Font controls */}
             <div className="acv-font-controls">
               <button className="acv-font-btn" title="Decrease font size" onClick={() => setFontSize(f => Math.max(11, f - 1))}>A-</button>
