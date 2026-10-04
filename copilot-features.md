@@ -271,7 +271,7 @@
 
 A polished, non-intrusive visual reading companion specifically designed to sit gracefully in the reader interface without obstructing reading content or disrupting reading flow.
 
-- **Status:** 📋 Documented (Scheduled for implementation)
+- **Status:** ✅ Completed
 - **Scope:** Purely visual/interaction feature — zero architectural or prompt overhead.
 
 #### 1. Visual Placement & Context
