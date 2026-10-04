@@ -18,8 +18,8 @@ interface BookCoverDrawerProps {
 const STORAGE_KEY_X = 'booksage-cover-drawer-x';
 const AUTO_HIDE_DELAY = 4500; // 4.5 seconds
 const MODAL_WIDTH = 375; // EXACT equal width
-const COMPACT_HEIGHT = 56;
-const EXPANDED_HEIGHT = 245;
+const COMPACT_HEIGHT = 72; // Generous height: allows full un-squished book cover
+const EXPANDED_HEIGHT = 255;
 
 /**
  * Robust title & author parser:
@@ -139,10 +139,10 @@ export function BookCoverDrawer({
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const originalViewport = page1.getViewport({ scale: 1 });
 
-        // A. Render Compact Thumbnail (CSS display: 40px width)
+        // A. Render Compact Thumbnail (CSS display: 42px width)
         if (thumbnailCanvasRef.current) {
           const canvas = thumbnailCanvasRef.current;
-          const targetWidth = 40;
+          const targetWidth = 42;
           const thumbScale = targetWidth / originalViewport.width;
           const scaledViewport = page1.getViewport({ scale: thumbScale * dpr });
           const ctx = canvas.getContext('2d');
@@ -398,8 +398,8 @@ export function BookCoverDrawer({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            padding: '6px 12px',
+            gap: '12px',
+            padding: '8px 14px',
             height: `${COMPACT_HEIGHT}px`,
             boxSizing: 'border-box',
             opacity: isExpanded ? 0 : 1,
@@ -418,15 +418,16 @@ export function BookCoverDrawer({
             onClick={handleCoverClick}
             title="Click to expand book cover showcase"
             style={{
-              width: '40px',
-              minHeight: '44px',
-              borderRadius: '4px',
+              width: '42px',
+              height: '56px',
+              minHeight: '56px',
+              borderRadius: '5px',
               overflow: 'hidden',
               flexShrink: 0,
               cursor: 'pointer',
               background: '#18191e',
               border: '1px solid rgba(255, 255, 255, 0.18)',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.5)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.55)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -438,7 +439,7 @@ export function BookCoverDrawer({
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.5)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.55)';
             }}
           >
             <canvas
@@ -459,13 +460,13 @@ export function BookCoverDrawer({
           <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
             <span
               style={{
-                fontSize: '0.84rem',
+                fontSize: '0.88rem',
                 fontWeight: 600,
                 color: '#ffffff',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                lineHeight: 1.25
+                lineHeight: 1.3
               }}
               title={title}
             >
@@ -474,12 +475,12 @@ export function BookCoverDrawer({
             {author && (
               <span
                 style={{
-                  fontSize: '0.72rem',
+                  fontSize: '0.74rem',
                   color: '#94a3b8',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  marginTop: '2px',
+                  marginTop: '3px',
                   lineHeight: 1.2
                 }}
                 title={author}
