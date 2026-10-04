@@ -7,6 +7,7 @@ import { useApiKeys } from '../../stores/apiKeysStore';
 import { useBookStore } from '../../stores/bookStore';
 import { useChatStore } from '../../stores/chatStore';
 import { saveCachedWordDefinition } from '../../services/dbService';
+import { formatPhoneticRespelling } from '../../utils/phoneticRespelling';
 import './WordDefinitionTooltip.css';
 
 export interface WordDefinitionTarget {
@@ -275,7 +276,8 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
 
   // Copy definition to clipboard
   const handleCopy = () => {
-    const textParts = [`**${cleanWord}** ${data?.phonetic || ''}`];
+    const formattedPronunciation = data?.phonetic ? formatPhoneticRespelling(data.phonetic) : '';
+    const textParts = [`**${cleanWord}** ${formattedPronunciation ? `(${formattedPronunciation})` : ''}`];
     if (data?.meanings) {
       data.meanings.forEach(m => {
         textParts.push(`*(${m.partOfSpeech})*`);
@@ -323,7 +325,11 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
         <div className="wtt-term-row">
           <GripVertical size={13} className="wtt-drag-handle" />
           <span className="wtt-word">{cleanWord}</span>
-          {data?.phonetic && <span className="wtt-phonetic">{data.phonetic}</span>}
+          {data?.phonetic && (
+            <span className="wtt-phonetic" title="Pronunciation guide">
+              {formatPhoneticRespelling(data.phonetic)}
+            </span>
+          )}
           <button
             className={`wtt-audio-btn ${isPlayingAudio ? 'is-playing' : ''}`}
             onClick={handlePlayAudio}
