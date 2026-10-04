@@ -46,11 +46,11 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
 
   // Font size scaling (persisted in localStorage)
   const [fontSize, setFontSize] = useState<number>(() => {
-    return Number(localStorage.getItem('booksage-def-fontsize')) || 13;
+    return Number(localStorage.getItem('booksage-def-fontsize')) || 14;
   });
 
   const handleFontSize = (delta: number | 'reset') => {
-    const next = delta === 'reset' ? 13 : Math.min(20, Math.max(10, fontSize + delta));
+    const next = delta === 'reset' ? 14 : Math.min(24, Math.max(10, fontSize + delta * 2));
     setFontSize(next);
     localStorage.setItem('booksage-def-fontsize', String(next));
   };
@@ -59,7 +59,7 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
   const [tooltipSize, setTooltipSize] = useState<{ w: number; h: number }>(() => {
     const savedW = Number(localStorage.getItem('booksage-def-w'));
     const savedH = Number(localStorage.getItem('booksage-def-h'));
-    return { w: savedW || 350, h: savedH || 0 };
+    return { w: savedW || 410, h: savedH || 0 };
   });
   const resizing = useRef(false);
   const resizeStart = useRef({ w: 0, h: 0, x: 0, y: 0 });
@@ -94,7 +94,7 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
     e.stopPropagation();
     e.preventDefault();
     resizing.current = true;
-    const currentW = containerRef.current?.offsetWidth || tooltipSize.w || 350;
+    const currentW = containerRef.current?.offsetWidth || tooltipSize.w || 410;
     const currentH = containerRef.current?.offsetHeight || 280;
     resizeStart.current = { w: currentW, h: currentH, x: e.clientX, y: e.clientY };
 
@@ -102,7 +102,7 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
       if (!resizing.current) return;
       const dw = ev.clientX - resizeStart.current.x;
       const dh = ev.clientY - resizeStart.current.y;
-      const nextW = Math.max(300, Math.min(window.innerWidth - 32, resizeStart.current.w + dw));
+      const nextW = Math.max(320, Math.min(window.innerWidth - 32, resizeStart.current.w + dw));
       const nextH = Math.max(200, Math.min(window.innerHeight - 32, resizeStart.current.h + dh));
       setTooltipSize({ w: nextW, h: nextH });
     };
@@ -126,7 +126,7 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
   useLayoutEffect(() => {
     if (!target) return;
     const { top, left, width, height } = target.rect;
-    const tooltipWidth = tooltipSize.w || 350;
+    const tooltipWidth = tooltipSize.w || 410;
     const estimatedHeight = tooltipSize.h || 280;
     const margin = 12;
 
@@ -387,7 +387,6 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
         <div className="wtt-term-row">
           <GripVertical size={13} className="wtt-drag-handle" />
           <span className="wtt-word">{cleanWord}</span>
-          {data?.phonetic && <span className="wtt-phonetic">{data.phonetic}</span>}
           <button
             className={`wtt-audio-btn ${isPlayingAudio ? 'is-playing' : ''}`}
             onClick={handlePlayAudio}
@@ -396,6 +395,11 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
           >
             <Volume2 size={13} />
           </button>
+          {data?.phonetic && (
+            <span className="wtt-phonetic" title={data.phonetic}>
+              {data.phonetic}
+            </span>
+          )}
         </div>
 
         <div className="wtt-header-actions" onMouseDown={e => e.stopPropagation()}>

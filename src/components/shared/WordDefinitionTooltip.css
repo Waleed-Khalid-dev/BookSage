@@ -2,15 +2,34 @@
 
 /* Floating Tooltip Container */
 .bs-word-tooltip {
+  --wtt-bg: #242424;
+  --wtt-border: rgba(255, 255, 255, 0.12);
+  --wtt-text: #e0e0e0;
+  --wtt-text-muted: #9e9e9e;
+  --wtt-text-title: #ffffff;
+  --wtt-accent: #009688;
+  --wtt-header-bg: rgba(0, 0, 0, 0.18);
+  --wtt-header-border: rgba(255, 255, 255, 0.07);
+  --wtt-context-bg: rgba(0, 150, 136, 0.08);
+  --wtt-context-border: rgba(0, 150, 136, 0.22);
+  --wtt-footer-bg: rgba(0, 0, 0, 0.2);
+  --wtt-footer-border: rgba(255, 255, 255, 0.06);
+  --wtt-btn-bg: rgba(255, 255, 255, 0.04);
+  --wtt-btn-border: rgba(255, 255, 255, 0.1);
+  --wtt-btn-text: #bbb;
+  --wtt-btn-hover-bg: rgba(255, 255, 255, 0.1);
+  --wtt-btn-hover-text: #fff;
+
   position: fixed;
   z-index: 10000;
-  width: 350px;
+  width: 410px;
+  min-width: 320px;
   max-width: calc(100vw - 24px);
-  background: var(--bs-panel, #242424);
-  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.12));
-  border-radius: 10px;
+  background: var(--wtt-bg);
+  border: 1px solid var(--wtt-border);
+  border-radius: 12px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
-  color: var(--bs-text, #e0e0e0);
+  color: var(--wtt-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
   animation: wtt-fade-scale 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
@@ -18,6 +37,7 @@
   overflow: hidden;
   backdrop-filter: blur(12px);
   user-select: text;
+  font-size: 14px;
 }
 
 @keyframes wtt-fade-scale {
@@ -31,14 +51,126 @@
   }
 }
 
+/* ── Modal Themes for Definition Tooltip ── */
+
+/* Sepia Parchment */
+.bs-word-tooltip.modal-theme--sepia {
+  --wtt-bg: #f4ecd8;
+  --wtt-border: #d4c5a9;
+  --wtt-text: #3e3223;
+  --wtt-text-muted: #7c6853;
+  --wtt-text-title: #2b2014;
+  --wtt-accent: #8b5a2b;
+  --wtt-header-bg: rgba(139, 90, 43, 0.1);
+  --wtt-header-border: rgba(139, 90, 43, 0.18);
+  --wtt-context-bg: rgba(139, 90, 43, 0.08);
+  --wtt-context-border: rgba(139, 90, 43, 0.25);
+  --wtt-footer-bg: rgba(139, 90, 43, 0.08);
+  --wtt-footer-border: rgba(139, 90, 43, 0.15);
+  --wtt-btn-bg: rgba(139, 90, 43, 0.09);
+  --wtt-btn-border: rgba(139, 90, 43, 0.22);
+  --wtt-btn-text: #5c4733;
+  --wtt-btn-hover-bg: rgba(139, 90, 43, 0.18);
+  --wtt-btn-hover-text: #2b2014;
+  box-shadow: 0 16px 40px rgba(62, 50, 35, 0.35), 0 2px 8px rgba(62, 50, 35, 0.2);
+}
+
+/* Emerald Dark Teal */
+.bs-word-tooltip.modal-theme--emerald {
+  --wtt-bg: #172323;
+  --wtt-border: #009688;
+  --wtt-text: #e0f2f1;
+  --wtt-text-muted: #80cbc4;
+  --wtt-text-title: #ffffff;
+  --wtt-accent: #009688;
+  --wtt-header-bg: rgba(0, 150, 136, 0.12);
+  --wtt-header-border: rgba(0, 150, 136, 0.22);
+  --wtt-context-bg: rgba(0, 150, 136, 0.12);
+  --wtt-context-border: rgba(0, 150, 136, 0.3);
+  --wtt-footer-bg: rgba(0, 0, 0, 0.25);
+  --wtt-footer-border: rgba(0, 150, 136, 0.18);
+  --wtt-btn-bg: rgba(0, 150, 136, 0.12);
+  --wtt-btn-border: rgba(0, 150, 136, 0.25);
+  --wtt-btn-text: #b2dfdb;
+  --wtt-btn-hover-bg: rgba(0, 150, 136, 0.25);
+  --wtt-btn-hover-text: #ffffff;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 150, 136, 0.25);
+}
+
+/* Studio Charcoal */
+.bs-word-tooltip.modal-theme--dark {
+  --wtt-bg: #1e1e24;
+  --wtt-border: rgba(255, 255, 255, 0.14);
+  --wtt-text: #e2e8f0;
+  --wtt-text-muted: #94a3b8;
+  --wtt-text-title: #ffffff;
+  --wtt-accent: #38bdf8;
+  --wtt-header-bg: rgba(255, 255, 255, 0.05);
+  --wtt-header-border: rgba(255, 255, 255, 0.08);
+  --wtt-context-bg: rgba(56, 189, 248, 0.08);
+  --wtt-context-border: rgba(56, 189, 248, 0.22);
+  --wtt-footer-bg: rgba(0, 0, 0, 0.25);
+  --wtt-footer-border: rgba(255, 255, 255, 0.08);
+  --wtt-btn-bg: rgba(255, 255, 255, 0.06);
+  --wtt-btn-border: rgba(255, 255, 255, 0.12);
+  --wtt-btn-text: #cbd5e1;
+  --wtt-btn-hover-bg: rgba(255, 255, 255, 0.12);
+  --wtt-btn-hover-text: #ffffff;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.7);
+}
+
+/* Crisp Clean Light */
+.bs-word-tooltip.modal-theme--light {
+  --wtt-bg: #ffffff;
+  --wtt-border: #cbd5e1;
+  --wtt-text: #1e293b;
+  --wtt-text-muted: #64748b;
+  --wtt-text-title: #0f172a;
+  --wtt-accent: #00796b;
+  --wtt-header-bg: #f8fafc;
+  --wtt-header-border: #e2e8f0;
+  --wtt-context-bg: rgba(0, 121, 107, 0.06);
+  --wtt-context-border: rgba(0, 121, 107, 0.22);
+  --wtt-footer-bg: #f8fafc;
+  --wtt-footer-border: #e2e8f0;
+  --wtt-btn-bg: #ffffff;
+  --wtt-btn-border: #cbd5e1;
+  --wtt-btn-text: #475569;
+  --wtt-btn-hover-bg: #f1f5f9;
+  --wtt-btn-hover-text: #0f172a;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* OLED Midnight */
+.bs-word-tooltip.modal-theme--oled {
+  --wtt-bg: #000000;
+  --wtt-border: rgba(20, 184, 166, 0.4);
+  --wtt-text: #f4f4f5;
+  --wtt-text-muted: #a1a1aa;
+  --wtt-text-title: #ffffff;
+  --wtt-accent: #14b8a6;
+  --wtt-header-bg: rgba(20, 184, 166, 0.08);
+  --wtt-header-border: rgba(20, 184, 166, 0.2);
+  --wtt-context-bg: rgba(20, 184, 166, 0.08);
+  --wtt-context-border: rgba(20, 184, 166, 0.25);
+  --wtt-footer-bg: #080808;
+  --wtt-footer-border: rgba(255, 255, 255, 0.08);
+  --wtt-btn-bg: rgba(20, 184, 166, 0.1);
+  --wtt-btn-border: rgba(20, 184, 166, 0.25);
+  --wtt-btn-text: #e4e4e7;
+  --wtt-btn-hover-bg: rgba(20, 184, 166, 0.2);
+  --wtt-btn-hover-text: #ffffff;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(20, 184, 166, 0.2);
+}
+
 /* Header (Draggable) */
 .wtt-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(0, 0, 0, 0.18);
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--wtt-header-border);
+  background: var(--wtt-header-bg);
   cursor: grab;
   user-select: none;
 }
@@ -47,8 +179,18 @@
   cursor: grabbing;
 }
 
+.wtt-term-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  margin-right: 6px;
+}
+
 .wtt-drag-handle {
-  color: var(--bs-text-muted, #777);
+  color: var(--wtt-text-muted);
   cursor: grab;
   margin-right: 2px;
   flex-shrink: 0;
@@ -56,28 +198,31 @@
 }
 
 .wtt-header:hover .wtt-drag-handle {
-  color: var(--bs-accent, #009688);
-}
-
-.wtt-term-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow: hidden;
+  color: var(--wtt-accent);
 }
 
 .wtt-word {
   font-size: 15px;
   font-weight: 700;
-  color: var(--bs-text-primary, #ffffff);
+  color: var(--wtt-text-title);
   letter-spacing: -0.01em;
   text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+  flex-shrink: 0;
 }
 
 .wtt-phonetic {
-  font-size: 12px;
-  color: var(--bs-text-muted, #9e9e9e);
+  font-size: 11.5px;
+  color: var(--wtt-text-muted);
   font-family: 'JetBrains Mono', Consolas, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+  flex-shrink: 1;
 }
 
 .wtt-audio-btn {
@@ -88,7 +233,7 @@
   height: 22px;
   border: none;
   background: rgba(0, 150, 136, 0.15);
-  color: var(--bs-accent, #009688);
+  color: var(--wtt-accent);
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -97,14 +242,14 @@
 }
 
 .wtt-audio-btn:hover {
-  background: var(--bs-accent, #009688);
+  background: var(--wtt-accent);
   color: #fff;
   transform: scale(1.08);
 }
 
 .wtt-audio-btn.is-playing {
   animation: wtt-pulse 1s infinite;
-  background: var(--bs-accent, #009688);
+  background: var(--wtt-accent);
   color: #fff;
 }
 
@@ -117,14 +262,14 @@
 .wtt-header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   flex-shrink: 0;
 }
 
 .wtt-font-btn {
   background: none;
   border: none;
-  color: var(--bs-text-muted, #888);
+  color: var(--wtt-text-muted);
   font-size: 11px;
   font-family: monospace;
   font-weight: bold;
@@ -136,8 +281,13 @@
 }
 
 .wtt-font-btn:hover {
-  color: var(--bs-text, #fff);
+  color: var(--wtt-text-title);
   background: rgba(255, 255, 255, 0.1);
+}
+
+.bs-word-tooltip.modal-theme--light .wtt-font-btn:hover,
+.bs-word-tooltip.modal-theme--sepia .wtt-font-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .wtt-close-btn {
@@ -148,7 +298,7 @@
   height: 22px;
   background: transparent;
   border: none;
-  color: var(--bs-text-muted, #8a8a8a);
+  color: var(--wtt-text-muted);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.12s ease;
@@ -158,7 +308,12 @@
 
 .wtt-close-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: var(--bs-text, #ffffff);
+  color: var(--wtt-text-title);
+}
+
+.bs-word-tooltip.modal-theme--light .wtt-close-btn:hover,
+.bs-word-tooltip.modal-theme--sepia .wtt-close-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
 }
 
 /* Tooltip Corner Resizer */
@@ -170,7 +325,7 @@
   height: 16px;
   cursor: nwse-resize;
   z-index: 10000;
-  border-bottom-right-radius: 10px;
+  border-bottom-right-radius: 12px;
 }
 
 .wtt-resizer::after {
@@ -180,303 +335,14 @@
   right: 4px;
   width: 6px;
   height: 6px;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.25);
-  border-right: 2px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 2px solid var(--wtt-text-muted);
+  border-right: 2px solid var(--wtt-text-muted);
+  opacity: 0.6;
 }
 
 .wtt-resizer:hover::after {
-  border-color: var(--bs-accent, #009688);
-}
-
-/* ── Modal Themes for Definition Tooltip ── */
-.bs-word-tooltip.modal-theme--sepia {
-  background: #f4ecd8;
-  border: 1px solid #d4c5a9;
-  color: #3e3223;
-  box-shadow: 0 16px 40px rgba(62, 50, 35, 0.35), 0 2px 8px rgba(62, 50, 35, 0.2);
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-header {
-  background: rgba(139, 90, 43, 0.1);
-  border-bottom: 1px solid rgba(139, 90, 43, 0.18);
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-word {
-  color: #2b2014;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-phonetic {
-  color: #7c6853;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-drag-handle {
-  color: #9c846d;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-font-btn,
-.bs-word-tooltip.modal-theme--sepia .wtt-close-btn {
-  color: #7c6853;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-font-btn:hover,
-.bs-word-tooltip.modal-theme--sepia .wtt-close-btn:hover {
-  background: rgba(139, 90, 43, 0.15);
-  color: #2b2014;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-audio-btn {
-  background: rgba(139, 90, 43, 0.16);
-  color: #8b5a2b;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-audio-btn:hover {
-  background: #8b5a2b;
-  color: #fff;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-def-item {
-  color: #3e3223;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-def-example {
-  color: #6e5944;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-pos-pill {
-  background: rgba(139, 90, 43, 0.12);
-  color: #8b5a2b;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-book-context-card {
-  background: rgba(139, 90, 43, 0.08);
-  border-color: rgba(139, 90, 43, 0.25);
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-context-badge {
-  color: #8b5a2b;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-context-chapter {
-  background: rgba(139, 90, 43, 0.14);
-  color: #6e5944;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-context-text {
-  color: #342719;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-footer {
-  background: rgba(139, 90, 43, 0.08);
-  border-top: 1px solid rgba(139, 90, 43, 0.15);
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-action-btn {
-  background: rgba(139, 90, 43, 0.09);
-  border-color: rgba(139, 90, 43, 0.22);
-  color: #5c4733;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-action-btn:hover {
-  background: rgba(139, 90, 43, 0.18);
-  color: #2b2014;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-action-btn--copilot {
-  background: #8b5a2b;
-  border-color: #8b5a2b;
-  color: #ffffff;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-action-btn--copilot:hover {
-  background: #73481f;
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-resizer::after {
-  border-color: rgba(139, 90, 43, 0.35);
-}
-.bs-word-tooltip.modal-theme--sepia .wtt-resizer:hover::after {
-  border-color: #8b5a2b;
-}
-
-/* Emerald Theme */
-.bs-word-tooltip.modal-theme--emerald {
-  background: #172323;
-  border: 1px solid #009688;
-  color: #e0f2f1;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 150, 136, 0.25);
-}
-.bs-word-tooltip.modal-theme--emerald .wtt-header {
-  background: rgba(0, 150, 136, 0.1);
-  border-bottom: 1px solid rgba(0, 150, 136, 0.22);
-}
-.bs-word-tooltip.modal-theme--emerald .wtt-word {
-  color: #ffffff;
-}
-.bs-word-tooltip.modal-theme--emerald .wtt-book-context-card {
-  background: rgba(0, 150, 136, 0.1);
-  border-color: rgba(0, 150, 136, 0.28);
-}
-.bs-word-tooltip.modal-theme--emerald .wtt-footer {
-  background: rgba(0, 0, 0, 0.25);
-  border-top: 1px solid rgba(0, 150, 136, 0.18);
-}
-
-/* Dark Charcoal Theme */
-.bs-word-tooltip.modal-theme--dark {
-  background: #1e1e24;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #e2e8f0;
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.7);
-}
-.bs-word-tooltip.modal-theme--dark .wtt-header {
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.bs-word-tooltip.modal-theme--dark .wtt-word {
-  color: #ffffff;
-}
-.bs-word-tooltip.modal-theme--dark .wtt-book-context-card {
-  background: rgba(56, 189, 248, 0.07);
-  border-color: rgba(56, 189, 248, 0.22);
-}
-.bs-word-tooltip.modal-theme--dark .wtt-context-badge {
-  color: #38bdf8;
-}
-.bs-word-tooltip.modal-theme--dark .wtt-pos-pill {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
-}
-.bs-word-tooltip.modal-theme--dark .wtt-audio-btn {
-  background: rgba(56, 189, 248, 0.15);
-  color: #38bdf8;
-}
-.bs-word-tooltip.modal-theme--dark .wtt-audio-btn:hover {
-  background: #38bdf8;
-  color: #0f172a;
-}
-.bs-word-tooltip.modal-theme--dark .wtt-action-btn--copilot {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.3);
-  color: #38bdf8;
-}
-.bs-word-tooltip.modal-theme--dark .wtt-action-btn--copilot:hover {
-  background: #38bdf8;
-  color: #0f172a;
-}
-
-/* Crisp Light Theme */
-.bs-word-tooltip.modal-theme--light {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #1e293b;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-.bs-word-tooltip.modal-theme--light .wtt-header {
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-}
-.bs-word-tooltip.modal-theme--light .wtt-word {
-  color: #0f172a;
-}
-.bs-word-tooltip.modal-theme--light .wtt-phonetic {
-  color: #64748b;
-}
-.bs-word-tooltip.modal-theme--light .wtt-drag-handle {
-  color: #94a3b8;
-}
-.bs-word-tooltip.modal-theme--light .wtt-font-btn,
-.bs-word-tooltip.modal-theme--light .wtt-close-btn {
-  color: #64748b;
-}
-.bs-word-tooltip.modal-theme--light .wtt-font-btn:hover,
-.bs-word-tooltip.modal-theme--light .wtt-close-btn:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-.bs-word-tooltip.modal-theme--light .wtt-audio-btn {
-  background: rgba(0, 121, 107, 0.12);
-  color: #00796b;
-}
-.bs-word-tooltip.modal-theme--light .wtt-audio-btn:hover {
-  background: #00796b;
-  color: #fff;
-}
-.bs-word-tooltip.modal-theme--light .wtt-def-item {
-  color: #1e293b;
-}
-.bs-word-tooltip.modal-theme--light .wtt-def-example {
-  color: #475569;
-}
-.bs-word-tooltip.modal-theme--light .wtt-pos-pill {
-  background: #f1f5f9;
-  color: #00796b;
-}
-.bs-word-tooltip.modal-theme--light .wtt-book-context-card {
-  background: rgba(0, 121, 107, 0.06);
-  border-color: rgba(0, 121, 107, 0.22);
-}
-.bs-word-tooltip.modal-theme--light .wtt-context-badge {
-  color: #00796b;
-}
-.bs-word-tooltip.modal-theme--light .wtt-context-chapter {
-  background: rgba(0, 121, 107, 0.12);
-  color: #475569;
-}
-.bs-word-tooltip.modal-theme--light .wtt-context-text {
-  color: #0f172a;
-}
-.bs-word-tooltip.modal-theme--light .wtt-footer {
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
-}
-.bs-word-tooltip.modal-theme--light .wtt-action-btn {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #475569;
-}
-.bs-word-tooltip.modal-theme--light .wtt-action-btn:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-.bs-word-tooltip.modal-theme--light .wtt-action-btn--copilot {
-  background: #00796b;
-  border-color: #00796b;
-  color: #ffffff;
-}
-.bs-word-tooltip.modal-theme--light .wtt-action-btn--copilot:hover {
-  background: #004d40;
-}
-.bs-word-tooltip.modal-theme--light .wtt-resizer::after {
-  border-color: #94a3b8;
-}
-.bs-word-tooltip.modal-theme--light .wtt-resizer:hover::after {
-  border-color: #00796b;
-}
-
-/* OLED Midnight Theme */
-.bs-word-tooltip.modal-theme--oled {
-  background: #000000;
-  border: 1px solid rgba(20, 184, 166, 0.4);
-  color: #f4f4f5;
-  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(20, 184, 166, 0.2);
-}
-.bs-word-tooltip.modal-theme--oled .wtt-header {
-  background: rgba(20, 184, 166, 0.08);
-  border-bottom: 1px solid rgba(20, 184, 166, 0.2);
-}
-.bs-word-tooltip.modal-theme--oled .wtt-word {
-  color: #ffffff;
-}
-.bs-word-tooltip.modal-theme--oled .wtt-book-context-card {
-  background: rgba(20, 184, 166, 0.07);
-  border-color: rgba(20, 184, 166, 0.25);
-}
-.bs-word-tooltip.modal-theme--oled .wtt-context-badge {
-  color: #14b8a6;
-}
-.bs-word-tooltip.modal-theme--oled .wtt-pos-pill {
-  color: #14b8a6;
-  background: rgba(20, 184, 166, 0.12);
-}
-.bs-word-tooltip.modal-theme--oled .wtt-audio-btn {
-  background: rgba(20, 184, 166, 0.15);
-  color: #14b8a6;
-}
-.bs-word-tooltip.modal-theme--oled .wtt-audio-btn:hover {
-  background: #14b8a6;
-  color: #000;
-}
-.bs-word-tooltip.modal-theme--oled .wtt-action-btn--copilot {
-  background: rgba(20, 184, 166, 0.15);
-  border-color: rgba(20, 184, 166, 0.35);
-  color: #14b8a6;
-}
-.bs-word-tooltip.modal-theme--oled .wtt-action-btn--copilot:hover {
-  background: #14b8a6;
-  color: #000;
-}
-.bs-word-tooltip.modal-theme--oled .wtt-footer {
-  background: #080808;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-color: var(--wtt-accent);
+  opacity: 1;
 }
 
 /* Tooltip Body */
@@ -484,11 +350,12 @@
   padding: 12px 14px;
   max-height: 380px;
   overflow-y: auto;
-  font-size: 13px;
+  font-size: 1em;
   line-height: 1.5;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  color: var(--wtt-text);
 }
 
 .wtt-loading-row,
@@ -497,12 +364,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  color: var(--bs-text-muted, #aaa);
-  font-size: 12px;
+  color: var(--wtt-text-muted);
+  font-size: 0.9em;
   padding: 8px 10px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--wtt-border);
   border-radius: 6px;
+}
+
+.bs-word-tooltip.modal-theme--light .wtt-loading-row,
+.bs-word-tooltip.modal-theme--sepia .wtt-loading-row {
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .wtt-retry-btn,
@@ -513,9 +385,9 @@
   padding: 3px 8px;
   font-size: 11px;
   font-weight: 500;
-  color: var(--bs-accent, #009688);
+  color: var(--wtt-accent);
   background: rgba(0, 150, 136, 0.12);
-  border: 1px solid rgba(0, 150, 136, 0.25);
+  border: 1px solid var(--wtt-accent);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -524,7 +396,7 @@
 
 .wtt-retry-btn:hover,
 .wtt-retry-mini-btn:hover {
-  background: var(--bs-accent, #009688);
+  background: var(--wtt-accent);
   color: #fff;
 }
 
@@ -533,13 +405,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  font-size: 11.5px;
-  color: var(--bs-text-muted, #aaa);
+  font-size: 0.88em;
+  color: var(--wtt-text-muted);
   padding: 2px 0;
 }
 
 .wtt-rate-limit-text {
-  font-size: 11.5px;
+  font-size: 0.88em;
   color: #ffb74d;
 }
 
@@ -547,7 +419,7 @@
   width: 14px;
   height: 14px;
   border: 2px solid rgba(0, 150, 136, 0.2);
-  border-top-color: var(--bs-accent, #009688);
+  border-top-color: var(--wtt-accent);
   border-radius: 50%;
   animation: wtt-spin 0.6s linear infinite;
 }
@@ -571,14 +443,14 @@
 
 .wtt-pos-pill {
   align-self: flex-start;
-  font-size: 10.5px;
+  font-size: 0.78em;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--bs-accent, #009688);
+  background: rgba(0, 150, 136, 0.12);
+  color: var(--wtt-accent);
 }
 
 .wtt-definitions-list {
@@ -590,28 +462,30 @@
 }
 
 .wtt-def-item {
-  color: var(--bs-text, #e2e2e2);
+  color: var(--wtt-text) !important;
+  font-size: 1em;
 }
 
 .wtt-def-text {
   display: inline;
+  color: var(--wtt-text) !important;
 }
 
 .wtt-def-example {
   display: block;
-  font-size: 12px;
-  color: var(--bs-text-muted, #8a8a8a);
+  font-size: 0.9em;
+  color: var(--wtt-text-muted) !important;
   font-style: italic;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 /* AI Book-Contextual Card */
 .wtt-book-context-card {
   margin-top: 4px;
   padding: 10px 12px 12px;
-  background: rgba(0, 150, 136, 0.08);
-  border: 1px solid rgba(0, 150, 136, 0.22);
-  border-radius: 6px;
+  background: var(--wtt-context-bg);
+  border: 1px solid var(--wtt-context-border);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -627,33 +501,33 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: 0.85em;
   font-weight: 600;
-  color: var(--bs-accent, #009688);
+  color: var(--wtt-accent);
   letter-spacing: 0.02em;
 }
 
 .wtt-context-chapter {
-  font-size: 10.5px;
-  padding: 1px 5px;
-  border-radius: 3px;
+  font-size: 0.8em;
+  padding: 1px 6px;
+  border-radius: 4px;
   background: rgba(0, 150, 136, 0.15);
-  color: var(--bs-text-muted, #aaa);
+  color: var(--wtt-text-muted);
 }
 
 .wtt-loading-ai {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
-  color: var(--bs-text-muted, #8a8a8a);
+  font-size: 0.88em;
+  color: var(--wtt-text-muted);
 }
 
 .wtt-pulse-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--bs-accent, #009688);
+  background: var(--wtt-accent);
   animation: wtt-pulse-dot 1s ease-in-out infinite alternate;
 }
 
@@ -664,9 +538,9 @@
 
 .wtt-context-text {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 0.95em;
   line-height: 1.48;
-  color: var(--bs-text, #f0f0f0);
+  color: var(--wtt-text) !important;
   word-break: break-word;
 }
 
@@ -676,8 +550,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--wtt-footer-bg);
+  border-top: 1px solid var(--wtt-footer-border);
 }
 
 .wtt-action-btn {
@@ -685,10 +559,10 @@
   align-items: center;
   gap: 5px;
   padding: 4px 9px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--bs-text-muted, #bbb);
+  border-radius: 5px;
+  border: 1px solid var(--wtt-btn-border);
+  background: var(--wtt-btn-bg);
+  color: var(--wtt-btn-text);
   font-size: 11.5px;
   font-weight: 500;
   cursor: pointer;
@@ -696,28 +570,25 @@
 }
 
 .wtt-action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--bs-text, #ffffff);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--wtt-btn-hover-bg);
+  color: var(--wtt-btn-hover-text);
 }
 
 .wtt-action-btn--copilot {
-  background: rgba(0, 150, 136, 0.12);
-  border-color: rgba(0, 150, 136, 0.25);
-  color: var(--bs-accent, #009688);
+  background: var(--wtt-accent);
+  border-color: var(--wtt-accent);
+  color: #ffffff;
 }
 
 .wtt-action-btn--copilot:hover {
-  background: var(--bs-accent, #009688);
-  color: #fff;
-  border-color: var(--bs-accent, #009688);
+  opacity: 0.9;
+  color: #ffffff;
 }
 
 /* =========================================================
    macOS-Style Minimalist Definition Cursor (When Ctrl is held)
    ========================================================= */
 
-/* High-DPI macOS-style book/magnifier definition SVG cursor */
 :root {
   --cursor-define-mac: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M4 5.5C4 4.12 5.12 3 6.5 3H18.5C19.33 3 20 3.67 20 4.5V18.5C20 19.33 19.33 20 18.5 20H6.5C5.12 20 4 18.88 4 17.5V5.5Z' fill='%231E1E1E' stroke='%23009688' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M4 7.5H20M8 12H16M8 15.5H13' stroke='%23FFFFFF' stroke-width='1.2' stroke-linecap='round'/%3E%3Ccircle cx='17' cy='17' r='4' fill='%23009688' stroke='%23FFFFFF' stroke-width='1.2'/%3E%3Cline x1='19.8' y1='19.8' x2='22' y2='22' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 4 4, help;
 }

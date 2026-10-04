@@ -1,24 +1,304 @@
 /* ── CopilotPopup ──────────────────────────────────────────────────────────── */
 
 .cpp-root {
+  --cpp-bg: #1e2a2a;
+  --cpp-border: #009688;
+  --cpp-text: #e0e0e0;
+  --cpp-text-muted: #80cbc4;
+  --cpp-text-title: #009688;
+  --cpp-accent: #009688;
+  --cpp-header-bg: rgba(0, 150, 136, 0.08);
+  --cpp-header-border: rgba(0, 150, 136, 0.2);
+  --cpp-context-bg: rgba(0, 0, 0, 0.25);
+  --cpp-context-border: #2a3a3a;
+  --cpp-context-text: #aaa;
+  --cpp-quick-btn-bg: #2e2e2e;
+  --cpp-quick-btn-border: #3a3a3a;
+  --cpp-quick-btn-text: #d0d0d0;
+  --cpp-quick-btn-hover-bg: #009688;
+  --cpp-quick-btn-hover-text: #ffffff;
+  --cpp-input-area-bg: transparent;
+  --cpp-input-area-border: rgba(255, 255, 255, 0.08);
+  --cpp-input-bg: #172323;
+  --cpp-input-border: #2a3a3a;
+  --cpp-input-text: #e0e0e0;
+  --cpp-input-placeholder: #666;
+  --cpp-send-bg: #009688;
+  --cpp-send-text: #ffffff;
+  --cpp-response-border: #2a3a3a;
+  --cpp-response-text: #e0e0e0;
+  --cpp-response-strong: #ffffff;
+  --cpp-response-em: #b0bec5;
+  --cpp-response-code-bg: #2a1a1a;
+  --cpp-response-code-text: #e05252;
+  --cpp-actions-bg: rgba(0, 0, 0, 0.2);
+  --cpp-actions-border: rgba(0, 150, 136, 0.15);
+  --cpp-btn-bg: #2e2e2e;
+  --cpp-btn-border: #3a3a3a;
+  --cpp-btn-text: #aaa;
+  --cpp-btn-hover-bg: #242424;
+  --cpp-btn-hover-text: #fff;
+  --cpp-followup-bg: #2e2e2e;
+  --cpp-followup-border: #3a3a3a;
+  --cpp-followup-text: #b0b0b0;
+  --cpp-followup-hover-bg: rgba(0, 150, 136, 0.2);
+  --cpp-followup-hover-text: #ffffff;
+
   position: fixed;
   z-index: 8500;
   width: 400px;
   max-width: calc(100vw - 16px);
-  background: var(--bs-copilot-bg, #1e2a2a);
-  border: 1px solid var(--bs-accent, #009688);
+  background: var(--cpp-bg);
+  border: 1px solid var(--cpp-border);
   border-radius: 14px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,150,136,0.15);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(0, 150, 136, 0.15);
   display: flex;
   flex-direction: column;
-  animation: cpp-in 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  animation: cpp-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-family: var(--bs-font, 'Inter', sans-serif);
   font-size: 0.85rem;
-  /* Manual resizer */
   min-width: 320px;
   min-height: 250px;
   max-width: 90vw;
   max-height: 90vh;
+  color: var(--cpp-text);
+}
+
+/* ── Modal Themes for Copilot Popup ── */
+
+/* Sepia Theme */
+.cpp-root.modal-theme--sepia {
+  --cpp-bg: #f4ecd8;
+  --cpp-border: #d4c5a9;
+  --cpp-text: #3e3223;
+  --cpp-text-muted: #7c6853;
+  --cpp-text-title: #8b5a2b;
+  --cpp-accent: #8b5a2b;
+  --cpp-header-bg: rgba(139, 90, 43, 0.1);
+  --cpp-header-border: rgba(139, 90, 43, 0.18);
+  --cpp-context-bg: rgba(139, 90, 43, 0.08);
+  --cpp-context-border: rgba(139, 90, 43, 0.16);
+  --cpp-context-text: #5c4733;
+  --cpp-quick-btn-bg: rgba(139, 90, 43, 0.1);
+  --cpp-quick-btn-border: rgba(139, 90, 43, 0.24);
+  --cpp-quick-btn-text: #4a3828;
+  --cpp-quick-btn-hover-bg: #8b5a2b;
+  --cpp-quick-btn-hover-text: #ffffff;
+  --cpp-input-area-bg: rgba(139, 90, 43, 0.05);
+  --cpp-input-area-border: rgba(139, 90, 43, 0.15);
+  --cpp-input-bg: #fdf9f0;
+  --cpp-input-border: rgba(139, 90, 43, 0.3);
+  --cpp-input-text: #2c2216;
+  --cpp-input-placeholder: #8f7962;
+  --cpp-send-bg: #8b5a2b;
+  --cpp-send-text: #ffffff;
+  --cpp-response-border: rgba(139, 90, 43, 0.18);
+  --cpp-response-text: #3e3223;
+  --cpp-response-strong: #20170e;
+  --cpp-response-em: #5c4936;
+  --cpp-response-code-bg: rgba(139, 90, 43, 0.12);
+  --cpp-response-code-text: #73481f;
+  --cpp-actions-bg: rgba(139, 90, 43, 0.08);
+  --cpp-actions-border: rgba(139, 90, 43, 0.16);
+  --cpp-btn-bg: rgba(139, 90, 43, 0.1);
+  --cpp-btn-border: rgba(139, 90, 43, 0.22);
+  --cpp-btn-text: #5c4733;
+  --cpp-btn-hover-bg: #8b5a2b;
+  --cpp-btn-hover-text: #ffffff;
+  --cpp-followup-bg: rgba(139, 90, 43, 0.09);
+  --cpp-followup-border: rgba(139, 90, 43, 0.22);
+  --cpp-followup-text: #4a3828;
+  --cpp-followup-hover-bg: #8b5a2b;
+  --cpp-followup-hover-text: #ffffff;
+  box-shadow: 0 16px 48px rgba(62, 50, 35, 0.45), 0 0 0 1px rgba(139, 90, 43, 0.2);
+}
+
+/* Emerald Theme */
+.cpp-root.modal-theme--emerald {
+  --cpp-bg: #172323;
+  --cpp-border: #009688;
+  --cpp-text: #e0f2f1;
+  --cpp-text-muted: #80cbc4;
+  --cpp-text-title: #009688;
+  --cpp-accent: #009688;
+  --cpp-header-bg: rgba(0, 150, 136, 0.1);
+  --cpp-header-border: rgba(0, 150, 136, 0.22);
+  --cpp-context-bg: rgba(0, 0, 0, 0.25);
+  --cpp-context-border: rgba(0, 150, 136, 0.2);
+  --cpp-context-text: #80cbc4;
+  --cpp-quick-btn-bg: #1c2b2b;
+  --cpp-quick-btn-border: rgba(0, 150, 136, 0.3);
+  --cpp-quick-btn-text: #b2dfdb;
+  --cpp-quick-btn-hover-bg: #009688;
+  --cpp-quick-btn-hover-text: #ffffff;
+  --cpp-input-area-bg: transparent;
+  --cpp-input-area-border: rgba(0, 150, 136, 0.2);
+  --cpp-input-bg: #0f1818;
+  --cpp-input-border: rgba(0, 150, 136, 0.25);
+  --cpp-input-text: #e0f2f1;
+  --cpp-input-placeholder: #527e7b;
+  --cpp-send-bg: #009688;
+  --cpp-send-text: #ffffff;
+  --cpp-response-border: rgba(0, 150, 136, 0.2);
+  --cpp-response-text: #e0f2f1;
+  --cpp-response-strong: #ffffff;
+  --cpp-response-em: #80cbc4;
+  --cpp-response-code-bg: rgba(0, 150, 136, 0.15);
+  --cpp-response-code-text: #80cbc4;
+  --cpp-actions-bg: rgba(0, 0, 0, 0.25);
+  --cpp-actions-border: rgba(0, 150, 136, 0.2);
+  --cpp-btn-bg: rgba(0, 150, 136, 0.12);
+  --cpp-btn-border: rgba(0, 150, 136, 0.25);
+  --cpp-btn-text: #b2dfdb;
+  --cpp-btn-hover-bg: #009688;
+  --cpp-btn-hover-text: #ffffff;
+  --cpp-followup-bg: rgba(0, 150, 136, 0.1);
+  --cpp-followup-border: rgba(0, 150, 136, 0.25);
+  --cpp-followup-text: #b2dfdb;
+  --cpp-followup-hover-bg: #009688;
+  --cpp-followup-hover-text: #ffffff;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 150, 136, 0.25);
+}
+
+/* Studio Charcoal Theme */
+.cpp-root.modal-theme--dark {
+  --cpp-bg: #1e1e24;
+  --cpp-border: rgba(255, 255, 255, 0.14);
+  --cpp-text: #e2e8f0;
+  --cpp-text-muted: #94a3b8;
+  --cpp-text-title: #38bdf8;
+  --cpp-accent: #38bdf8;
+  --cpp-header-bg: rgba(255, 255, 255, 0.05);
+  --cpp-header-border: rgba(255, 255, 255, 0.08);
+  --cpp-context-bg: rgba(0, 0, 0, 0.25);
+  --cpp-context-border: rgba(255, 255, 255, 0.08);
+  --cpp-context-text: #94a3b8;
+  --cpp-quick-btn-bg: #27272e;
+  --cpp-quick-btn-border: rgba(255, 255, 255, 0.12);
+  --cpp-quick-btn-text: #cbd5e1;
+  --cpp-quick-btn-hover-bg: #38bdf8;
+  --cpp-quick-btn-hover-text: #0f172a;
+  --cpp-input-area-bg: transparent;
+  --cpp-input-area-border: rgba(255, 255, 255, 0.08);
+  --cpp-input-bg: #141418;
+  --cpp-input-border: rgba(255, 255, 255, 0.15);
+  --cpp-input-text: #ffffff;
+  --cpp-input-placeholder: #71717a;
+  --cpp-send-bg: #38bdf8;
+  --cpp-send-text: #0f172a;
+  --cpp-response-border: rgba(255, 255, 255, 0.08);
+  --cpp-response-text: #e2e8f0;
+  --cpp-response-strong: #ffffff;
+  --cpp-response-em: #94a3b8;
+  --cpp-response-code-bg: rgba(255, 255, 255, 0.08);
+  --cpp-response-code-text: #38bdf8;
+  --cpp-actions-bg: rgba(0, 0, 0, 0.25);
+  --cpp-actions-border: rgba(255, 255, 255, 0.08);
+  --cpp-btn-bg: rgba(255, 255, 255, 0.06);
+  --cpp-btn-border: rgba(255, 255, 255, 0.12);
+  --cpp-btn-text: #cbd5e1;
+  --cpp-btn-hover-bg: rgba(255, 255, 255, 0.14);
+  --cpp-btn-hover-text: #ffffff;
+  --cpp-followup-bg: rgba(255, 255, 255, 0.05);
+  --cpp-followup-border: rgba(255, 255, 255, 0.1);
+  --cpp-followup-text: #cbd5e1;
+  --cpp-followup-hover-bg: rgba(56, 189, 248, 0.2);
+  --cpp-followup-hover-text: #ffffff;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75);
+}
+
+/* Crisp Clean Light Theme */
+.cpp-root.modal-theme--light {
+  --cpp-bg: #ffffff;
+  --cpp-border: #cbd5e1;
+  --cpp-text: #1e293b;
+  --cpp-text-muted: #64748b;
+  --cpp-text-title: #00796b;
+  --cpp-accent: #00796b;
+  --cpp-header-bg: #f8fafc;
+  --cpp-header-border: #e2e8f0;
+  --cpp-context-bg: #f1f5f9;
+  --cpp-context-border: #e2e8f0;
+  --cpp-context-text: #475569;
+  --cpp-quick-btn-bg: #ffffff;
+  --cpp-quick-btn-border: #cbd5e1;
+  --cpp-quick-btn-text: #334155;
+  --cpp-quick-btn-hover-bg: #00796b;
+  --cpp-quick-btn-hover-text: #ffffff;
+  --cpp-input-area-bg: #f8fafc;
+  --cpp-input-area-border: #e2e8f0;
+  --cpp-input-bg: #ffffff;
+  --cpp-input-border: #cbd5e1;
+  --cpp-input-text: #0f172a;
+  --cpp-input-placeholder: #94a3b8;
+  --cpp-send-bg: #00796b;
+  --cpp-send-text: #ffffff;
+  --cpp-response-border: #e2e8f0;
+  --cpp-response-text: #1e293b;
+  --cpp-response-strong: #0f172a;
+  --cpp-response-em: #475569;
+  --cpp-response-code-bg: #f1f5f9;
+  --cpp-response-code-text: #0f172a;
+  --cpp-actions-bg: #f8fafc;
+  --cpp-actions-border: #e2e8f0;
+  --cpp-btn-bg: #ffffff;
+  --cpp-btn-border: #cbd5e1;
+  --cpp-btn-text: #475569;
+  --cpp-btn-hover-bg: #e2e8f0;
+  --cpp-btn-hover-text: #0f172a;
+  --cpp-followup-bg: #ffffff;
+  --cpp-followup-border: #cbd5e1;
+  --cpp-followup-text: #334155;
+  --cpp-followup-hover-bg: #00796b;
+  --cpp-followup-hover-text: #ffffff;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* OLED Midnight Theme */
+.cpp-root.modal-theme--oled {
+  --cpp-bg: #000000;
+  --cpp-border: rgba(20, 184, 166, 0.45);
+  --cpp-text: #f4f4f5;
+  --cpp-text-muted: #a1a1aa;
+  --cpp-text-title: #14b8a6;
+  --cpp-accent: #14b8a6;
+  --cpp-header-bg: rgba(20, 184, 166, 0.08);
+  --cpp-header-border: rgba(20, 184, 166, 0.25);
+  --cpp-context-bg: rgba(0, 0, 0, 0.4);
+  --cpp-context-border: rgba(20, 184, 166, 0.2);
+  --cpp-context-text: #a1a1aa;
+  --cpp-quick-btn-bg: #0d0d0f;
+  --cpp-quick-btn-border: rgba(20, 184, 166, 0.25);
+  --cpp-quick-btn-text: #e4e4e7;
+  --cpp-quick-btn-hover-bg: #14b8a6;
+  --cpp-quick-btn-hover-text: #000000;
+  --cpp-input-area-bg: transparent;
+  --cpp-input-area-border: rgba(20, 184, 166, 0.2);
+  --cpp-input-bg: #09090b;
+  --cpp-input-border: rgba(20, 184, 166, 0.3);
+  --cpp-input-text: #f4f4f5;
+  --cpp-input-placeholder: #71717a;
+  --cpp-send-bg: #14b8a6;
+  --cpp-send-text: #000000;
+  --cpp-response-border: rgba(20, 184, 166, 0.2);
+  --cpp-response-text: #f4f4f5;
+  --cpp-response-strong: #ffffff;
+  --cpp-response-em: #a1a1aa;
+  --cpp-response-code-bg: rgba(20, 184, 166, 0.12);
+  --cpp-response-code-text: #14b8a6;
+  --cpp-actions-bg: #080808;
+  --cpp-actions-border: rgba(20, 184, 166, 0.2);
+  --cpp-btn-bg: rgba(20, 184, 166, 0.1);
+  --cpp-btn-border: rgba(20, 184, 166, 0.25);
+  --cpp-btn-text: #e4e4e7;
+  --cpp-btn-hover-bg: #14b8a6;
+  --cpp-btn-hover-text: #000000;
+  --cpp-followup-bg: rgba(20, 184, 166, 0.08);
+  --cpp-followup-border: rgba(20, 184, 166, 0.2);
+  --cpp-followup-text: #e4e4e7;
+  --cpp-followup-hover-bg: #14b8a6;
+  --cpp-followup-hover-text: #000000;
+  box-shadow: 0 16px 54px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(20, 184, 166, 0.25);
 }
 
 .cpp-resizer {
@@ -38,11 +318,13 @@
   right: 4px;
   width: 6px;
   height: 6px;
-  border-bottom: 2px solid rgba(255,255,255,0.2);
-  border-right: 2px solid rgba(255,255,255,0.2);
+  border-bottom: 2px solid var(--cpp-text-muted);
+  border-right: 2px solid var(--cpp-text-muted);
+  opacity: 0.6;
 }
 .cpp-resizer:hover::after {
-  border-color: var(--bs-accent);
+  border-color: var(--cpp-accent);
+  opacity: 1;
 }
 
 @keyframes cpp-in {
@@ -52,10 +334,10 @@
 
 /* ── Pill Button ── */
 .cpp-pill {
-  background: var(--bs-copilot-bg, #1e2a2a);
-  border: 1px solid var(--bs-accent, #009688);
+  background: var(--cpp-bg);
+  border: 1px solid var(--cpp-border);
   border-radius: 20px;
-  color: var(--bs-accent, #009688);
+  color: var(--cpp-accent);
   font-family: var(--bs-font, 'Inter', sans-serif);
   font-size: 0.94em;
   font-weight: 600;
@@ -78,36 +360,46 @@
   gap: 8px;
   padding: 10px 12px;
   cursor: grab;
-  background: rgba(0,150,136,0.08);
-  border-bottom: 1px solid rgba(0,150,136,0.2);
+  background: var(--cpp-header-bg);
+  border-bottom: 1px solid var(--cpp-header-border);
   border-radius: 14px 14px 0 0;
   user-select: none;
 }
 .cpp-header:active { cursor: grabbing; }
 
-.cpp-drag-icon { color: #555; font-size: 1.17em; flex-shrink: 0; }
-.cpp-title { flex: 1; font-weight: 700; color: var(--bs-accent, #009688); font-size: 0.96em; letter-spacing: 0.03em; }
+.cpp-drag-icon { color: var(--cpp-text-muted); font-size: 1.17em; flex-shrink: 0; opacity: 0.7; }
+.cpp-title { flex: 1; font-weight: 700; color: var(--cpp-text-title); font-size: 0.96em; letter-spacing: 0.03em; }
 .cpp-header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .cpp-font-btn {
-  background: none; border: none; color: #888; font-size: 0.9em;
+  background: none; border: none; color: var(--cpp-text-muted); font-size: 0.9em;
   font-family: monospace; font-weight: bold;
   cursor: pointer; line-height: 1; padding: 4px; border-radius: 4px;
   transition: color 0.15s, background 0.15s;
 }
-.cpp-font-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.cpp-font-btn:hover { color: var(--cpp-text-title); background: rgba(255,255,255,0.08); }
+
+.cpp-root.modal-theme--light .cpp-font-btn:hover,
+.cpp-root.modal-theme--sepia .cpp-font-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
 
 .cpp-close {
-  background: none; border: none; color: #888; font-size: 1.17em;
+  background: none; border: none; color: var(--cpp-text-muted); font-size: 1.17em;
   cursor: pointer; line-height: 1; padding: 2px 4px; border-radius: 4px;
   transition: color 0.15s, background 0.15s;
-  margin-left: 4px;
+  margin-left: 2px;
 }
-.cpp-close:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.cpp-close:hover { color: var(--cpp-text-title); background: rgba(255,255,255,0.08); }
+
+.cpp-root.modal-theme--light .cpp-close:hover,
+.cpp-root.modal-theme--sepia .cpp-close:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
 
 /* ── Context ── */
 .cpp-context {
@@ -115,21 +407,21 @@
   gap: 6px;
   align-items: flex-start;
   padding: 8px 12px;
-  background: rgba(0,0,0,0.25);
-  border-bottom: 1px solid #2a3a3a;
+  background: var(--cpp-context-bg);
+  border-bottom: 1px solid var(--cpp-context-border);
 }
 .cpp-context-label {
   font-size: 0.8em;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--bs-accent);
+  color: var(--cpp-accent);
   flex-shrink: 0;
   margin-top: 2px;
 }
 .cpp-context-text {
   font-size: 0.91em;
-  color: #aaa;
+  color: var(--cpp-context-text);
   font-style: italic;
   line-height: 1.4;
 }
@@ -140,67 +432,83 @@
   flex-wrap: wrap;
   gap: 5px;
   padding: 8px 12px;
-  border-bottom: 1px solid #2a3a3a;
+  border-bottom: 1px solid var(--cpp-context-border);
 }
 .cpp-quick-actions button {
-  background: #2e2e2e;
-  border: 1px solid #3a3a3a;
+  background: var(--cpp-quick-btn-bg);
+  border: 1px solid var(--cpp-quick-btn-border);
   border-radius: 20px;
-  color: #d0d0d0;
+  color: var(--cpp-quick-btn-text);
   padding: 4px 10px;
   font-size: 0.87em;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.cpp-quick-actions button:hover { background: var(--bs-accent); border-color: var(--bs-accent); color: #fff; }
+.cpp-quick-actions button:hover {
+  background: var(--cpp-quick-btn-hover-bg);
+  border-color: var(--cpp-quick-btn-hover-bg);
+  color: var(--cpp-quick-btn-hover-text);
+}
 
 .cpp-translate-wrap { position: relative; }
 .cpp-translate-menu {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  background: #242424;
-  border: 1px solid #3a3a3a;
+  background: var(--cpp-bg);
+  border: 1px solid var(--cpp-border);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  padding: 4px 0;
-  z-index: 9100;
+  display: flex;
+  flex-direction: column;
+  z-index: 9000;
+  overflow: hidden;
   min-width: 130px;
 }
 .cpp-translate-menu button {
-  display: block; width: 100%; text-align: left;
-  padding: 6px 12px; border-radius: 0; border: none;
-  background: none; font-size: 0.94em;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: var(--cpp-text);
+  padding: 6px 12px;
+  text-align: left;
+  font-size: 0.88em;
+  cursor: pointer;
+  transition: background 0.1s;
 }
-.cpp-translate-menu button:hover { background: #2e2e2e; }
+.cpp-translate-menu button:hover { background: var(--cpp-accent); color: #fff; }
 
-/* ── Input ── */
-.cpp-input-row {
+/* ── Input row ── */
+.cpp-input-area {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   padding: 8px 12px;
   align-items: flex-end;
+  background: var(--cpp-input-area-bg);
+  border-top: 1px solid var(--cpp-input-area-border);
 }
 .cpp-input {
   flex: 1;
-  background: #2e2e2e;
-  border: 1px solid #3a3a3a;
+  background: var(--cpp-input-bg);
+  border: 1px solid var(--cpp-input-border);
   border-radius: 8px;
-  color: #e0e0e0;
-  padding: 8px 10px;
-  font-size: 0.96em;
+  color: var(--cpp-input-text);
+  font-family: inherit;
+  font-size: 0.95em;
+  padding: 7px 10px;
   resize: none;
   outline: none;
-  font-family: inherit;
   transition: border-color 0.15s;
   line-height: 1.4;
 }
-.cpp-input:focus { border-color: var(--bs-accent); }
+.cpp-input:focus { border-color: var(--cpp-accent); }
+.cpp-input::placeholder { color: var(--cpp-input-placeholder); }
+
 .cpp-send {
-  background: var(--bs-accent, #009688);
+  background: var(--cpp-send-bg);
   border: none;
   border-radius: 8px;
-  color: #fff;
+  color: var(--cpp-send-text);
   font-size: 1.29em;
   width: 36px;
   height: 36px;
@@ -222,7 +530,7 @@
 }
 .cpp-loading span {
   width: 7px; height: 7px;
-  background: var(--bs-accent);
+  background: var(--cpp-accent);
   border-radius: 50%;
   animation: cpp-dot 1.1s ease-in-out infinite;
 }
@@ -244,7 +552,7 @@
 
 /* ── Response ── */
 .cpp-response {
-  border-top: 1px solid #2a3a3a;
+  border-top: 1px solid var(--cpp-response-border);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -257,23 +565,37 @@
   overflow-y: auto;
   font-size: 0.97em;
   line-height: 1.6;
-  color: #e0e0e0;
+  color: var(--cpp-response-text) !important;
 }
 .cpp-persona-badge {
   display: inline-block;
   font-size: 0.72em;
   font-weight: 600;
-  color: var(--bs-accent, #009688);
-  opacity: 0.75;
+  color: var(--cpp-accent);
+  opacity: 0.9;
   letter-spacing: 0.03em;
   margin-bottom: 6px;
 }
-.cpp-response-content p { margin: 0 0 6px; }
+.cpp-response-content p,
+.cpp-response-content li,
+.cpp-response-content span,
+.cpp-response-content div {
+  color: var(--cpp-response-text) !important;
+  margin: 0 0 6px;
+}
 .cpp-response-content p:last-child { margin-bottom: 0; }
-.cpp-response-content strong { color: #fff; }
+.cpp-response-content strong,
+.cpp-response-content b {
+  color: var(--cpp-response-strong) !important;
+  font-weight: 700;
+}
+.cpp-response-content em,
+.cpp-response-content i {
+  color: var(--cpp-response-em) !important;
+}
 .cpp-response-content code {
-  background: var(--bs-code-bg, #2a1a1a);
-  color: var(--bs-code-text, #e05252);
+  background: var(--cpp-response-code-bg) !important;
+  color: var(--cpp-response-code-text) !important;
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 0.94em;
@@ -292,23 +614,28 @@
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
+.cpp-root.modal-theme--light .cpp-followups,
+.cpp-root.modal-theme--sepia .cpp-followups {
+  border-top-color: rgba(0, 0, 0, 0.12);
+}
+
 .cpp-followup-pill {
   text-align: left;
-  background: var(--bs-surface, #2e2e2e);
-  border: 1px solid var(--bs-border, #3a3a3a);
+  background: var(--cpp-followup-bg);
+  border: 1px solid var(--cpp-followup-border);
   border-radius: 6px;
   padding: 5px 9px;
   font-size: 0.85em;
-  color: var(--bs-text-secondary, #b0b0b0);
+  color: var(--cpp-followup-text);
   cursor: pointer;
   transition: all 0.15s ease;
   line-height: 1.35;
 }
 
 .cpp-followup-pill:hover {
-  background: rgba(0, 150, 136, 0.15);
-  border-color: var(--bs-accent, #009688);
-  color: var(--bs-text-bright, #ffffff);
+  background: var(--cpp-followup-hover-bg);
+  border-color: var(--cpp-accent);
+  color: var(--cpp-followup-hover-text);
 }
 
 .cpp-response-actions {
@@ -317,331 +644,23 @@
   padding: 8px 12px;
   flex-wrap: wrap;
   flex-shrink: 0;
-  border-top: 1px solid rgba(0, 150, 136, 0.15);
-  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid var(--cpp-actions-border);
+  background: var(--cpp-actions-bg);
 }
 .cpp-response-actions button {
-  background: #2e2e2e;
-  border: 1px solid #3a3a3a;
+  background: var(--cpp-btn-bg);
+  border: 1px solid var(--cpp-btn-border);
   border-radius: 6px;
-  color: #aaa;
+  color: var(--cpp-btn-text);
   padding: 4px 10px;
   font-size: 0.87em;
   cursor: pointer;
   transition: all 0.15s;
 }
-.cpp-response-actions button:hover { background: #242424; color: #fff; border-color: var(--bs-accent); }
-
-/* =========================================================
-   Modal Themes for Copilot Popup
-   ========================================================= */
-
-/* Sepia Theme */
-.cpp-root.modal-theme--sepia {
-  background: #f4ecd8;
-  border: 1px solid #d4c5a9;
-  color: #3e3223;
-  box-shadow: 0 16px 48px rgba(62, 50, 35, 0.45), 0 0 0 1px rgba(139, 90, 43, 0.2);
-}
-.cpp-root.modal-theme--sepia .cpp-header {
-  background: rgba(139, 90, 43, 0.1);
-  border-bottom: 1px solid rgba(139, 90, 43, 0.18);
-}
-.cpp-root.modal-theme--sepia .cpp-title {
-  color: #8b5a2b;
-}
-.cpp-root.modal-theme--sepia .cpp-font-btn,
-.cpp-root.modal-theme--sepia .cpp-close {
-  color: #7c6853;
-}
-.cpp-root.modal-theme--sepia .cpp-font-btn:hover,
-.cpp-root.modal-theme--sepia .cpp-close:hover {
-  background: rgba(139, 90, 43, 0.15);
-  color: #2b2014;
-}
-.cpp-root.modal-theme--sepia .cpp-context {
-  background: rgba(139, 90, 43, 0.08);
-  border-bottom: 1px solid rgba(139, 90, 43, 0.16);
-}
-.cpp-root.modal-theme--sepia .cpp-context-label {
-  color: #8b5a2b;
-}
-.cpp-root.modal-theme--sepia .cpp-context-text {
-  color: #5c4733;
-}
-.cpp-root.modal-theme--sepia .cpp-quick-actions {
-  background: rgba(139, 90, 43, 0.05);
-  border-bottom: 1px solid rgba(139, 90, 43, 0.14);
-}
-.cpp-root.modal-theme--sepia .cpp-quick-actions button {
-  background: rgba(139, 90, 43, 0.1);
-  border: 1px solid rgba(139, 90, 43, 0.24);
-  color: #4a3828;
-}
-.cpp-root.modal-theme--sepia .cpp-quick-actions button:hover {
-  background: #8b5a2b;
-  color: #ffffff;
-}
-.cpp-root.modal-theme--sepia .cpp-input-area {
-  background: rgba(139, 90, 43, 0.06);
-  border-top: 1px solid rgba(139, 90, 43, 0.15);
-}
-.cpp-root.modal-theme--sepia .cpp-input {
-  background: #eadecb;
-  border-color: rgba(139, 90, 43, 0.3);
-  color: #2c2216;
-}
-.cpp-root.modal-theme--sepia .cpp-input::placeholder {
-  color: #8f7962;
-}
-.cpp-root.modal-theme--sepia .cpp-send {
-  background: #8b5a2b;
-  color: #ffffff;
-}
-.cpp-root.modal-theme--sepia .cpp-send:hover:not(:disabled) {
-  background: #73481f;
-}
-.cpp-root.modal-theme--sepia .cpp-response-area {
-  color: #3e3223;
-}
-.cpp-root.modal-theme--sepia .cpp-response-area h1,
-.cpp-root.modal-theme--sepia .cpp-response-area h2,
-.cpp-root.modal-theme--sepia .cpp-response-area h3 {
-  color: #2b2014;
-}
-.cpp-root.modal-theme--sepia .cpp-response-area code {
-  background: rgba(139, 90, 43, 0.12);
-  color: #73481f;
-}
-.cpp-root.modal-theme--sepia .cpp-response-actions {
-  background: rgba(139, 90, 43, 0.08);
-  border-top: 1px solid rgba(139, 90, 43, 0.16);
-}
-.cpp-root.modal-theme--sepia .cpp-response-actions button {
-  background: rgba(139, 90, 43, 0.1);
-  border-color: rgba(139, 90, 43, 0.22);
-  color: #5c4733;
-}
-.cpp-root.modal-theme--sepia .cpp-response-actions button:hover {
-  background: rgba(139, 90, 43, 0.2);
-  color: #2b2014;
-}
-.cpp-root.modal-theme--sepia .cpp-followup-pill {
-  background: rgba(139, 90, 43, 0.09);
-  border-color: rgba(139, 90, 43, 0.22);
-  color: #4a3828;
-}
-.cpp-root.modal-theme--sepia .cpp-followup-pill:hover {
-  background: #8b5a2b;
-  border-color: #8b5a2b;
-  color: #ffffff;
-}
-.cpp-root.modal-theme--sepia .cpp-resizer::after {
-  border-color: rgba(139, 90, 43, 0.35);
-}
-.cpp-root.modal-theme--sepia .cpp-resizer:hover::after {
-  border-color: #8b5a2b;
-}
-
-/* Emerald Theme */
-.cpp-root.modal-theme--emerald {
-  background: #172323;
-  border: 1px solid #009688;
-  color: #e0f2f1;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 150, 136, 0.2);
-}
-.cpp-root.modal-theme--emerald .cpp-header {
-  background: rgba(0, 150, 136, 0.08);
-  border-bottom: 1px solid rgba(0, 150, 136, 0.2);
-}
-.cpp-root.modal-theme--emerald .cpp-title {
-  color: #009688;
-}
-
-/* Dark Charcoal Theme */
-.cpp-root.modal-theme--dark {
-  background: #1e1e24;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #e2e8f0;
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75);
-}
-.cpp-root.modal-theme--dark .cpp-header {
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.cpp-root.modal-theme--dark .cpp-title {
-  color: #38bdf8;
-}
-.cpp-root.modal-theme--dark .cpp-context {
-  background: rgba(0, 0, 0, 0.25);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.cpp-root.modal-theme--dark .cpp-context-label {
-  color: #38bdf8;
-}
-.cpp-root.modal-theme--dark .cpp-quick-actions button:hover {
-  border-color: #38bdf8;
-  color: #38bdf8;
-}
-.cpp-root.modal-theme--dark .cpp-input {
-  background: rgba(0, 0, 0, 0.35);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-}
-.cpp-root.modal-theme--dark .cpp-send {
-  background: #38bdf8;
-  color: #0f172a;
-}
-.cpp-root.modal-theme--dark .cpp-send:hover:not(:disabled) {
-  background: #0ea5e9;
-}
-.cpp-root.modal-theme--dark .cpp-followup-pill:hover {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: #38bdf8;
-  color: #ffffff;
-}
-.cpp-root.modal-theme--dark .cpp-resizer:hover::after {
-  border-color: #38bdf8;
-}
-
-/* Crisp Light Theme */
-.cpp-root.modal-theme--light {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #1e293b;
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-.cpp-root.modal-theme--light .cpp-header {
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-}
-.cpp-root.modal-theme--light .cpp-title {
-  color: #00796b;
-}
-.cpp-root.modal-theme--light .cpp-font-btn,
-.cpp-root.modal-theme--light .cpp-close {
-  color: #64748b;
-}
-.cpp-root.modal-theme--light .cpp-font-btn:hover,
-.cpp-root.modal-theme--light .cpp-close:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-.cpp-root.modal-theme--light .cpp-context {
-  background: #f1f5f9;
-  border-bottom: 1px solid #e2e8f0;
-}
-.cpp-root.modal-theme--light .cpp-context-label {
-  color: #00796b;
-}
-.cpp-root.modal-theme--light .cpp-context-text {
-  color: #475569;
-}
-.cpp-root.modal-theme--light .cpp-quick-actions {
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-}
-.cpp-root.modal-theme--light .cpp-quick-actions button {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #334155;
-}
-.cpp-root.modal-theme--light .cpp-quick-actions button:hover {
-  background: #00796b;
-  color: #ffffff;
-  border-color: #00796b;
-}
-.cpp-root.modal-theme--light .cpp-input-area {
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
-}
-.cpp-root.modal-theme--light .cpp-input {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-.cpp-root.modal-theme--light .cpp-input::placeholder {
-  color: #94a3b8;
-}
-.cpp-root.modal-theme--light .cpp-send {
-  background: #00796b;
-  color: #ffffff;
-}
-.cpp-root.modal-theme--light .cpp-send:hover:not(:disabled) {
-  background: #004d40;
-}
-.cpp-root.modal-theme--light .cpp-response-area {
-  color: #1e293b;
-}
-.cpp-root.modal-theme--light .cpp-response-area h1,
-.cpp-root.modal-theme--light .cpp-response-area h2,
-.cpp-root.modal-theme--light .cpp-response-area h3 {
-  color: #0f172a;
-}
-.cpp-root.modal-theme--light .cpp-response-area code {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-.cpp-root.modal-theme--light .cpp-response-actions {
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
-}
-.cpp-root.modal-theme--light .cpp-response-actions button {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #475569;
-}
-.cpp-root.modal-theme--light .cpp-response-actions button:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-.cpp-root.modal-theme--light .cpp-followup-pill {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #334155;
-}
-.cpp-root.modal-theme--light .cpp-followup-pill:hover {
-  background: #00796b;
-  border-color: #00796b;
-  color: #ffffff;
-}
-.cpp-root.modal-theme--light .cpp-resizer::after {
-  border-color: #94a3b8;
-}
-.cpp-root.modal-theme--light .cpp-resizer:hover::after {
-  border-color: #00796b;
-}
-
-/* OLED Midnight Theme */
-.cpp-root.modal-theme--oled {
-  background: #000000;
-  border: 1px solid rgba(20, 184, 166, 0.45);
-  color: #f4f4f5;
-  box-shadow: 0 16px 54px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(20, 184, 166, 0.2);
-}
-.cpp-root.modal-theme--oled .cpp-header {
-  background: rgba(20, 184, 166, 0.08);
-  border-bottom: 1px solid rgba(20, 184, 166, 0.25);
-}
-.cpp-root.modal-theme--oled .cpp-title {
-  color: #14b8a6;
-}
-.cpp-root.modal-theme--oled .cpp-input {
-  background: #09090b;
-  border-color: rgba(20, 184, 166, 0.3);
-  color: #ffffff;
-}
-.cpp-root.modal-theme--oled .cpp-send {
-  background: #14b8a6;
-  color: #000000;
-}
-.cpp-root.modal-theme--oled .cpp-followup-pill:hover {
-  background: rgba(20, 184, 166, 0.15);
-  border-color: #14b8a6;
-  color: #ffffff;
-}
-.cpp-root.modal-theme--oled .cpp-resizer:hover::after {
-  border-color: #14b8a6;
+.cpp-response-actions button:hover {
+  background: var(--cpp-btn-hover-bg);
+  color: var(--cpp-btn-hover-text);
+  border-color: var(--cpp-accent);
 }
 
 /* =========================================================
@@ -660,4 +679,3 @@
 .is-ctrl-define-active .notes-scroll blockquote {
   cursor: var(--cursor-define-mac) !important;
 }
-
