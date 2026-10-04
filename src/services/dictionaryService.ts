@@ -1,6 +1,5 @@
 import { getCachedWordDefinition, saveCachedWordDefinition } from './dbService';
 import { invokePython } from './pythonService';
-import { formatPhoneticRespelling } from '../utils/phoneticRespelling';
 
 export interface DefinitionItem {
   definition: string;
@@ -118,7 +117,7 @@ export async function lookupWordDefinition(
 
         const result: WordDefinitionData = {
           word,
-          phonetic: phonetic ? formatPhoneticRespelling(phonetic) : undefined,
+          phonetic: phonetic || undefined,
           audioUrl,
           meanings,
           source: 'api'
@@ -176,7 +175,7 @@ export async function lookupWordDefinition(
 
         const result: WordDefinitionData = {
           word,
-          phonetic: r.phonetic ? formatPhoneticRespelling(r.phonetic) : undefined,
+          phonetic: r.phonetic || undefined,
           meanings,
           bookContext: r.book_context || undefined,
           source: 'fallback'

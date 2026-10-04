@@ -404,7 +404,7 @@ def define_and_context_word(
     prompt += (
         f"\nRespond ONLY with a valid JSON object matching this schema without markdown code blocks:\n"
         f"{{\n"
-        f'  "phonetic": "Everyday phonetic respelling with syllable hyphens and CAPITALIZED primary stress (e.g. STRAT-uh-jee or uh-FEK-shun, NOT raw IPA)",\n'
+        f'  "phonetic": "/pronunciation/",\n'
         f'  "meanings": [\n'
         f'    {{\n'
         f'      "partOfSpeech": "noun",\n'
