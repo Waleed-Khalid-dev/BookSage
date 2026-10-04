@@ -17,42 +17,53 @@ interface BookCoverDrawerProps {
 
 const STORAGE_KEY_X = 'booksage-cover-drawer-x';
 const AUTO_HIDE_DELAY = 4500; // 4.5 seconds
+const MODAL_WIDTH = 375; // EXACT equal width for both compact popup and expanded dropdown!
 
 /**
  * Robust title & author parser:
- * Handles "Title -- Author", "Title - Author", "Title — Author", or "Author - Title"
- * Prevents duplicating the author in the title.
+ * Handles "Robert Greene - 48 Laws of Power -- Robert Greene"
+ * Splits delimiters, detects author names, and strips author redundancy from title.
  */
 function parseTitleAndAuthor(rawTitle: string): { title: string; author: string } {
   if (!rawTitle) return { title: 'Untitled Document', author: '' };
   let clean = rawTitle.replace(/\.pdf$/i, '').trim();
 
-  // Normalize delimiters: " -- ", " — ", " - "
-  let delimiter = '';
-  if (clean.includes(' -- ')) delimiter = ' -- ';
-  else if (clean.includes(' — ')) delimiter = ' — ';
-  else if (clean.includes(' - ')) delimiter = ' - ';
+  // Split by common delimiters: " -- ", " — ", " – ", " - "
+  const tokens = clean
+    .split(/\s*(?:--|—|–|-)\s*/)
+    .map(t => t.trim())
+    .filter(Boolean);
 
-  if (delimiter) {
-    const parts = clean.split(delimiter).map(p => p.trim()).filter(Boolean);
-    if (parts.length >= 2) {
-      const part0 = parts[0];
-      const part1 = parts.slice(1).join(delimiter);
+  if (tokens.length >= 2) {
+    const authorRegex = /^[A-Z][a-zA-Z.'-]+\s+[A-Z][a-zA-Z.'-]+$/;
+    let detectedAuthor = '';
+    const nonAuthorTokens: string[] = [];
 
-      // Check if either part is likely an author name (e.g. "Robert Greene", "James Clear")
-      const isPart0Author = /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$/.test(part0) && 
-        !/^(The|A|An|How|Why|What|Who|Where|When|Handbook|Guide|Principles)\b/i.test(part0);
-      
-      const isPart1Author = /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$/.test(part1) && 
-        !/^(The|A|An|How|Why|What|Who|Where|When|Handbook|Guide|Principles)\b/i.test(part1);
-
-      if (isPart0Author && !isPart1Author) {
-        return { title: part1, author: part0 };
-      } else if (isPart1Author && !isPart0Author) {
-        return { title: part0, author: part1 };
+    for (const token of tokens) {
+      if (!detectedAuthor && authorRegex.test(token) && !/^\d/.test(token) && !/^(The|A|An|How|Why|What|Who|Where|When|Handbook|Guide|Principles)\b/i.test(token)) {
+        detectedAuthor = token;
+      } else if (token !== detectedAuthor) {
+        nonAuthorTokens.push(token);
       }
-      return { title: part1, author: part0 };
     }
+
+    let finalTitle = nonAuthorTokens.join(' - ');
+    if (!finalTitle && tokens.length > 0) {
+      finalTitle = tokens[0];
+    }
+
+    // Strip leading or trailing author name if it lingered
+    if (detectedAuthor) {
+      finalTitle = finalTitle
+        .replace(new RegExp(`^${detectedAuthor}\\s*[-–—:]*\\s*`, 'i'), '')
+        .replace(new RegExp(`\\s*[-–—:]*\\s*${detectedAuthor}$`, 'i'), '')
+        .trim();
+    }
+
+    return {
+      title: finalTitle || clean,
+      author: detectedAuthor
+    };
   }
 
   return { title: clean, author: '' };
@@ -148,10 +159,10 @@ export function BookCoverDrawer({
           }
         }
 
-        // B. Render Expanded Large Cover (CSS display: 125px width)
+        // B. Render Expanded Large Cover (CSS display: 105px width)
         if (expandedCanvasRef.current) {
           const canvas = expandedCanvasRef.current;
-          const targetWidth = 125;
+          const targetWidth = 105;
           const largeScale = targetWidth / originalViewport.width;
           const scaledViewport = page1.getViewport({ scale: largeScale * dpr });
           const ctx = canvas.getContext('2d');
@@ -184,7 +195,7 @@ export function BookCoverDrawer({
       renderTaskThumb?.cancel();
       renderTaskLarge?.cancel();
     };
-  }, [pdfDocument, isExpanded]);
+  }, [pdfDocument]);
 
   // 2. Auto-hide timer management
   const clearHideTimer = useCallback(() => {
@@ -236,7 +247,6 @@ export function BookCoverDrawer({
       setIsExpanded(false);
     };
 
-    // Listen on pointerdown with capture phase to catch clicks anywhere on screen
     const timer = setTimeout(() => {
       window.addEventListener('pointerdown', handleOutsideClick, true);
     }, 20);
@@ -273,9 +283,8 @@ export function BookCoverDrawer({
 
     // Bounds clamping: respect sidebar if open
     const parentWidth = containerRef.current?.parentElement?.clientWidth || window.innerWidth;
-    const popupWidth = popupRef.current?.offsetWidth || 340;
     const minBound = isSidebarOpen ? 312 : 16;
-    const maxBound = Math.max(minBound, parentWidth - popupWidth - 16);
+    const maxBound = Math.max(minBound, parentWidth - MODAL_WIDTH - 16);
     const clampedX = Math.max(minBound, Math.min(maxBound, rawX));
 
     setPosX(clampedX);
@@ -315,11 +324,6 @@ export function BookCoverDrawer({
 
   const progressPercent = totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0;
 
-  // Clamped X for the expanded panel so it aligns with popup without overflowing screen right
-  const parentWidth = containerRef.current?.parentElement?.clientWidth || window.innerWidth;
-  const drawerWidth = 405;
-  const drawerLeft = Math.max(isSidebarOpen ? 312 : 16, Math.min(parentWidth - drawerWidth - 16, posX));
-
   return (
     <div
       ref={containerRef}
@@ -335,7 +339,7 @@ export function BookCoverDrawer({
       }}
     >
       {/* ────────────────────────────────────────────────────────────────
-          COMPACT RETRACTABLE POPUP (Dark Glass HUD)
+          COMPACT RETRACTABLE POPUP (Width exactly equal to dropdown)
       ────────────────────────────────────────────────────────────────── */}
       <div
         ref={popupRef}
@@ -354,25 +358,29 @@ export function BookCoverDrawer({
           position: 'absolute',
           top: '12px',
           left: `${posX}px`,
+          width: `${MODAL_WIDTH}px`,
+          minWidth: `${MODAL_WIDTH}px`,
+          maxWidth: `${MODAL_WIDTH}px`,
+          boxSizing: 'border-box',
           pointerEvents: isCompactVisible ? 'auto' : 'none',
           opacity: isCompactVisible ? 1 : 0,
-          transform: isCompactVisible ? 'translateY(0)' : 'translateY(-65px)',
+          transform: isCompactVisible ? 'translate3d(0, 0, 0)' : 'translate3d(0, -65px, 0)',
           transition: isDragging 
             ? 'opacity 0.2s ease' 
-            : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
+            : 'transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease',
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          padding: '6px 10px',
-          background: 'rgba(22, 23, 28, 0.94)',
+          padding: '6px 12px',
+          background: 'rgba(22, 23, 28, 0.95)',
           border: '1px solid rgba(255, 255, 255, 0.14)',
-          borderRadius: '10px',
+          borderRadius: isExpanded ? '10px 10px 4px 4px' : '10px',
           boxShadow: '0 10px 28px -4px rgba(0, 0, 0, 0.5), 0 2px 8px -1px rgba(0, 0, 0, 0.3)',
           userSelect: 'none',
           cursor: isDragging ? 'grabbing' : 'default',
           backdropFilter: 'blur(14px)',
-          maxWidth: '380px',
-          zIndex: 46
+          zIndex: 47,
+          willChange: 'transform, opacity'
         }}
       >
         {/* Clickable Book Cover Thumbnail */}
@@ -422,7 +430,7 @@ export function BookCoverDrawer({
           )}
         </div>
 
-        {/* Title and Author Info (Clean & High Contrast) */}
+        {/* Title and Author Info (Clean Title & Author) */}
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
           <span
             style={{
@@ -552,7 +560,9 @@ export function BookCoverDrawer({
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          EXPANDED SHOWCASE PANEL (POSITIONED DIRECTLY UNDERNEATH TRIGGER)
+          EXPANDED SHOWCASE PANEL (EXACT EQUAL WIDTH & ULTRA-SMOOTH GLIDE)
+          - Equal width: 375px (aligns 100% with the top popup)
+          - Buttery-smooth transform & opacity slide down
           - No background blur
           - No blocking overlay
           - Clicks anywhere outside slide it right back up!
@@ -561,23 +571,27 @@ export function BookCoverDrawer({
         ref={drawerRef}
         style={{
           position: 'absolute',
-          top: '68px', // Positioned directly beneath the compact popup!
-          left: `${drawerLeft}px`,
-          width: `${drawerWidth}px`,
+          top: '66px', // Positioned directly beneath compact popup with neat alignment
+          left: `${posX}px`,
+          width: `${MODAL_WIDTH}px`,
+          minWidth: `${MODAL_WIDTH}px`,
+          maxWidth: `${MODAL_WIDTH}px`,
+          boxSizing: 'border-box',
           pointerEvents: isExpanded ? 'auto' : 'none',
           opacity: isExpanded ? 1 : 0,
-          transform: isExpanded ? 'translateY(0)' : 'translateY(-14px)',
-          visibility: isExpanded ? 'visible' : 'hidden',
-          transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, visibility 0.22s ease',
+          transform: isExpanded ? 'translate3d(0, 0, 0)' : 'translate3d(0, -20px, 0)',
+          transition: 'transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+          willChange: 'transform, opacity',
+          backfaceVisibility: 'hidden',
           zIndex: 48,
           background: 'rgba(22, 23, 28, 0.96)',
           border: '1px solid rgba(255, 255, 255, 0.14)',
-          borderRadius: '12px',
+          borderRadius: '10px',
           boxShadow: isExpanded 
             ? '0 18px 40px -6px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06)' 
             : 'none',
           backdropFilter: 'blur(16px)',
-          padding: '16px 18px',
+          padding: '14px 16px',
           display: 'flex',
           flexDirection: 'column',
           gap: '12px'
@@ -648,18 +662,18 @@ export function BookCoverDrawer({
         </div>
 
         {/* Body: Cover Canvas + Book Info */}
-        <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
           {/* Cover Art */}
           <div
             style={{
-              width: '120px',
-              minHeight: '170px',
+              width: '105px',
+              minHeight: '150px',
               borderRadius: '6px',
               overflow: 'hidden',
               flexShrink: 0,
               background: '#18191e',
               border: '1px solid rgba(255, 255, 255, 0.18)',
-              boxShadow: '-3px 0 10px -2px rgba(0,0,0,0.5), 0 12px 24px -4px rgba(0, 0, 0, 0.7)',
+              boxShadow: '-3px 0 10px -2px rgba(0,0,0,0.5), 0 10px 20px -4px rgba(0, 0, 0, 0.7)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -677,7 +691,7 @@ export function BookCoverDrawer({
             />
             {!isCoverLoaded && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                <BookOpen size={28} color="#009688" />
+                <BookOpen size={24} color="#009688" />
                 <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Loading...</span>
               </div>
             )}
@@ -687,11 +701,14 @@ export function BookCoverDrawer({
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
             <h3
               style={{
-                fontSize: '1.05rem',
+                fontSize: '0.98rem',
                 fontWeight: 700,
                 color: '#ffffff',
                 margin: '0 0 2px 0',
-                lineHeight: 1.3
+                lineHeight: 1.25,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
               }}
               title={title}
             >
@@ -701,10 +718,14 @@ export function BookCoverDrawer({
             {author && (
               <p
                 style={{
-                  fontSize: '0.8rem',
+                  fontSize: '0.78rem',
                   color: '#94a3b8',
-                  margin: '0 0 10px 0'
+                  margin: '0 0 8px 0',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
                 }}
+                title={author}
               >
                 by <strong style={{ color: '#e2e8f0' }}>{author}</strong>
               </p>
@@ -717,10 +738,10 @@ export function BookCoverDrawer({
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '6px',
                 padding: '8px 10px',
-                marginBottom: '12px'
+                marginBottom: '10px'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '5px' }}>
                 <span style={{ color: '#cbd5e1' }}>Reading Progress</span>
                 <span style={{ color: '#2dd4bf', fontWeight: 600 }}>{progressPercent}%</span>
               </div>
@@ -745,14 +766,14 @@ export function BookCoverDrawer({
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8', marginTop: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#94a3b8', marginTop: '5px' }}>
                 <span>Page {currentPage} of {totalPages}</span>
-                <span>{totalPages - currentPage} pages left</span>
+                <span>{totalPages - currentPage} left</span>
               </div>
             </div>
 
             {/* Quick Actions */}
-            <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', marginTop: 'auto', flexWrap: 'wrap' }}>
               {onJumpToPage && (
                 <button
                   onClick={() => {
@@ -762,13 +783,13 @@ export function BookCoverDrawer({
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '5px',
-                    padding: '6px 12px',
+                    gap: '4px',
+                    padding: '5px 10px',
                     borderRadius: '6px',
                     background: '#009688',
                     border: 'none',
                     color: '#ffffff',
-                    fontSize: '0.78rem',
+                    fontSize: '0.75rem',
                     fontWeight: 600,
                     cursor: 'pointer',
                     boxShadow: '0 3px 10px rgba(0, 150, 136, 0.4)',
@@ -791,12 +812,12 @@ export function BookCoverDrawer({
               <button
                 onClick={handleDismissExpanded}
                 style={{
-                  padding: '6px 12px',
+                  padding: '5px 10px',
                   borderRadius: '6px',
                   background: 'rgba(255, 255, 255, 0.08)',
                   border: '1px solid rgba(255, 255, 255, 0.12)',
                   color: '#e2e8f0',
-                  fontSize: '0.78rem',
+                  fontSize: '0.75rem',
                   fontWeight: 500,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease'
