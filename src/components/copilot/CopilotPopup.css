@@ -86,8 +86,8 @@
   --cpp-quick-btn-hover-text: #ffffff;
   --cpp-input-area-bg: rgba(139, 90, 43, 0.05);
   --cpp-input-area-border: rgba(139, 90, 43, 0.15);
-  --cpp-input-bg: #fdf9f0;
-  --cpp-input-border: rgba(139, 90, 43, 0.3);
+  --cpp-input-bg: #eae1cd;
+  --cpp-input-border: rgba(139, 90, 43, 0.35);
   --cpp-input-text: #2c2216;
   --cpp-input-placeholder: #8f7962;
   --cpp-send-bg: #8b5a2b;
@@ -479,26 +479,30 @@
 .cpp-translate-menu button:hover { background: var(--cpp-accent); color: #fff; }
 
 /* ── Input row ── */
+.cpp-input-row,
 .cpp-input-area {
   display: flex;
   gap: 8px;
   padding: 8px 12px;
-  align-items: flex-end;
+  align-items: center;
   background: var(--cpp-input-area-bg);
   border-top: 1px solid var(--cpp-input-area-border);
 }
 .cpp-input {
   flex: 1;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   background: var(--cpp-input-bg);
   border: 1px solid var(--cpp-input-border);
   border-radius: 8px;
   color: var(--cpp-input-text);
   font-family: inherit;
   font-size: 0.95em;
-  padding: 7px 10px;
+  padding: 8px 12px;
   resize: none;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
   line-height: 1.4;
 }
 .cpp-input:focus { border-color: var(--cpp-accent); }
@@ -509,17 +513,113 @@
   border: none;
   border-radius: 8px;
   color: var(--cpp-send-text);
-  font-size: 1.29em;
+  font-size: 1.25em;
   width: 36px;
   height: 36px;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.1s;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .cpp-send:hover:not(:disabled) { opacity: 0.85; transform: scale(1.05); }
-.cpp-send:disabled { opacity: 0.4; cursor: not-allowed; }
+.cpp-send:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .cpp-model-row { padding: 0 12px 8px; }
+
+/* Theming ModelSelector inside Copilot Popup */
+.cpp-root.modal-theme--sepia .ms-trigger {
+  background: #eae1cd !important;
+  border-color: rgba(139, 90, 43, 0.28) !important;
+  color: #2c2216 !important;
+}
+.cpp-root.modal-theme--sepia .ms-trigger:hover {
+  background: #e2d7c0 !important;
+  border-color: #8b5a2b !important;
+}
+.cpp-root.modal-theme--sepia .ms-chevron {
+  color: #8b5a2b !important;
+}
+.cpp-root.modal-theme--sepia .ms-dropdown {
+  background: #f4ecd8 !important;
+  border-color: #d4c5a9 !important;
+  color: #3e3223 !important;
+  box-shadow: 0 10px 30px rgba(62, 50, 35, 0.35) !important;
+}
+.cpp-root.modal-theme--sepia .ms-group-label {
+  color: #8b5a2b !important;
+}
+.cpp-root.modal-theme--sepia .ms-option {
+  color: #3e3223 !important;
+}
+.cpp-root.modal-theme--sepia .ms-option:hover {
+  background: rgba(139, 90, 43, 0.15) !important;
+}
+.cpp-root.modal-theme--sepia .ms-option--active {
+  color: #8b5a2b !important;
+}
+.cpp-root.modal-theme--sepia .ms-separator {
+  background: rgba(139, 90, 43, 0.18) !important;
+}
+
+.cpp-root.modal-theme--light .ms-trigger {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.cpp-root.modal-theme--light .ms-trigger:hover {
+  background: #e2e8f0 !important;
+  border-color: #00796b !important;
+}
+.cpp-root.modal-theme--light .ms-chevron {
+  color: #64748b !important;
+}
+.cpp-root.modal-theme--light .ms-dropdown {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+.cpp-root.modal-theme--light .ms-group-label {
+  color: #00796b !important;
+}
+.cpp-root.modal-theme--light .ms-option {
+  color: #1e293b !important;
+}
+.cpp-root.modal-theme--light .ms-option:hover {
+  background: #f1f5f9 !important;
+}
+.cpp-root.modal-theme--light .ms-option--active {
+  color: #00796b !important;
+}
+.cpp-root.modal-theme--light .ms-separator {
+  background: #e2e8f0 !important;
+}
+
+/* Theming Persona Pill inside Copilot Popup */
+.cpp-root.modal-theme--sepia .bs-persona-pill {
+  background: rgba(139, 90, 43, 0.12) !important;
+  border-color: rgba(139, 90, 43, 0.28) !important;
+  color: #3e3223 !important;
+}
+.cpp-root.modal-theme--sepia .bs-persona-pill:hover,
+.cpp-root.modal-theme--sepia .bs-persona-pill--open {
+  background: rgba(139, 90, 43, 0.2) !important;
+  border-color: #8b5a2b !important;
+  color: #2b2014 !important;
+}
+.cpp-root.modal-theme--light .bs-persona-pill {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.cpp-root.modal-theme--light .bs-persona-pill:hover,
+.cpp-root.modal-theme--light .bs-persona-pill--open {
+  background: #e2e8f0 !important;
+  border-color: #00796b !important;
+  color: #0f172a !important;
+}
 
 /* ── Loading dots ── */
 .cpp-loading {

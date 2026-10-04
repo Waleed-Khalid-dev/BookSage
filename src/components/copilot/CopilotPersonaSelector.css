@@ -193,3 +193,82 @@
   line-height: 1.28;
   color: var(--bs-text-muted, #94a3b8);
 }
+
+/* ── Modal Theme Integration ── */
+.modal-theme--sepia .bs-persona-pill {
+  background: rgba(139, 90, 43, 0.12) !important;
+  border-color: rgba(139, 90, 43, 0.28) !important;
+  color: #3e3223 !important;
+}
+.modal-theme--sepia .bs-persona-pill:hover,
+.modal-theme--sepia .bs-persona-pill--open {
+  background: rgba(139, 90, 43, 0.2) !important;
+  border-color: #8b5a2b !important;
+  color: #2b2014 !important;
+}
+.modal-theme--sepia .bs-persona-menu {
+  background: #f4ecd8 !important;
+  border-color: #d4c5a9 !important;
+  color: #3e3223 !important;
+  box-shadow: 0 10px 30px rgba(62, 50, 35, 0.35) !important;
+}
+.modal-theme--sepia .bs-persona-menu-header {
+  color: #7c6853 !important;
+  border-bottom-color: rgba(139, 90, 43, 0.15) !important;
+}
+.modal-theme--sepia .bs-persona-item {
+  color: #3e3223 !important;
+}
+.modal-theme--sepia .bs-persona-item:hover {
+  background: rgba(139, 90, 43, 0.14) !important;
+  color: #2b2014 !important;
+}
+.modal-theme--sepia .bs-persona-item--active {
+  background: rgba(139, 90, 43, 0.18) !important;
+  color: #8b5a2b !important;
+}
+.modal-theme--sepia .bs-persona-item-check {
+  color: #8b5a2b !important;
+}
+.modal-theme--sepia .bs-persona-item-desc {
+  color: #7c6853 !important;
+}
+
+.modal-theme--light .bs-persona-pill {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.modal-theme--light .bs-persona-pill:hover,
+.modal-theme--light .bs-persona-pill--open {
+  background: #e2e8f0 !important;
+  border-color: #00796b !important;
+  color: #0f172a !important;
+}
+.modal-theme--light .bs-persona-menu {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+.modal-theme--light .bs-persona-menu-header {
+  color: #64748b !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+.modal-theme--light .bs-persona-item {
+  color: #1e293b !important;
+}
+.modal-theme--light .bs-persona-item:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+.modal-theme--light .bs-persona-item--active {
+  background: #e2e8f0 !important;
+  color: #00796b !important;
+}
+.modal-theme--light .bs-persona-item-check {
+  color: #00796b !important;
+}
+.modal-theme--light .bs-persona-item-desc {
+  color: #64748b !important;
+}

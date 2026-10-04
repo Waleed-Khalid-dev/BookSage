@@ -146,3 +146,77 @@
   color: #009688;
   flex-shrink: 0;
 }
+
+/* ── Theming inside Sepia Modal ── */
+.modal-theme--sepia .mtp-trigger-btn {
+  background: rgba(139, 90, 43, 0.1);
+  border-color: rgba(139, 90, 43, 0.25);
+  color: #7c6853;
+}
+.modal-theme--sepia .mtp-trigger-btn:hover,
+.modal-theme--sepia .mtp-trigger-btn.active {
+  background: rgba(139, 90, 43, 0.2);
+  border-color: #8b5a2b;
+  color: #2b2014;
+}
+.modal-theme--sepia .mtp-popover {
+  background: #f4ecd8;
+  border-color: #d4c5a9;
+  color: #3e3223;
+  box-shadow: 0 12px 32px rgba(62, 50, 35, 0.4);
+}
+.modal-theme--sepia .mtp-popover-title {
+  color: #7c6853;
+  border-bottom-color: rgba(139, 90, 43, 0.15);
+}
+.modal-theme--sepia .mtp-option-btn {
+  color: #3e3223;
+}
+.modal-theme--sepia .mtp-option-btn:hover {
+  background: rgba(139, 90, 43, 0.12);
+}
+.modal-theme--sepia .mtp-option-btn.selected {
+  background: rgba(139, 90, 43, 0.18);
+  color: #8b5a2b;
+  font-weight: 600;
+}
+.modal-theme--sepia .mtp-check-icon {
+  color: #8b5a2b;
+}
+
+/* ── Theming inside Light Modal ── */
+.modal-theme--light .mtp-trigger-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+.modal-theme--light .mtp-trigger-btn:hover,
+.modal-theme--light .mtp-trigger-btn.active {
+  background: #e2e8f0;
+  border-color: #00796b;
+  color: #0f172a;
+}
+.modal-theme--light .mtp-popover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #1e293b;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+.modal-theme--light .mtp-popover-title {
+  color: #64748b;
+  border-bottom-color: #e2e8f0;
+}
+.modal-theme--light .mtp-option-btn {
+  color: #1e293b;
+}
+.modal-theme--light .mtp-option-btn:hover {
+  background: #f1f5f9;
+}
+.modal-theme--light .mtp-option-btn.selected {
+  background: #e2e8f0;
+  color: #00796b;
+  font-weight: 600;
+}
+.modal-theme--light .mtp-check-icon {
+  color: #00796b;
+}

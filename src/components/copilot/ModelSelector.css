@@ -97,3 +97,72 @@
   text-align: center;
 }
 .ms-configure strong { color: var(--bs-accent); }
+
+/* ── Modal Theme Integration ── */
+.modal-theme--sepia .ms-trigger {
+  background: #eae1cd !important;
+  border-color: rgba(139, 90, 43, 0.3) !important;
+  color: #2c2216 !important;
+}
+.modal-theme--sepia .ms-trigger:hover {
+  background: #e2d7c0 !important;
+  border-color: #8b5a2b !important;
+}
+.modal-theme--sepia .ms-chevron {
+  color: #8b5a2b !important;
+}
+.modal-theme--sepia .ms-dropdown {
+  background: #f4ecd8 !important;
+  border-color: #d4c5a9 !important;
+  color: #3e3223 !important;
+  box-shadow: 0 10px 30px rgba(62, 50, 35, 0.35) !important;
+}
+.modal-theme--sepia .ms-group-label {
+  color: #8b5a2b !important;
+}
+.modal-theme--sepia .ms-option {
+  color: #3e3223 !important;
+}
+.modal-theme--sepia .ms-option:hover {
+  background: rgba(139, 90, 43, 0.15) !important;
+}
+.modal-theme--sepia .ms-option--active {
+  color: #8b5a2b !important;
+}
+.modal-theme--sepia .ms-separator {
+  background: rgba(139, 90, 43, 0.18) !important;
+}
+
+.modal-theme--light .ms-trigger {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.modal-theme--light .ms-trigger:hover {
+  background: #e2e8f0 !important;
+  border-color: #00796b !important;
+}
+.modal-theme--light .ms-chevron {
+  color: #64748b !important;
+}
+.modal-theme--light .ms-dropdown {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+.modal-theme--light .ms-group-label {
+  color: #00796b !important;
+}
+.modal-theme--light .ms-option {
+  color: #1e293b !important;
+}
+.modal-theme--light .ms-option:hover {
+  background: #f1f5f9 !important;
+}
+.modal-theme--light .ms-option--active {
+  color: #00796b !important;
+}
+.modal-theme--light .ms-separator {
+  background: #e2e8f0 !important;
+}
