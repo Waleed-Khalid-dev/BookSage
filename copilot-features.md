@@ -253,13 +253,15 @@
 ### Persona / Tone Selector
 *Inspired by: Character.ai, Claude tone options*
 
-- [x] Dropdown in sidebar/popup: "Copilot Persona"
+- [x] Unified dropdown in sidebar, text selection popup, and AIChatView: `[ 🎓 Scholar ▾ ]`
   - [x] 🎓 **Scholar** — academic, detailed, cites principles
   - [x] 👨‍🏫 **Teacher** — explains simply, uses analogies
   - [x] 🔥 **Coach** — motivational, action-oriented
   - [x] 🤔 **Devil's Advocate** — challenges assumptions
-- [x] Persona is injected as a system prompt prefix
-- [x] Persisted in settingsStore
+- [x] Persona is injected as a system prompt prefix across all chat interactions
+- [x] Optional Quick Actions persona toggle ("Apply Persona Tone to Quick Actions") in Settings
+- [x] Persisted in `booksage-settings` (`localStorage`) across restarts and reloads
+- [x] Dedicated "AI Copilot" tab in SettingsDialog with visual persona cards and toggle switch
 
 ---
 
