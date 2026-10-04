@@ -15,7 +15,6 @@ import { AudioToolbar } from '../reader/AudioToolbar';
 import { NotesSearchBar } from './NotesSearchBar';
 import { CopilotPopup } from '../copilot/CopilotPopup';
 import { ContextMenu as AiContextMenu } from '../copilot/ContextMenu';
-import { WordDefinitionTooltip, WordDefinitionTarget } from '../shared/WordDefinitionTooltip';
 import { getWordAtPoint } from '../../utils/wordSelection';
 import './NotesViewer.css';
 
@@ -71,7 +70,12 @@ function SkeletonLoader() {
 export function NotesViewer() {
   const { chapters, bookId, currentBookTitle, insightsRefreshCounter } = useBookStore();
   const { setActiveView, setFocusedPanel } = useUiStore();
-  const { setSelection: setCopilotSelection, openContextMenu } = useChatStore();
+  const { 
+    setSelection: setCopilotSelection, 
+    openContextMenu,
+    setShowPopup,
+    setPendingQuickAction
+  } = useChatStore();
 
   const [activeChapterIdx, setActiveChapterIdx] = useState(0);
   const [chapterJson, setChapterJson] = useState<ChapterJson | null>(null);
@@ -102,8 +106,7 @@ export function NotesViewer() {
   const [pinnedInsights, setPinnedInsights] = useState<string[]>([]);
   const [pinnedOpen, setPinnedOpen] = useState(true);
 
-  // Inline Word Definition State
-  const [wordTooltipTarget, setWordTooltipTarget] = useState<WordDefinitionTarget | null>(null);
+  // Inline Word Definition Ctrl Tracking
   const [isCtrlDown, setIsCtrlDown] = useState(false);
 
   const notesRef = useRef(userNotes);
@@ -310,20 +313,15 @@ export function NotesViewer() {
   const handleContainerClick = (e: React.MouseEvent) => {
     if (e.ctrlKey || e.metaKey) {
       const targetEl = e.target as HTMLElement | null;
-      if (!targetEl || !targetEl.closest('button, input, select, textarea, [role="button"], .bs-word-tooltip')) {
+      if (!targetEl || !targetEl.closest('button, input, select, textarea, [role="button"], .copilot-popup')) {
         const wordInfo = getWordAtPoint(e.clientX, e.clientY);
         if (wordInfo) {
           e.preventDefault();
           e.stopPropagation();
-          setWordTooltipTarget({
-            word: wordInfo.word,
-            rect: wordInfo.rect,
-            bookTitle: currentBookTitle,
-            chapterNum: activeChapter?.num,
-            chapterTitle: activeChapter?.title,
-            chapterPath: activeChapter?.path,
-            surroundingText: wordInfo.surroundingText
-          });
+          const domRect = new DOMRect(wordInfo.rect.left, wordInfo.rect.top, wordInfo.rect.width, wordInfo.rect.height);
+          setCopilotSelection({ text: wordInfo.word, rect: domRect });
+          setPendingQuickAction({ type: 'action', action: 'define' });
+          setShowPopup(true);
         }
       }
     }
@@ -785,11 +783,6 @@ export function NotesViewer() {
       {/* Phase 6: AI Copilot overlays */}
       <CopilotPopup />
       <AiContextMenu />
-
-      <WordDefinitionTooltip
-        target={wordTooltipTarget}
-        onClose={() => setWordTooltipTarget(null)}
-      />
 
       {toast && <Toast message={toast} onDone={() => setToast('')} />}
     </div>

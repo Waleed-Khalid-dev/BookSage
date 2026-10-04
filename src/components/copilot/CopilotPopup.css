@@ -322,3 +322,21 @@
   transition: all 0.15s;
 }
 .cpp-response-actions button:hover { background: #242424; color: #fff; border-color: var(--bs-accent); }
+
+/* =========================================================
+   macOS-Style Minimalist Definition Cursor (When Ctrl is held)
+   ========================================================= */
+
+:root {
+  --cursor-define-mac: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M4 5.5C4 4.12 5.12 3 6.5 3H18.5C19.33 3 20 3.67 20 4.5V18.5C20 19.33 19.33 20 18.5 20H6.5C5.12 20 4 18.88 4 17.5V5.5Z' fill='%231E1E1E' stroke='%23009688' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M4 7.5H20M8 12H16M8 15.5H13' stroke='%23FFFFFF' stroke-width='1.2' stroke-linecap='round'/%3E%3Ccircle cx='17' cy='17' r='4' fill='%23009688' stroke='%23FFFFFF' stroke-width='1.2'/%3E%3Cline x1='19.8' y1='19.8' x2='22' y2='22' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 4 4, help;
+}
+
+.is-ctrl-define-active,
+.is-ctrl-define-active .textLayer span,
+.is-ctrl-define-active .notes-scroll p,
+.is-ctrl-define-active .notes-scroll span,
+.is-ctrl-define-active .notes-scroll li,
+.is-ctrl-define-active .notes-scroll blockquote {
+  cursor: var(--cursor-define-mac) !important;
+}
+

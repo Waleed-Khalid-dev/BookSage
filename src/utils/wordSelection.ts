@@ -64,6 +64,17 @@ export function getWordAtPoint(clientX: number, clientY: number): ClickedWordInf
 
           const clientRect = wordRange.getBoundingClientRect();
 
+          // Highlight the clicked word visually with native selection
+          try {
+            const sel = window.getSelection();
+            if (sel) {
+              sel.removeAllRanges();
+              sel.addRange(wordRange);
+            }
+          } catch (e) {
+            // Ignore selection errors in restricted contexts
+          }
+
           // Extract surrounding sentence (approx 80 chars before and after)
           const sentenceStart = Math.max(0, wordStart - 80);
           const sentenceEnd = Math.min(text.length, wordEnd + 80);
