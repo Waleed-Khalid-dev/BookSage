@@ -52,10 +52,20 @@ Drop in any PDF book or document. BookSage automatically splits chapters, extrac
 | <img src="assets/screenshots/reader-spread-view.png" alt="PDF Reader View" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> | <img src="assets/screenshots/notes-flashcards.png" alt="Notes Studio View" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> |
 | *Two-page 3D spread, 6 color themes, margin cropping & draw layer* | *Structured chapter summaries, action steps & interactive flashcards* |
 
-| ✦ Context-Aware AI Copilot Sidebar | 💬 Full-Screen AI Chat Studio & Citations |
+| 🎨 Draggable Book Cover Popup & Downward Showcase | 📚 <kbd>Ctrl+Click</kbd> Inline Dictionary & Theme Picker |
 | :---: | :---: |
-| <img src="assets/screenshots/copilot-sidebar.png" alt="Copilot Sidebar" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> | <img src="assets/screenshots/ai-chat-studio.png" alt="AI Chat Studio" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> |
-| *Right-click menu, floating popup, and resizable sidebar assistant* | *Multi-chapter RAG context selector & interactive citation jumping* |
+| <img src="assets/screenshots/cover-drawer-showcase.png" alt="Book Cover Showcase" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> | <img src="assets/screenshots/word-definition-modal.png" alt="Inline Word Definition Modal" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> |
+| *Real cover art from PDF, uncompressed morphing card, and reading stats* | *Zero-token definitions, phonetics, audio player, AI nuance & 5 themes* |
+
+| ✦ Context-Aware AI Copilot Sidebar | 🎭 4 AI Personas & Configurable Presets |
+| :---: | :---: |
+| <img src="assets/screenshots/copilot-sidebar.png" alt="Copilot Sidebar" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> | <img src="assets/screenshots/copilot-personas-presets.png" alt="AI Personas and Presets" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> |
+| *Live token counter badge, chapter context & interactive follow-up chips* | *Scholar, Teacher, Coach, Devil's Advocate & custom prompt manager* |
+
+| 💬 Full-Screen AI Chat Studio & Citations | ⏳ "Story So Far" Spoiler-Free Book Recap |
+| :---: | :---: |
+| <img src="assets/screenshots/ai-chat-studio.png" alt="AI Chat Studio" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> | <img src="assets/screenshots/story-so-far-recap.png" alt="Story So Far Recap" width="460" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" /> |
+| *Multi-chapter RAG context selector & interactive citation jumping* | *Chronological recap modal & welcome-back resume reading banner* |
 
 </div>
 
