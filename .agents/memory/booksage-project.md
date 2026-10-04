@@ -460,6 +460,23 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Verification:**
   - `tsc && vite build` passing cleanly with 0 errors.
 
+### Session 2026-10-04 (Modal Theme Picker & Draggable Book Cover Popup Showcase)
+- **Modal Theme Picker & Font Controls (`ModalThemePicker.tsx`):**
+  - Built reusable `ModalThemePicker.tsx` with 5 curated themes: `sepia` (Sepia Parchment), `emerald` (Dark Emerald), `dark` (Dark Charcoal), `light` (Clean Light), and `oled` (OLED Midnight).
+  - Integrated theme picker and font scaling (`A-` / `A+`) into both `WordDefinitionTooltip.tsx` and `CopilotPopup.tsx`.
+  - Resolved dark/light text readability and contrast issues across both modals.
+  - Added persistence in `bookStore.ts` (`copilotModalTheme`, `definitionModalTheme`).
+- **Draggable Book Cover Popup & Downward Slide Showcase Panel (`BookCoverDrawer.tsx`):**
+  - Built `BookCoverDrawer.tsx` component mounted in `BookReader.tsx` floating over reading canvas.
+  - **Dynamic Cover Art:** Renders PDF page 1 directly onto HTML canvas for both compact thumbnail and large showcase at 2x Retina resolution.
+  - **Compact Trigger Popup:** Displays cover thumbnail, parsed title and author, horizontal drag handle (`═`), and close button (`✕`). Draggable horizontally across reading canvas with X position persisted in `localStorage`.
+  - **Auto-Hide & Re-Summon:** Automatically slides upward to retract after 4.5 seconds of idle reading, with pause on hover/drag and a sleek pinned "Cover ▾" re-summon tab.
+  - **Downward Sliding Showcase:** Pops down directly beneath trigger element with matching 375px width (`MODAL_WIDTH`), showing reading progress bar, chapter info, and "Jump to Cover (Page 1)" action.
+  - **Non-Intrusive Interaction:** Zero background blur, no cursor or focus lock, and instant outside-click dismissal.
+  - **Robust Delimiter & Author Parser:** Splits multi-token book titles (e.g. `Robert Greene - 48 Laws of Power -- Robert Greene`) to eliminate author redundancy.
+- **Verification:**
+  - `tsc && vite build` clean with 0 errors.
+
 
 
 

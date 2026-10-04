@@ -29,3 +29,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Secrets & Environment
+.env
+.env.*
+*.pem
+*.key
+
+# Local SQLite databases & test runs
+*.db
+*.sqlite
+*.sqlite3

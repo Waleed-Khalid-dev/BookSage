@@ -37,9 +37,9 @@
 
 ## 💡 What is BookSage Studio?
 
-**BookSage Studio** is an all-in-one desktop application designed for serious readers, researchers, and lifelong learners. Instead of juggling detached PDF readers, separate note-taking apps, and generic AI chatbots, BookSage combines everything into a unified, **local-first learning studio**.
+**BookSage Studio** is an all-in-one desktop application engineered for serious readers, researchers, and lifelong learners. Instead of juggling detached PDF readers, separate note-taking apps, and generic cloud chatbots, BookSage combines everything into a unified, **local-first learning studio**.
 
-Drop in any PDF book or document. BookSage automatically splits chapters, extracts comprehensive structured insights (teachings, actionable steps, core lessons, key quotes, and Obsidian tags), and gives you an immersive reader with a **persistent, context-aware AI Copilot**.
+Drop in any PDF book or document. BookSage automatically splits chapters, extracts comprehensive structured insights (teachings, actionable steps, core lessons, key quotes, and Obsidian tags), and delivers an immersive reader backed by a **persistent, context-aware AI Copilot** and an **instant dictionary engine**.
 
 ---
 
@@ -65,20 +65,37 @@ Drop in any PDF book or document. BookSage automatically splits chapters, extrac
 
 ### 📖 1. Next-Gen PDF Reading Experience
 - **Multiple Layout Modes:** Seamlessly switch between **Single Page**, **Continuous Infinite Scroll**, and **Two-Page 3D Realistic Spread Mode**.
-- **6 Curated Display Themes:** High-contrast `Dark`, clean `Light`, warm `Sepia`, eye-strain reducing `Night`, pure black `OLED`, and distraction-free `Focus Mode`.
-- **Custom Duotone SVG Tinting:** Customize PDF text and page tint colors for optimal readability in any lighting condition.
+- **6 Curated Reader Themes:** High-contrast `Dark`, clean `Light`, warm `Sepia`, eye-strain reducing `Night`, pure black `OLED`, and distraction-free `Focus Mode (F11)`.
+- **Custom Duotone SVG Tinting:** Customize PDF page background and text tint colors for optimal readability in any lighting environment.
 - **Smart Margin Cropping:** Crop empty page margins dynamically to maximize reading real estate.
+- **Draggable Book Cover Popup & Downward Slide Showcase:**
+  - **Dynamic Cover Art:** Renders the active book's cover artwork directly from PDF page 1 onto HTML canvas at 2x Retina resolution.
+  - **Retractable Floating Bar:** Displays title, author, cover thumbnail, and a center drag handle (`═`). Horizontally draggable across the reading canvas with coordinates remembered across sessions.
+  - **Smart Auto-Hide & Re-Summon:** Automatically slides upward to tuck away after 4.5 seconds of idle reading. Hovering pauses the timer, and a subtle "Cover ▾" tab remains pinned to the top edge for instant access.
+  - **Downward Sliding Dropdown:** Clicking the thumbnail opens a large showcase card sliding directly beneath the trigger element with exact matching width (`375px`). Features reading progress percentage, pages remaining, and a "Jump to Cover (Page 1)" action.
+  - **Non-Intrusive Interaction:** Zero background blur, no cursor or focus lock, and instant dismissal when clicking anywhere outside.
 - **Full Annotation Suite:**
-  - 4-color text highlighters with customizable opacity.
-  - Freehand Pen and Drawing layer with full **Undo/Redo** history.
+  - 4-color text highlighters with customizable opacity and styles (underline, strikethrough).
+  - Freehand Pen and Eraser layer with full **Unified Undo/Redo** history.
   - Sticky notes and pop-up comments on any highlight.
-  - Searchable annotation sidebar with instant page jump.
-  - One-click annotation export to Markdown.
-- **Synchronized Text-to-Speech (TTS):** Character-proportional word-by-word highlighted reading voice powered by Python engine.
+  - Searchable annotation sidebar with instant page navigation.
+  - One-click annotation export to clean Markdown.
+- **Synchronized Text-to-Speech (TTS):** Character-proportional word-by-word highlighted reading voice powered by a native Python engine.
 
 ---
 
-### 🧠 2. Automated AI Knowledge Extraction Pipeline
+### 📚 2. Instant Dictionary & Inline Word Definitions
+- **<kbd>Ctrl+Click</kbd> Smart Lookup:** Click any word in the PDF reader or Notes viewer to reveal an instant definition popover with an authentic macOS definition cursor cue.
+- **Zero-Token Free Dictionary Integration:** Powered by the Free Dictionary API for instant offline-cached definitions, phonetic transcription, part of speech, and audio pronunciation.
+- **AI Chapter Thematic Context:** Generates book-specific nuance explaining how the author uses the term within the active chapter.
+- **Curated Modal Theme Picker:** Customize popup aesthetics on the fly with 5 curated themes:
+  - 🍵 `Sepia Parchment` • 🌲 `Dark Emerald` • 🌑 `Dark Charcoal` • ⚪ `Clean Light` • 🌌 `OLED Midnight`.
+- **In-Modal Font Scaling:** Adjust definition text size directly via `A-` / `A+` controls.
+- **Local SQLite Cache:** Caches lookups in the local database for instantaneous repeat lookups.
+
+---
+
+### 🧠 3. Automated AI Knowledge Extraction Pipeline
 - **Chapter Splitting:** Automatic table of contents detection and regex fallback using high-speed `PyMuPDF`.
 - **Structured JSON Synthesis:** Converts raw book text into standardized, high-density study guides:
   - 📌 **Executive Summary & Core Lesson:** The central takeaway distilled.
@@ -95,33 +112,36 @@ Drop in any PDF book or document. BookSage automatically splits chapters, extrac
 
 ---
 
-### 📝 3. Interactive Notes Studio & Obsidian Bridge
+### 📝 4. Interactive Notes Studio & Obsidian Vault Bridge
 - **Obsidian Visual Grammar:** Beautiful typography with obsidian-style red headers, styled callouts, and code blocks.
 - **Interactive Checklists:** Track your progress as you implement teachings into your daily workflow.
 - **Flashcard Study Mode:** Turn chapter lessons into interactive, flippable flashcards for spaced repetition.
 - **Native Obsidian Export:** Export clean, beautifully formatted `.md` vault files ready for Obsidian, Logseq, or Notion.
+- **Pinned AI Insights:** Pin key takeaways or copilot responses directly to your book's Notes view with direct page jump links.
 
 ---
 
-### ✦ 4. In-App AI Copilot & Full Chat Studio
-- **Persistent Copilot Sidebar:** Resizable right-side assistant docked directly in the reader and notes views.
-- **Selection Popup & Smart Context Menu:** Select any text and right-click to instantly trigger:
+### ✦ 5. In-App AI Copilot & Full Chat Studio
+- **Persistent Copilot Sidebar:** Resizable right-side assistant docked directly alongside the reader and notes views.
+- **Visual Context Token Estimator:** Live token badge in the sidebar header with real-time recalculation across chapter, full-book, or custom selections.
+- **Selection Popup & Smart Context Menu:** Select any text and right-click to trigger:
   - 📋 *Summarize*, 🧠 *Simplify (ELI5)*, 💡 *Explain*, ✂️ *Make Shorter/Longer*, ✅ *Fix Grammar*, 🌐 *Translate (10+ languages)*.
+  - 🎨 *Rephrase*, ✍️ *Continue Writing*, 📊 *Extract Key Data*.
 - **4 Distinct AI Personas:**
-  - 🎓 **Scholar:** Deep, academic, detailed analysis.
-  - 👨‍🏫 **Teacher:** Clear, simplified, structured breakdowns.
-  - 🔥 **Coach:** Motivating, highly actionable real-world execution advice.
-  - 🤔 **Devil's Advocate:** Critical thinking, challenging assumptions and weaknesses in arguments.
-- **Source-Grounded Citations (`[Ch. 4 ↗]`):**
-  - AI responses embed interactive citation badges that show chapter title and page range on hover.
-  - Clicking any citation badge instantly teleports the PDF canvas to that chapter's exact starting page.
-- **Flexible Multi-Chapter RAG Context:**
-  - Toggle between **Entire Book**, **Current Chapter**, or **Custom Selection** with live search and optional full raw text injection.
+  - 🎓 **Scholar:** Deep, academic, theoretical analysis with principle citations.
+  - 👨‍🏫 **Teacher:** Clear, simplified, patient breakdowns with practical analogies.
+  - 🔥 **Coach:** Motivating, punchy, action-oriented execution advice.
+  - 🤔 **Devil's Advocate:** Socratic critical thinking, challenging assumptions and edge cases.
+- **Minimalist Persona Badges:** Assistant responses display clean persona indicator tags across the Sidebar, Chat Studio, and Floating Popup.
+- **Configurable AI Presets:** Fully customizable sidebar prompt presets in Settings Dialog (add, reorder, edit prompts, and toggle default buttons).
+- **"Story So Far" Recap Engine:** Catch up on what you've read with spoiler-free chronological recaps and welcome-back resume banners.
+- **Interactive Follow-Up Chips:** Generates clickable follow-up questions at the end of conversational responses.
+- **Source-Grounded Citations (`[Ch. 4 ↗]`):** Interactive citation badges teleport the reader canvas directly to the cited chapter and page.
 
 ---
 
-### 🔒 5. 100% Local-First & Private
-- **Local SQLite Database:** All reading progress, highlights, drawings, bookmarks, notes, and chat histories stay on your machine.
+### 🔒 6. 100% Local-First & Private
+- **Local SQLite Database:** All reading progress, highlights, drawings, bookmarks, definitions, notes, and chat histories stay on your machine.
 - **Zero Plaintext Credentials:** API keys are encrypted and stored safely via the native OS keychain (`keyring`).
 - **Offline Capable:** Run completely offline using local models via Ollama.
 
@@ -136,6 +156,7 @@ graph TD
     subgraph Frontend ["Desktop Frontend (React 18 + TypeScript + Zustand)"]
         UI["App Shell (App.tsx)"]
         Reader["Book Reader (PDF.js + Web Canvas)"]
+        Drawer["Book Cover Drawer & Showcase"]
         Notes["Notes Viewer (ReactMarkdown + remark-gfm)"]
         Chat["AI Chat Studio & Copilot Sidebar"]
         Store["State Layer (bookStore, chatStore, uiStore)"]
@@ -152,11 +173,13 @@ graph TD
         PDF["PDF Engine (PyMuPDF / fitz)"]
         Splitter["Chapter Splitter (TOC + Regex)"]
         TTS["TTS Engine (Word-Level Sync)"]
+        Dict["Context Dictionary & Recap Engine"]
         AI["AI Client Engine (Gemini, OpenAI, Claude, Ollama)"]
     end
 
     UI --> Store
     Store --> IPC
+    Reader --> Drawer
     Reader --> IPC
     Chat --> IPC
     IPC --> SQL
@@ -165,6 +188,7 @@ graph TD
     Main --> PDF
     Main --> Splitter
     Main --> TTS
+    Main --> Dict
     Main --> AI
 ```
 
@@ -243,8 +267,9 @@ The output installer will be generated in `src-tauri/target/release/bundle/`.
 - [x] **Phase 4.5: Reader Polish & Annotations** — 6 themes, margin crop, SVG duotone, highlights, freehand pen
 - [x] **Phase 5: Obsidian-Style Notes Studio** — Interactive teachings, study checklists, flashcards
 - [x] **Phase 5b/c: Obsidian Vault Export & Notes TTS** — One-click vault export & word-level TTS
-- [x] **Phase 6: In-App AI Copilot** — Sidebar, selection popup, 4 personas, multi-chapter RAG & citations
-- [ ] **Phase 7: Enhanced Library View** — Visual shelf management, reading goals, and import analytics *(In Progress)*
+- [x] **Phase 6: In-App AI Copilot Studio** — Sidebar, selection popup, 4 personas, multi-chapter RAG, citations, and pinned insights
+- [x] **Phase 6 Polish: Inline Dictionary & Visual Showcase** — <kbd>Ctrl+Click</kbd> dictionary, 5 modal themes, draggable book cover popup & downward showcase panel
+- [ ] **Phase 7: Enhanced Library View** — Visual shelf management, reading goals, and import analytics *(Next Action)*
 - [ ] **Phase 8: Settings & Keyring Security** — Hardware-backed credential management
 - [ ] **Phase 9: Production Packaging** — WiX/NSIS signed releases
 
