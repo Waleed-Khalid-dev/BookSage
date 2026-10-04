@@ -176,6 +176,15 @@ export function SettingsDialog() {
                     </button>
                   </div>
                 ))}
+                <div className="shortcut-item" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', marginTop: '6px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span>Instant Word Definition & Context</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--bs-text-muted)' }}>Kindle & Apple style dictionary + book context</span>
+                  </div>
+                  <span className="shortcut-btn" style={{ cursor: 'default', background: 'rgba(0,150,136,0.12)', borderColor: 'rgba(0,150,136,0.3)', color: 'var(--bs-accent, #009688)' }}>
+                    Ctrl + Click
+                  </span>
+                </div>
               </div>
               
               <div className="settings-actions">

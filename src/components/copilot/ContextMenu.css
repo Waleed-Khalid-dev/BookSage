@@ -52,6 +52,19 @@
 .ctx-item--parent:hover { background: var(--bs-surface); color: #fff; }
 .ctx-arrow { margin-left: auto; color: #777; font-size: 0.65rem; }
 
+.ctx-shortcut-kbd {
+  margin-left: auto;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--bs-text-muted, #888);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  padding: 1px 4px;
+  line-height: 1.2;
+}
+
 .ctx-submenu {
   position: absolute;
   left: 100%;

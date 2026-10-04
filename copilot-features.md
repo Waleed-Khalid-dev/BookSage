@@ -226,9 +226,10 @@
 ### Inline Word Definition
 *Inspired by: Kindle X-Ray, Apple Dictionary, Readwise*
 
-- [ ] `Ctrl+Click` on any single word in BookReader or NotesViewer
-- [ ] Small tooltip pops up with: dictionary definition + AI-powered contextual explanation in the book's context
-- [ ] Uses free dictionary API for base definition; AI adds book-specific meaning
+- [x] `Ctrl+Click` on any single word in BookReader or NotesViewer
+- [x] Small tooltip pops up with: dictionary definition + AI-powered contextual explanation in the book's context
+- [x] Uses free dictionary API for base definition; AI adds book-specific meaning
+- [x] High-precision macOS-style cursor on Ctrl-hover, Context Menu shortcut badge, and Settings shortcuts list
 
 ### AI-Generated Study Quiz
 *Inspired by: Notewise AI Study Tools, Anki*

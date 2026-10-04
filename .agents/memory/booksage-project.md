@@ -417,4 +417,14 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Verification:**
   - `npm run build` clean (`✓ built in 32.23s`) with 0 errors.
 
+### Session 2026-10-04 Follow-up (Inline Word Definition Implementation)
+- **DOM Word Extraction & Event Handling:** Created `src/utils/wordSelection.ts` with `getWordAtPoint` using `caretRangeFromPoint` to automatically extract word boundaries on click.
+- **Hybrid Data Pipeline:** Built `src/services/dictionaryService.ts` querying the Free Dictionary API for instant 0-token definitions, phonetics, parts of speech, and audio pronunciation, combined with `word_book_context` Python command in `ai_chat.py` and `main.py` for chapter-specific thematic nuance.
+- **SQLite Persistence:** Created `word_definitions` table in SQLite (`dbService.ts`) with `getCachedWordDefinition` and `saveCachedWordDefinition` for zero-latency repeat lookups.
+- **Floating Tooltip (`WordDefinitionTooltip.tsx` & `.css`):** Built Kindle/Apple Dictionary style popover with audio pronunciation player, copy action, and `Discuss in Copilot` bridge.
+- **Minimalist Discovery:** Added high-precision macOS definition cursor on holding `Ctrl`, `<kbd>Ctrl+Click</kbd>` badge in `ContextMenu.tsx`, and documented in `SettingsDialog.tsx` Shortcuts tab.
+- **Verification:**
+  - `npm run build` clean (`✓ built in 17.13s`) with 0 errors.
+
+
 

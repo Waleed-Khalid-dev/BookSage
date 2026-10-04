@@ -144,7 +144,9 @@ export function ContextMenu({ onSaveHighlight }: ContextMenuProps) {
       {wordCount > 0 && wordCount <= 3 && (
         <>
           <button className="ctx-item" onClick={() => doQuickAction('define')} disabled={!isKeyReady}>
-            <span className="ctx-icon">📖</span> Define
+            <span className="ctx-icon">📖</span>
+            <span className="ctx-text">Define</span>
+            <kbd className="ctx-shortcut-kbd">Ctrl+Click</kbd>
           </button>
           <button className="ctx-item" onClick={() => doQuickAction('encyclopedia')} disabled={!isKeyReady}>
             <span className="ctx-icon">🏛️</span> Encyclopedia Lookup

@@ -19,6 +19,8 @@ import { CopilotPopup } from '../copilot/CopilotPopup';
 import { ContextMenu as AiContextMenu } from '../copilot/ContextMenu';
 import { Search, ChevronRight, PenTool, Undo, Redo, Eraser, Maximize, Minimize, BookOpen } from 'lucide-react';
 import { StorySoFarModal } from '../shared/StorySoFarModal';
+import { WordDefinitionTooltip, WordDefinitionTarget } from '../shared/WordDefinitionTooltip';
+import { getWordAtPoint } from '../../utils/wordSelection';
 
 const hexToRgbNormalized = (hex: string) => {
   const h = hex.replace('#', '');
@@ -85,6 +87,12 @@ export function BookReader() {
   
   // Note Editor State
   const [editingNote, setEditingNote] = useState<{ highlightId: string, text: string } | null>(null);
+
+  // Inline Word Definition Tooltip State
+  const [wordTooltipTarget, setWordTooltipTarget] = useState<WordDefinitionTarget | null>(null);
+  const [isCtrlDown, setIsCtrlDown] = useState(false);
+  const currentChapterRef = useRef(currentChapter);
+  useEffect(() => { currentChapterRef.current = currentChapter; }, [currentChapter]);
 
   useTextSelection((sel) => {
     setSelection(sel);
@@ -336,9 +344,44 @@ export function BookReader() {
           state.setScale(1.0);
         }
       }
+
+      if (e.key === 'Control' || e.key === 'Meta') {
+        setIsCtrlDown(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Control' || e.key === 'Meta') {
+        setIsCtrlDown(false);
+      }
+    };
+
+    const handleWindowBlur = () => {
+      setIsCtrlDown(false);
     };
     
-    const handleClick = () => {
+    const handleClick = (e: MouseEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        const targetEl = e.target as HTMLElement | null;
+        if (!targetEl || !targetEl.closest('button, input, select, textarea, [role="button"], .bs-word-tooltip')) {
+          const wordInfo = getWordAtPoint(e.clientX, e.clientY);
+          if (wordInfo) {
+            e.preventDefault();
+            e.stopPropagation();
+            const curChap = currentChapterRef.current;
+            setWordTooltipTarget({
+              word: wordInfo.word,
+              rect: wordInfo.rect,
+              bookTitle: currentBookTitle,
+              chapterNum: curChap?.num,
+              chapterTitle: curChap?.title,
+              chapterPath: curChap?.path,
+              surroundingText: wordInfo.surroundingText
+            });
+            return;
+          }
+        }
+      }
       setContextMenu(null);
     };
     
@@ -414,11 +457,15 @@ export function BookReader() {
     };
     
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleWindowBlur);
     window.addEventListener('click', handleClick);
     window.addEventListener('search-jump', handleSearchJump);
     window.addEventListener('booksage-jump-page', handleBookSageJump);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('click', handleClick);
       window.removeEventListener('search-jump', handleSearchJump);
       window.removeEventListener('booksage-jump-page', handleBookSageJump);
@@ -620,7 +667,7 @@ export function BookReader() {
       )}
       
       <div 
-        className="view-container book-reader" 
+        className={`view-container book-reader ${isCtrlDown ? 'is-ctrl-define-active' : ''}`}
         style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}
         onMouseEnter={() => setFocusedPanel('reader')}
         onClick={() => setFocusedPanel('reader')}
@@ -1259,6 +1306,11 @@ export function BookReader() {
         chapters={chapters}
         aiModel={aiModel}
         onDiscussInCopilot={handleDiscussRecapInCopilot}
+      />
+
+      <WordDefinitionTooltip
+        target={wordTooltipTarget}
+        onClose={() => setWordTooltipTarget(null)}
       />
 
       </div>

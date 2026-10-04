@@ -297,3 +297,68 @@ def generate_story_so_far(
 
     return client.chat(prompt, [], "You are a concise, world-class reading synthesizer.")
 
+
+def explain_word_in_context(
+    word: str,
+    book_title: Optional[str],
+    chapter_num: Optional[int],
+    chapter_title: Optional[str],
+    chapter_path: Optional[str],
+    surrounding_text: Optional[str],
+    provider: str,
+    api_key: str,
+    model_name: str = "gemini-3.6-flash"
+) -> str:
+    """
+    Generates a concise 1-2 sentence explanation of how a specific word or phrase
+    is used or intended within the context of the active book and chapter.
+    """
+    client = get_ai_client(provider, api_key, model_name)
+
+    context_snippets = []
+    if book_title:
+        context_snippets.append(f"Book: '{book_title}'")
+    if chapter_num is not None:
+        ch_desc = f"Chapter {chapter_num}"
+        if chapter_title:
+            ch_desc += f": {chapter_title}"
+        context_snippets.append(ch_desc)
+
+    # If chapter json or txt exists, pull a small snippet
+    if chapter_path:
+        try:
+            # Check for chapter json first
+            base, _ = os.path.splitext(chapter_path)
+            json_candidate = base + "_extracted.json"
+            if not os.path.exists(json_candidate):
+                json_candidate = base + ".json"
+            
+            if os.path.exists(json_candidate):
+                with open(json_candidate, 'r', encoding='utf-8', errors='replace') as f:
+                    cdata = json.load(f)
+                    if isinstance(cdata, list) and len(cdata) > 0:
+                        cdata = cdata[0]
+                    summary = cdata.get("summary") or cdata.get("core_lesson")
+                    if summary:
+                        context_snippets.append(f"Chapter Theme/Summary: {summary[:500]}")
+        except Exception as e:
+            print(f"[ai_chat] Error reading context for word explanation: {e}")
+
+    context_header = " | ".join(context_snippets) if context_snippets else "General Reading"
+
+    prompt = (
+        f"Context: {context_header}\n"
+    )
+    if surrounding_text:
+        prompt += f"Surrounding Sentence/Passage: \"{surrounding_text.strip()[:400]}\"\n"
+
+    prompt += (
+        f"Target Term: \"{word}\"\n\n"
+        f"In 1 to 2 crisp, high-signal sentences, explain the specific nuance, meaning, or thematic role "
+        f"of \"{word}\" in this book's context. Do not repeat a standard generic dictionary definition; "
+        f"focus on how the author or chapter uses it. Be direct and avoid filler intros."
+    )
+
+    system_prompt = "You are an insightful literary companion and contextual dictionary assistant."
+    return client.chat(prompt, [], system_prompt)
+

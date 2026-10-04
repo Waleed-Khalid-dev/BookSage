@@ -1,0 +1,334 @@
+// src/components/shared/WordDefinitionTooltip.tsx
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { Volume2, Sparkles, X, MessageSquare, Copy, Check } from 'lucide-react';
+import { lookupWordDefinition, WordDefinitionData, cleanWordToken } from '../../services/dictionaryService';
+import { invokePython } from '../../services/pythonService';
+import { useApiKeys } from '../../stores/apiKeysStore';
+import { useBookStore } from '../../stores/bookStore';
+import { useChatStore } from '../../stores/chatStore';
+import { saveCachedWordDefinition } from '../../services/dbService';
+import './WordDefinitionTooltip.css';
+
+export interface WordDefinitionTarget {
+  word: string;
+  rect: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  };
+  bookTitle?: string;
+  chapterNum?: number;
+  chapterTitle?: string;
+  chapterPath?: string;
+  surroundingText?: string;
+}
+
+interface WordDefinitionTooltipProps {
+  target: WordDefinitionTarget | null;
+  onClose: () => void;
+}
+
+export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ target, onClose }) => {
+  const [data, setData] = useState<WordDefinitionData | null>(null);
+  const [loadingDict, setLoadingDict] = useState<boolean>(true);
+  const [dictError, setDictError] = useState<string | null>(null);
+  const [bookContext, setBookContext] = useState<string | null>(null);
+  const [loadingAi, setLoadingAi] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; placement: 'below' | 'above' }>({
+    top: 0,
+    left: 0,
+    placement: 'below',
+  });
+
+  const { getKey } = useApiKeys();
+  const selectedModel = useBookStore(s => s.aiModel) || 'gemini-3.6-flash';
+  const provider = selectedModel.includes('gpt') ? 'openai' : selectedModel.includes('claude') ? 'claude' : 'gemini';
+  const apiKey = getKey(provider);
+
+  const cleanWord = target ? cleanWordToken(target.word) : '';
+
+  // 1. Calculate smart floating position
+  useLayoutEffect(() => {
+    if (!target) return;
+    const { top, left, width, height } = target.rect;
+    const tooltipWidth = 340;
+    const estimatedHeight = 260;
+    const margin = 10;
+
+    let computedLeft = left + width / 2 - tooltipWidth / 2;
+    if (computedLeft < margin) computedLeft = margin;
+    if (computedLeft + tooltipWidth > window.innerWidth - margin) {
+      computedLeft = window.innerWidth - tooltipWidth - margin;
+    }
+
+    let placement: 'below' | 'above' = 'below';
+    let computedTop = top + height + 8;
+
+    if (computedTop + estimatedHeight > window.innerHeight - margin) {
+      // Flip above
+      computedTop = Math.max(margin, top - estimatedHeight - 8);
+      placement = 'above';
+    }
+
+    setPos({ top: computedTop, left: computedLeft, placement });
+  }, [target]);
+
+  // 2. Fetch dictionary definition and AI context
+  useEffect(() => {
+    if (!target || !cleanWord) return;
+
+    let isMounted = true;
+    setLoadingDict(true);
+    setDictError(null);
+    setData(null);
+    setBookContext(null);
+
+    // Step A: Base Dictionary Lookup
+    lookupWordDefinition(cleanWord)
+      .then(res => {
+        if (!isMounted) return;
+        setLoadingDict(false);
+        if (res) {
+          setData(res);
+          if (res.bookContext) {
+            setBookContext(res.bookContext);
+          }
+        } else {
+          setDictError('No dictionary definition found for this term.');
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setLoadingDict(false);
+        setDictError('Unable to load dictionary definition.');
+      });
+
+    // Step B: AI Book Contextual Explanation
+    if (apiKey) {
+      setLoadingAi(true);
+      invokePython({
+        command: 'word_book_context',
+        word: cleanWord,
+        book_title: target.bookTitle,
+        chapter_num: target.chapterNum,
+        chapter_title: target.chapterTitle,
+        chapter_path: target.chapterPath,
+        surrounding_text: target.surroundingText,
+        provider,
+        api_key: apiKey,
+        model_name: selectedModel
+      })
+        .then(res => {
+          if (!isMounted) return;
+          setLoadingAi(false);
+          if (res.status === 'success' && res.explanation) {
+            setBookContext(res.explanation);
+            // Save to SQLite cache alongside definition
+            saveCachedWordDefinition({
+              word: cleanWord,
+              meanings_json: JSON.stringify(data?.meanings || []),
+              phonetic: data?.phonetic,
+              audio_url: data?.audioUrl,
+              ai_context_json: res.explanation
+            }).catch(() => {});
+          }
+        })
+        .catch(err => {
+          if (!isMounted) return;
+          setLoadingAi(false);
+          console.warn('Word book context fetch failed:', err);
+        });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cleanWord, target?.chapterNum]);
+
+  // 3. Dismissal listeners (Escape, click outside, scroll)
+  useEffect(() => {
+    if (!target) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    const handlePointerDown = (e: PointerEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+
+    const handleScroll = (e: Event) => {
+      // Don't close if scrolling inside the tooltip itself
+      if (containerRef.current && containerRef.current.contains(e.target as Node)) {
+        return;
+      }
+      onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('scroll', handleScroll, true);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [target, onClose]);
+
+  if (!target) return null;
+
+  // Audio pronunciation player
+  const handlePlayAudio = () => {
+    if (!data?.audioUrl) return;
+    setIsPlayingAudio(true);
+    const audio = new Audio(data.audioUrl);
+    audio.onended = () => setIsPlayingAudio(false);
+    audio.onerror = () => setIsPlayingAudio(false);
+    audio.play().catch(() => setIsPlayingAudio(false));
+  };
+
+  // Copy definition to clipboard
+  const handleCopy = () => {
+    const textParts = [`**${cleanWord}** ${data?.phonetic || ''}`];
+    if (data?.meanings) {
+      data.meanings.forEach(m => {
+        textParts.push(`*(${m.partOfSpeech})*`);
+        m.definitions.forEach((d, i) => {
+          textParts.push(`${i + 1}. ${d.definition}`);
+          if (d.example) textParts.push(`   "${d.example}"`);
+        });
+      });
+    }
+    if (bookContext) {
+      textParts.push(`\n**In this book:**\n${bookContext}`);
+    }
+    navigator.clipboard.writeText(textParts.join('\n'));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  // Open in Copilot Sidebar
+  const handleAskCopilot = () => {
+    useChatStore.setState({ isSidebarOpen: true });
+    window.dispatchEvent(new CustomEvent('append-chat-input', {
+      detail: `What is the significance of the term "${cleanWord}" in Chapter ${target.chapterNum ?? ''}: ${target.chapterTitle || target.bookTitle || ''}?`
+    }));
+    onClose();
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className={`bs-word-tooltip bs-word-tooltip--${pos.placement}`}
+      style={{
+        top: `${pos.top}px`,
+        left: `${pos.left}px`,
+      }}
+      onClick={e => e.stopPropagation()}
+    >
+      {/* Tooltip Header */}
+      <div className="wtt-header">
+        <div className="wtt-term-row">
+          <span className="wtt-word">{cleanWord}</span>
+          {data?.phonetic && <span className="wtt-phonetic">{data.phonetic}</span>}
+          {data?.audioUrl && (
+            <button
+              className={`wtt-audio-btn ${isPlayingAudio ? 'is-playing' : ''}`}
+              onClick={handlePlayAudio}
+              title="Listen to pronunciation"
+              aria-label="Play pronunciation"
+            >
+              <Volume2 size={13} />
+            </button>
+          )}
+        </div>
+        <button className="wtt-close-btn" onClick={onClose} title="Close (Esc)">
+          <X size={13} />
+        </button>
+      </div>
+
+      {/* Tooltip Body */}
+      <div className="wtt-body">
+        {loadingDict && (
+          <div className="wtt-loading-row">
+            <span className="wtt-spinner" />
+            <span>Looking up dictionary...</span>
+          </div>
+        )}
+
+        {dictError && !data && (
+          <div className="wtt-empty-text">
+            <span>{dictError}</span>
+          </div>
+        )}
+
+        {/* Dictionary Meanings */}
+        {data && data.meanings && data.meanings.length > 0 && (
+          <div className="wtt-meanings">
+            {data.meanings.slice(0, 2).map((meaning, mIdx) => (
+              <div key={mIdx} className="wtt-meaning-group">
+                <span className="wtt-pos-pill">{meaning.partOfSpeech}</span>
+                <ol className="wtt-definitions-list">
+                  {meaning.definitions.slice(0, 2).map((def, dIdx) => (
+                    <li key={dIdx} className="wtt-def-item">
+                      <span className="wtt-def-text">{def.definition}</span>
+                      {def.example && (
+                        <span className="wtt-def-example">"{def.example}"</span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* AI Book-Contextual Nuance */}
+        {(loadingAi || bookContext) && (
+          <div className="wtt-book-context-card">
+            <div className="wtt-context-header">
+              <span className="wtt-context-badge">
+                <Sparkles size={11} />
+                <span>In This Book</span>
+              </span>
+              {target.chapterNum !== undefined && (
+                <span className="wtt-context-chapter">Ch. {target.chapterNum}</span>
+              )}
+            </div>
+            {loadingAi && !bookContext ? (
+              <div className="wtt-loading-ai">
+                <span className="wtt-pulse-dot" />
+                <span>Extracting book context...</span>
+              </div>
+            ) : (
+              <p className="wtt-context-text">{bookContext}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Tooltip Actions Bar */}
+      <div className="wtt-footer">
+        <button className="wtt-action-btn" onClick={handleCopy} title="Copy definition">
+          {copied ? <Check size={12} color="var(--bs-accent, #009688)" /> : <Copy size={12} />}
+          <span>{copied ? 'Copied' : 'Copy'}</span>
+        </button>
+
+        <button className="wtt-action-btn wtt-action-btn--copilot" onClick={handleAskCopilot} title="Discuss in Copilot">
+          <MessageSquare size={12} />
+          <span>Discuss in Copilot</span>
+        </button>
+      </div>
+    </div>
+  );
+};

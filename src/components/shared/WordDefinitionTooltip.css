@@ -1,0 +1,327 @@
+/* src/components/shared/WordDefinitionTooltip.css */
+
+/* Floating Tooltip Container */
+.bs-word-tooltip {
+  position: fixed;
+  z-index: 10000;
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  background: var(--bs-panel, #242424);
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  color: var(--bs-text, #e0e0e0);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  animation: wtt-fade-scale 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  user-select: text;
+}
+
+@keyframes wtt-fade-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Header */
+.wtt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.wtt-term-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.wtt-word {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bs-text-primary, #ffffff);
+  letter-spacing: -0.01em;
+  text-transform: capitalize;
+}
+
+.wtt-phonetic {
+  font-size: 12px;
+  color: var(--bs-text-muted, #9e9e9e);
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+.wtt-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: rgba(0, 150, 136, 0.15);
+  color: var(--bs-accent, #009688);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.wtt-audio-btn:hover {
+  background: var(--bs-accent, #009688);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.wtt-audio-btn.is-playing {
+  animation: wtt-pulse 1s infinite;
+  background: var(--bs-accent, #009688);
+  color: #fff;
+}
+
+@keyframes wtt-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.wtt-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  color: var(--bs-text-muted, #8a8a8a);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  padding: 0;
+}
+
+.wtt-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--bs-text, #ffffff);
+}
+
+/* Tooltip Body */
+.wtt-body {
+  padding: 12px 14px;
+  max-height: 280px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wtt-loading-row,
+.wtt-empty-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--bs-text-muted, #999);
+  font-size: 12px;
+  padding: 8px 0;
+}
+
+.wtt-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 150, 136, 0.2);
+  border-top-color: var(--bs-accent, #009688);
+  border-radius: 50%;
+  animation: wtt-spin 0.6s linear infinite;
+}
+
+@keyframes wtt-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Meanings */
+.wtt-meanings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wtt-meaning-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wtt-pos-pill {
+  align-self: flex-start;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--bs-accent, #009688);
+}
+
+.wtt-definitions-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wtt-def-item {
+  color: var(--bs-text, #e2e2e2);
+}
+
+.wtt-def-text {
+  display: inline;
+}
+
+.wtt-def-example {
+  display: block;
+  font-size: 12px;
+  color: var(--bs-text-muted, #8a8a8a);
+  font-style: italic;
+  margin-top: 1px;
+}
+
+/* AI Book-Contextual Card */
+.wtt-book-context-card {
+  margin-top: 4px;
+  padding: 9px 11px;
+  background: rgba(0, 150, 136, 0.08);
+  border: 1px solid rgba(0, 150, 136, 0.22);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wtt-context-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wtt-context-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bs-accent, #009688);
+  letter-spacing: 0.02em;
+}
+
+.wtt-context-chapter {
+  font-size: 10.5px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(0, 150, 136, 0.15);
+  color: var(--bs-text-muted, #aaa);
+}
+
+.wtt-loading-ai {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--bs-text-muted, #8a8a8a);
+}
+
+.wtt-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bs-accent, #009688);
+  animation: wtt-pulse-dot 1s ease-in-out infinite alternate;
+}
+
+@keyframes wtt-pulse-dot {
+  from { opacity: 0.3; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1.2); }
+}
+
+.wtt-context-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--bs-text, #f0f0f0);
+}
+
+/* Footer Actions */
+.wtt-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.wtt-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--bs-text-muted, #bbb);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wtt-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--bs-text, #ffffff);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.wtt-action-btn--copilot {
+  background: rgba(0, 150, 136, 0.12);
+  border-color: rgba(0, 150, 136, 0.25);
+  color: var(--bs-accent, #009688);
+}
+
+.wtt-action-btn--copilot:hover {
+  background: var(--bs-accent, #009688);
+  color: #fff;
+  border-color: var(--bs-accent, #009688);
+}
+
+/* =========================================================
+   macOS-Style Minimalist Definition Cursor (When Ctrl is held)
+   ========================================================= */
+
+/* High-DPI macOS-style book/magnifier definition SVG cursor */
+:root {
+  --cursor-define-mac: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M4 5.5C4 4.12 5.12 3 6.5 3H18.5C19.33 3 20 3.67 20 4.5V18.5C20 19.33 19.33 20 18.5 20H6.5C5.12 20 4 18.88 4 17.5V5.5Z' fill='%231E1E1E' stroke='%23009688' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M4 7.5H20M8 12H16M8 15.5H13' stroke='%23FFFFFF' stroke-width='1.2' stroke-linecap='round'/%3E%3Ccircle cx='17' cy='17' r='4' fill='%23009688' stroke='%23FFFFFF' stroke-width='1.2'/%3E%3Cline x1='19.8' y1='19.8' x2='22' y2='22' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 4 4, help;
+}
+
+/* Applied when Ctrl is pressed over readable text */
+.is-ctrl-define-active,
+.is-ctrl-define-active .textLayer span,
+.is-ctrl-define-active .nv-markdown p,
+.is-ctrl-define-active .nv-markdown span,
+.is-ctrl-define-active .nv-markdown li,
+.is-ctrl-define-active .nv-markdown blockquote {
+  cursor: var(--cursor-define-mac) !important;
+}

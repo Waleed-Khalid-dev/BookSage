@@ -184,6 +184,15 @@ async function initDb(database: Database) {
       updated_at    INTEGER NOT NULL,
       PRIMARY KEY (book_id, up_to_chapter)
     );
+
+    CREATE TABLE IF NOT EXISTS word_definitions (
+      word             TEXT PRIMARY KEY,
+      phonetic         TEXT,
+      meanings_json    TEXT NOT NULL,
+      audio_url        TEXT,
+      ai_context_json  TEXT,
+      updated_at       INTEGER NOT NULL
+    );
   `);
 
   // Migrations for existing databases
@@ -834,5 +843,60 @@ export async function saveCachedBookRecap(bookId: string, upToChapter: number, r
     );
   } catch (e) {
     console.error('Error saving cached book recap:', e);
+  }
+}
+
+export interface CachedWordDefinitionRecord {
+  word: string;
+  phonetic?: string;
+  meanings_json: string;
+  audio_url?: string;
+  ai_context_json?: string;
+  updated_at: number;
+}
+
+export async function getCachedWordDefinition(word: string): Promise<CachedWordDefinitionRecord | null> {
+  const database = await getDb();
+  try {
+    const rows = await database.select<CachedWordDefinitionRecord[]>(
+      'SELECT * FROM word_definitions WHERE word = $1 LIMIT 1',
+      [word.toLowerCase().trim()]
+    );
+    return rows[0] || null;
+  } catch (e) {
+    console.error('Error fetching cached word definition:', e);
+    return null;
+  }
+}
+
+export async function saveCachedWordDefinition(record: {
+  word: string;
+  phonetic?: string;
+  meanings_json: string;
+  audio_url?: string;
+  ai_context_json?: string;
+}): Promise<void> {
+  const database = await getDb();
+  try {
+    await database.execute(
+      `INSERT INTO word_definitions (word, phonetic, meanings_json, audio_url, ai_context_json, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT(word) DO UPDATE SET
+       phonetic = COALESCE(excluded.phonetic, word_definitions.phonetic),
+       meanings_json = excluded.meanings_json,
+       audio_url = COALESCE(excluded.audio_url, word_definitions.audio_url),
+       ai_context_json = COALESCE(excluded.ai_context_json, word_definitions.ai_context_json),
+       updated_at = excluded.updated_at`,
+      [
+        record.word.toLowerCase().trim(),
+        record.phonetic || null,
+        record.meanings_json,
+        record.audio_url || null,
+        record.ai_context_json || null,
+        Date.now()
+      ]
+    );
+  } catch (e) {
+    console.error('Error saving cached word definition:', e);
   }
 }

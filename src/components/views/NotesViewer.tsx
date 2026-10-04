@@ -15,6 +15,8 @@ import { AudioToolbar } from '../reader/AudioToolbar';
 import { NotesSearchBar } from './NotesSearchBar';
 import { CopilotPopup } from '../copilot/CopilotPopup';
 import { ContextMenu as AiContextMenu } from '../copilot/ContextMenu';
+import { WordDefinitionTooltip, WordDefinitionTarget } from '../shared/WordDefinitionTooltip';
+import { getWordAtPoint } from '../../utils/wordSelection';
 import './NotesViewer.css';
 
 interface ChapterJson {
@@ -99,8 +101,10 @@ export function NotesViewer() {
   const [chapterInsights, setChapterInsights] = useState<Record<number, string>>({});
   const [pinnedInsights, setPinnedInsights] = useState<string[]>([]);
   const [pinnedOpen, setPinnedOpen] = useState(true);
-  // Selection pill is no longer a separate state — handled by CopilotPopup via chatStore
-  // (kept as minimal ref for backward compat)
+
+  // Inline Word Definition State
+  const [wordTooltipTarget, setWordTooltipTarget] = useState<WordDefinitionTarget | null>(null);
+  const [isCtrlDown, setIsCtrlDown] = useState(false);
 
   const notesRef = useRef(userNotes);
   notesRef.current = userNotes;
@@ -276,6 +280,54 @@ export function NotesViewer() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [doneChapters.length, viewMode, chapterJson?.teachings?.length]);
+
+  // Ctrl tracking for macOS-style definition cursor
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Control' || e.key === 'Meta') {
+        setIsCtrlDown(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Control' || e.key === 'Meta') {
+        setIsCtrlDown(false);
+      }
+    };
+    const handleBlur = () => {
+      setIsCtrlDown(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
+
+  const handleContainerClick = (e: React.MouseEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      const targetEl = e.target as HTMLElement | null;
+      if (!targetEl || !targetEl.closest('button, input, select, textarea, [role="button"], .bs-word-tooltip')) {
+        const wordInfo = getWordAtPoint(e.clientX, e.clientY);
+        if (wordInfo) {
+          e.preventDefault();
+          e.stopPropagation();
+          setWordTooltipTarget({
+            word: wordInfo.word,
+            rect: wordInfo.rect,
+            bookTitle: currentBookTitle,
+            chapterNum: activeChapter?.num,
+            chapterTitle: activeChapter?.title,
+            chapterPath: activeChapter?.path,
+            surroundingText: wordInfo.surroundingText
+          });
+        }
+      }
+    }
+  };
 
   // Text selection → chatStore (drives CopilotPopup)
   useEffect(() => {
@@ -619,9 +671,12 @@ export function NotesViewer() {
 
   return (
     <div 
-      className="notes-viewer"
+      className={`notes-viewer ${isCtrlDown ? 'is-ctrl-define-active' : ''}`}
       onMouseEnter={() => setFocusedPanel('notes')}
-      onClick={() => setFocusedPanel('notes')}
+      onClick={(e) => {
+        setFocusedPanel('notes');
+        handleContainerClick(e);
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         openContextMenu(e.clientX, e.clientY);
@@ -730,6 +785,11 @@ export function NotesViewer() {
       {/* Phase 6: AI Copilot overlays */}
       <CopilotPopup />
       <AiContextMenu />
+
+      <WordDefinitionTooltip
+        target={wordTooltipTarget}
+        onClose={() => setWordTooltipTarget(null)}
+      />
 
       {toast && <Toast message={toast} onDone={() => setToast('')} />}
     </div>
