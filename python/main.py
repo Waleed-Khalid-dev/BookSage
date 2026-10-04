@@ -143,6 +143,37 @@ def handle_command(cmd_data):
             model_name=model_name
         )
         return {"status": "success", "explanation": context_explanation}
+
+    elif command == "word_define_full":
+        word = cmd_data.get("word")
+        if not word:
+            return {"status": "error", "message": "Missing 'word'."}
+
+        book_title = cmd_data.get("book_title")
+        chapter_num = cmd_data.get("chapter_num")
+        chapter_title = cmd_data.get("chapter_title")
+        chapter_path = cmd_data.get("chapter_path")
+        surrounding_text = cmd_data.get("surrounding_text")
+        provider = cmd_data.get("provider", "gemini")
+        api_key = cmd_data.get("api_key")
+        model_name = cmd_data.get("model_name", "gemini-3.6-flash")
+
+        if not api_key:
+            return {"status": "error", "message": "Missing 'api_key'."}
+
+        from ai_chat import define_and_context_word
+        result = define_and_context_word(
+            word=word,
+            book_title=book_title,
+            chapter_num=chapter_num,
+            chapter_title=chapter_title,
+            chapter_path=chapter_path,
+            surrounding_text=surrounding_text,
+            provider=provider,
+            api_key=api_key,
+            model_name=model_name
+        )
+        return {"status": "success", "result": result}
     
     elif command == "search_pdf":
         pdf_path = cmd_data.get("path")

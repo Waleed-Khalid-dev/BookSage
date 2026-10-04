@@ -19,6 +19,7 @@ import { CopilotPopup } from '../copilot/CopilotPopup';
 import { ContextMenu as AiContextMenu } from '../copilot/ContextMenu';
 import { Search, ChevronRight, PenTool, Undo, Redo, Eraser, Maximize, Minimize, BookOpen } from 'lucide-react';
 import { StorySoFarModal } from '../shared/StorySoFarModal';
+import { WordDefinitionTooltip, WordDefinitionTarget } from '../shared/WordDefinitionTooltip';
 import { getWordAtPoint } from '../../utils/wordSelection';
 
 const hexToRgbNormalized = (hex: string) => {
@@ -42,9 +43,7 @@ export function BookReader() {
   const { isTtsPlaying, setActiveSelection, setFocusedPanel } = useUiStore();
   const { 
     setSelection: setCopilotSelection, 
-    openContextMenu,
-    setShowPopup,
-    setPendingQuickAction
+    openContextMenu 
   } = useChatStore();
   const pdfState = usePDF(pdfPath, lastPage);
   const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'spread'>('single');
@@ -92,7 +91,8 @@ export function BookReader() {
   // Note Editor State
   const [editingNote, setEditingNote] = useState<{ highlightId: string, text: string } | null>(null);
 
-  // Inline Word Definition Ctrl Tracking
+  // Inline Word Definition Tooltip State
+  const [wordTooltipTarget, setWordTooltipTarget] = useState<WordDefinitionTarget | null>(null);
   const [isCtrlDown, setIsCtrlDown] = useState(false);
   const currentChapterRef = useRef(currentChapter);
   useEffect(() => { currentChapterRef.current = currentChapter; }, [currentChapter]);
@@ -366,15 +366,21 @@ export function BookReader() {
     const handleClick = (e: MouseEvent) => {
       if (e.ctrlKey || e.metaKey) {
         const targetEl = e.target as HTMLElement | null;
-        if (!targetEl || !targetEl.closest('button, input, select, textarea, [role="button"], .copilot-popup')) {
+        if (!targetEl || !targetEl.closest('button, input, select, textarea, [role="button"], .bs-word-tooltip')) {
           const wordInfo = getWordAtPoint(e.clientX, e.clientY);
           if (wordInfo) {
             e.preventDefault();
             e.stopPropagation();
-            const domRect = new DOMRect(wordInfo.rect.left, wordInfo.rect.top, wordInfo.rect.width, wordInfo.rect.height);
-            setCopilotSelection({ text: wordInfo.word, rect: domRect });
-            setPendingQuickAction({ type: 'action', action: 'define' });
-            setShowPopup(true);
+            const curChap = currentChapterRef.current;
+            setWordTooltipTarget({
+              word: wordInfo.word,
+              rect: wordInfo.rect,
+              bookTitle: currentBookTitle,
+              chapterNum: curChap?.num,
+              chapterTitle: curChap?.title,
+              chapterPath: curChap?.path,
+              surroundingText: wordInfo.surroundingText,
+            });
             return;
           }
         }
@@ -1303,6 +1309,11 @@ export function BookReader() {
         chapters={chapters}
         aiModel={aiModel}
         onDiscussInCopilot={handleDiscussRecapInCopilot}
+      />
+
+      <WordDefinitionTooltip
+        target={wordTooltipTarget}
+        onClose={() => setWordTooltipTarget(null)}
       />
 
       </div>

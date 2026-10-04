@@ -354,11 +354,94 @@ def explain_word_in_context(
 
     prompt += (
         f"Target Term: \"{word}\"\n\n"
-        f"In 1 to 2 crisp, high-signal sentences, explain the specific nuance, meaning, or thematic role "
+        f"In 1 to 2 crisp sentences (under 40 words total), explain the specific nuance, meaning, or thematic role "
         f"of \"{word}\" in this book's context. Do not repeat a standard generic dictionary definition; "
         f"focus on how the author or chapter uses it. Be direct and avoid filler intros."
     )
 
     system_prompt = "You are an insightful literary companion and contextual dictionary assistant."
-    return client.chat(prompt, [], system_prompt)
+    return client.chat(prompt, [], system_prompt).strip()
+
+
+def define_and_context_word(
+    word: str,
+    book_title: Optional[str],
+    chapter_num: Optional[int],
+    chapter_title: Optional[str],
+    chapter_path: Optional[str],
+    surrounding_text: Optional[str],
+    provider: str,
+    api_key: str,
+    model_name: str = "gemini-3.6-flash"
+) -> dict:
+    """
+    Fallback when free dictionary API is offline or rate-limited:
+    Generates dictionary definition, phonetics, parts of speech, and book context in one structured JSON.
+    """
+    client = get_ai_client(provider, api_key, model_name)
+
+    context_snippets = []
+    if book_title:
+        context_snippets.append(f"Book: '{book_title}'")
+    if chapter_num is not None:
+        ch_desc = f"Chapter {chapter_num}"
+        if chapter_title:
+            ch_desc += f": {chapter_title}"
+        context_snippets.append(ch_desc)
+
+    context_header = " | ".join(context_snippets) if context_snippets else "General Reading"
+
+    prompt = (
+        f"Define the word: \"{word}\"\n"
+        f"Context: {context_header}\n"
+    )
+    if surrounding_text:
+        prompt += f"Passage: \"{surrounding_text.strip()[:350]}\"\n"
+
+    prompt += (
+        f"\nRespond ONLY with a valid JSON object matching this schema without markdown code blocks:\n"
+        f"{{\n"
+        f'  "phonetic": "/pronunciation/",\n'
+        f'  "meanings": [\n'
+        f'    {{\n'
+        f'      "partOfSpeech": "noun",\n'
+        f'      "definitions": [\n'
+        f'        {{\n'
+        f'          "definition": "Clear concise definition.",\n'
+        f'          "example": "Natural usage example sentence."\n'
+        f'        }}\n'
+        f'      ]\n'
+        f'    }}\n'
+        f'  ],\n'
+        f'  "book_context": "Crisp 1-2 sentence explanation (under 40 words) of how this author or chapter specifically uses or frames this term."\n'
+        f"}}"
+    )
+
+    system_prompt = "You are a precise dictionary engine and literary reading assistant. Output valid JSON only."
+    raw = client.chat(prompt, [], system_prompt).strip()
+    
+    # Strip markdown code blocks if any
+    clean_json = raw
+    if clean_json.startswith("```"):
+        lines = clean_json.split("\n")
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        clean_json = "\n".join(lines).strip()
+
+    try:
+        return json.loads(clean_json)
+    except Exception as e:
+        print(f"[ai_chat] JSON parse error in define_and_context_word: {e}, raw: {raw}")
+        return {
+            "phonetic": "",
+            "meanings": [
+                {
+                    "partOfSpeech": "definition",
+                    "definitions": [{"definition": raw[:200]}]
+                }
+            ],
+            "book_context": ""
+        }
 

@@ -4,12 +4,12 @@
 .bs-word-tooltip {
   position: fixed;
   z-index: 10000;
-  width: 340px;
+  width: 350px;
   max-width: calc(100vw - 24px);
   background: var(--bs-panel, #242424);
   border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.12));
   border-radius: 10px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
   color: var(--bs-text, #e0e0e0);
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
   animation: wtt-fade-scale 0.15s cubic-bezier(0.16, 1, 0.3, 1);
@@ -31,19 +31,37 @@
   }
 }
 
-/* Header */
+/* Header (Draggable) */
 .wtt-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.18);
+  cursor: grab;
+  user-select: none;
+}
+
+.wtt-header:active {
+  cursor: grabbing;
+}
+
+.wtt-drag-handle {
+  color: var(--bs-text-muted, #777);
+  cursor: grab;
+  margin-right: 2px;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.wtt-header:hover .wtt-drag-handle {
+  color: var(--bs-accent, #009688);
 }
 
 .wtt-term-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   overflow: hidden;
 }

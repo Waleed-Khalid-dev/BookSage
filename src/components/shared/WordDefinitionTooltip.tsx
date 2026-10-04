@@ -1,6 +1,6 @@
 // src/components/shared/WordDefinitionTooltip.tsx
-import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
-import { Volume2, Sparkles, X, MessageSquare, Copy, Check } from 'lucide-react';
+import React, { useEffect, useState, useRef, useLayoutEffect, useCallback } from 'react';
+import { Volume2, Sparkles, X, MessageSquare, Copy, Check, GripVertical } from 'lucide-react';
 import { lookupWordDefinition, WordDefinitionData, cleanWordToken } from '../../services/dictionaryService';
 import { invokePython } from '../../services/pythonService';
 import { useApiKeys } from '../../stores/apiKeysStore';
@@ -39,6 +39,9 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+
   const [pos, setPos] = useState<{ top: number; left: number; placement: 'below' | 'above' }>({
     top: 0,
     left: 0,
@@ -52,13 +55,13 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
 
   const cleanWord = target ? cleanWordToken(target.word) : '';
 
-  // 1. Calculate smart floating position
+  // 1. Initial smart floating positioning relative to clicked word
   useLayoutEffect(() => {
     if (!target) return;
     const { top, left, width, height } = target.rect;
-    const tooltipWidth = 340;
-    const estimatedHeight = 260;
-    const margin = 10;
+    const tooltipWidth = 350;
+    const estimatedHeight = 280;
+    const margin = 12;
 
     let computedLeft = left + width / 2 - tooltipWidth / 2;
     if (computedLeft < margin) computedLeft = margin;
@@ -67,18 +70,50 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
     }
 
     let placement: 'below' | 'above' = 'below';
-    let computedTop = top + height + 8;
+    let computedTop = top + height + 10;
 
     if (computedTop + estimatedHeight > window.innerHeight - margin) {
-      // Flip above
-      computedTop = Math.max(margin, top - estimatedHeight - 8);
+      // Flip above word if overflows bottom
+      computedTop = Math.max(margin, top - estimatedHeight - 10);
       placement = 'above';
     }
 
     setPos({ top: computedTop, left: computedLeft, placement });
   }, [target]);
 
-  // 2. Fetch dictionary definition and AI context
+  // 2. Dragging Logic (moves popup freely across the viewport)
+  const onDragStart = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return; // Left mouse button only
+    if ((e.target as HTMLElement).closest('button')) return; // Ignore button clicks
+
+    dragging.current = true;
+    dragOffset.current = {
+      x: e.clientX - pos.left,
+      y: e.clientY - pos.top,
+    };
+
+    const onMove = (ev: MouseEvent) => {
+      if (!dragging.current || !containerRef.current) return;
+      const pw = containerRef.current.offsetWidth || 350;
+      const ph = containerRef.current.offsetHeight || 280;
+      setPos(prev => ({
+        ...prev,
+        left: Math.max(8, Math.min(ev.clientX - dragOffset.current.x, window.innerWidth - pw - 8)),
+        top: Math.max(8, Math.min(ev.clientY - dragOffset.current.y, window.innerHeight - ph - 8)),
+      }));
+    };
+
+    const onUp = () => {
+      dragging.current = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [pos.left, pos.top]);
+
+  // 3. Fetch dictionary definition and AI context
   useEffect(() => {
     if (!target || !cleanWord) return;
 
@@ -88,8 +123,17 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
     setData(null);
     setBookContext(null);
 
-    // Step A: Base Dictionary Lookup
-    lookupWordDefinition(cleanWord)
+    // Step A: Base Dictionary Lookup with local cache & robust AI fallback
+    lookupWordDefinition(cleanWord, {
+      bookTitle: target.bookTitle,
+      chapterNum: target.chapterNum,
+      chapterTitle: target.chapterTitle,
+      chapterPath: target.chapterPath,
+      surroundingText: target.surroundingText,
+      provider,
+      apiKey,
+      modelName: selectedModel,
+    })
       .then(res => {
         if (!isMounted) return;
         setLoadingDict(false);
@@ -108,7 +152,7 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
         setDictError('Unable to load dictionary definition.');
       });
 
-    // Step B: AI Book Contextual Explanation
+    // Step B: AI Book Contextual Explanation (if not already returned by fallback)
     if (apiKey) {
       setLoadingAi(true);
       invokePython({
@@ -121,20 +165,19 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
         surrounding_text: target.surroundingText,
         provider,
         api_key: apiKey,
-        model_name: selectedModel
+        model_name: selectedModel,
       })
         .then(res => {
           if (!isMounted) return;
           setLoadingAi(false);
           if (res.status === 'success' && res.explanation) {
             setBookContext(res.explanation);
-            // Save to SQLite cache alongside definition
             saveCachedWordDefinition({
               word: cleanWord,
               meanings_json: JSON.stringify(data?.meanings || []),
               phonetic: data?.phonetic,
               audio_url: data?.audioUrl,
-              ai_context_json: res.explanation
+              ai_context_json: res.explanation,
             }).catch(() => {});
           }
         })
@@ -150,7 +193,7 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
     };
   }, [cleanWord, target?.chapterNum]);
 
-  // 3. Dismissal listeners (Escape, click outside, scroll)
+  // 4. Dismissal listeners (Escape & outside click when not dragging)
   useEffect(() => {
     if (!target) return;
 
@@ -161,40 +204,52 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
     };
 
     const handlePointerDown = (e: PointerEvent) => {
+      if (dragging.current) return;
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         onClose();
       }
     };
 
-    const handleScroll = (e: Event) => {
-      // Don't close if scrolling inside the tooltip itself
-      if (containerRef.current && containerRef.current.contains(e.target as Node)) {
-        return;
-      }
-      onClose();
-    };
-
     window.addEventListener('keydown', handleKeyDown);
     document.addEventListener('pointerdown', handlePointerDown);
-    window.addEventListener('scroll', handleScroll, true);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [target, onClose]);
 
   if (!target) return null;
 
-  // Audio pronunciation player
+  // Audio pronunciation player with Web Speech API fallback
   const handlePlayAudio = () => {
-    if (!data?.audioUrl) return;
-    setIsPlayingAudio(true);
-    const audio = new Audio(data.audioUrl);
-    audio.onended = () => setIsPlayingAudio(false);
-    audio.onerror = () => setIsPlayingAudio(false);
-    audio.play().catch(() => setIsPlayingAudio(false));
+    if (data?.audioUrl) {
+      setIsPlayingAudio(true);
+      const audio = new Audio(data.audioUrl);
+      audio.onended = () => setIsPlayingAudio(false);
+      audio.onerror = () => {
+        setIsPlayingAudio(false);
+        speakFallback();
+      };
+      audio.play().catch(() => {
+        setIsPlayingAudio(false);
+        speakFallback();
+      });
+    } else {
+      speakFallback();
+    }
+  };
+
+  const speakFallback = () => {
+    if ('speechSynthesis' in window && cleanWord) {
+      setIsPlayingAudio(true);
+      const utterance = new SpeechSynthesisUtterance(cleanWord);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
+      utterance.onend = () => setIsPlayingAudio(false);
+      utterance.onerror = () => setIsPlayingAudio(false);
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   // Copy definition to clipboard
@@ -217,12 +272,14 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
     setTimeout(() => setCopied(false), 1800);
   };
 
-  // Open in Copilot Sidebar
+  // Open in Copilot Sidebar for deep discussion
   const handleAskCopilot = () => {
     useChatStore.setState({ isSidebarOpen: true });
-    window.dispatchEvent(new CustomEvent('append-chat-input', {
-      detail: `What is the significance of the term "${cleanWord}" in Chapter ${target.chapterNum ?? ''}: ${target.chapterTitle || target.bookTitle || ''}?`
-    }));
+    window.dispatchEvent(
+      new CustomEvent('append-chat-input', {
+        detail: `What is the significance and thematic role of the term "${cleanWord}" in Chapter ${target.chapterNum ?? ''}: ${target.chapterTitle || target.bookTitle || ''}?`,
+      })
+    );
     onClose();
   };
 
@@ -236,21 +293,24 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
       }}
       onClick={e => e.stopPropagation()}
     >
-      {/* Tooltip Header */}
-      <div className="wtt-header">
+      {/* Tooltip Draggable Header */}
+      <div
+        className="wtt-header"
+        onMouseDown={onDragStart}
+        title="Click and drag to move"
+      >
         <div className="wtt-term-row">
+          <GripVertical size={13} className="wtt-drag-handle" />
           <span className="wtt-word">{cleanWord}</span>
           {data?.phonetic && <span className="wtt-phonetic">{data.phonetic}</span>}
-          {data?.audioUrl && (
-            <button
-              className={`wtt-audio-btn ${isPlayingAudio ? 'is-playing' : ''}`}
-              onClick={handlePlayAudio}
-              title="Listen to pronunciation"
-              aria-label="Play pronunciation"
-            >
-              <Volume2 size={13} />
-            </button>
-          )}
+          <button
+            className={`wtt-audio-btn ${isPlayingAudio ? 'is-playing' : ''}`}
+            onClick={handlePlayAudio}
+            title="Listen to pronunciation"
+            aria-label="Play pronunciation"
+          >
+            <Volume2 size={13} />
+          </button>
         </div>
         <button className="wtt-close-btn" onClick={onClose} title="Close (Esc)">
           <X size={13} />
@@ -324,7 +384,11 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
           <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
 
-        <button className="wtt-action-btn wtt-action-btn--copilot" onClick={handleAskCopilot} title="Discuss in Copilot">
+        <button
+          className="wtt-action-btn wtt-action-btn--copilot"
+          onClick={handleAskCopilot}
+          title="Discuss in Copilot"
+        >
           <MessageSquare size={12} />
           <span>Discuss in Copilot</span>
         </button>
