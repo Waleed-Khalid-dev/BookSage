@@ -190,23 +190,26 @@ function makeMessage(role: 'user' | 'assistant', content: string, followUps?: st
 }
 
 /** Extract @@FOLLOWUP: lines from AI response and strip them from visible content. */
-function parseFollowUps(raw: string): { content: string; followUps: string[] } {
-  const lines = raw.split('\n');
+export function parseFollowUps(raw: string): { content: string; followUps: string[] } {
+  if (!raw) return { content: '', followUps: [] };
+
   const followUps: string[] = [];
-  const rest: string[] = [];
-  for (const line of lines) {
-    const match = line.match(/^\s*(?:[-*•]|\d+\.?)?\s*@@FOLLOWUP:\s*(.+)$/i);
-    if (match) {
-      const q = match[1].trim().replace(/^["']|["']$/g, '');
-      if (q && !followUps.includes(q)) {
-        followUps.push(q);
-      }
-    } else {
-      rest.push(line);
+  
+  // 1. Extract all @@FOLLOWUP: occurrences globally (handles single or multiple on same line)
+  const matches = raw.matchAll(/@@FOLLOWUP:\s*([^@\n\r]+)/gi);
+  for (const m of matches) {
+    const q = m[1].trim().replace(/^["']|["']$/g, '');
+    if (q && !followUps.includes(q)) {
+      followUps.push(q);
     }
   }
-  let content = rest.join('\n').trim();
+
+  // 2. Remove all @@FOLLOWUP: statements and their trailing text cleanly from content
+  let content = raw.replace(/(?:[\r\n\s]*@@FOLLOWUP:\s*[^@\n\r]+)+/gi, '').trim();
+
+  // 3. Remove any trailing "Suggested follow-up questions" headers if left behind
   content = content.replace(/(?:\*\*|##+)?\s*(?:suggested\s+)?follow-?up\s+questions?:?\s*(?:\*\*)?$/i, '').trim();
+
   return { content, followUps: followUps.slice(0, 3) };
 }
 
@@ -533,8 +536,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       provider,
       api_key: apiKey,
       model_name: modelName,
+      include_followups: false,
     });
-    if (res.status === 'success') return res.response ?? '';
+    if (res.status === 'success') {
+      const raw = res.response ?? '';
+      const { content } = parseFollowUps(raw);
+      return content;
+    }
     throw new Error(res.message ?? 'Quick action failed');
   },
 
@@ -548,8 +556,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       provider,
       api_key: apiKey,
       model_name: modelName,
+      include_followups: false,
     });
-    if (res.status === 'success') return res.response ?? '';
+    if (res.status === 'success') {
+      const raw = res.response ?? '';
+      const { content } = parseFollowUps(raw);
+      return content;
+    }
     throw new Error(res.message ?? 'Translation failed');
   },
 

@@ -57,7 +57,8 @@ def chat_with_context(
     current_chapter_title: Optional[str] = None,
     current_chapter_pages: Optional[str] = None,
     book_title: Optional[str] = None,
-    chapters_meta: Optional[List[Dict[str, Any]]] = None
+    chapters_meta: Optional[List[Dict[str, Any]]] = None,
+    include_followups: bool = True
 ) -> str:
     """
     Sends a chat message to the AI provider, using the provided RAG files 
@@ -177,20 +178,22 @@ def chat_with_context(
         "answer accurately using the ACTIVE USER READING POSITION provided above!\n"
     )
 
-    followup_instructions = (
-        "\n\nSUGGESTED FOLLOW-UP QUESTIONS (CRITICAL & MANDATORY):\n"
-        "At the very end of your response, you MUST provide exactly 3 concise, highly relevant follow-up questions "
-        "that the user might want to ask next to explore this chapter, lesson, or topic deeper.\n"
-        "Format each question on its own separate line starting with @@FOLLOWUP:\n"
-        "Example at the end of your response:\n"
-        "@@FOLLOWUP: What is a real-world example of applying this principle?\n"
-        "@@FOLLOWUP: What are the main dangers or common mistakes to avoid?\n"
-        "@@FOLLOWUP: How does this connect to the previous chapter?\n"
-        "Rules:\n"
-        "- Exactly 3 questions.\n"
-        "- Do NOT prefix the line with numbers (1.), bullets (*), or quotes.\n"
-        "- Put them at the very end of the message.\n"
-    )
+    followup_instructions = ""
+    if include_followups:
+        followup_instructions = (
+            "\n\nSUGGESTED FOLLOW-UP QUESTIONS (CRITICAL & MANDATORY):\n"
+            "At the very end of your response, you MUST provide exactly 3 concise, highly relevant follow-up questions "
+            "that the user might want to ask next to explore this chapter, lesson, or topic deeper.\n"
+            "Format each question on its own separate line starting with @@FOLLOWUP:\n"
+            "Example at the end of your response:\n"
+            "@@FOLLOWUP: What is a real-world example of applying this principle?\n"
+            "@@FOLLOWUP: What are the main dangers or common mistakes to avoid?\n"
+            "@@FOLLOWUP: How does this connect to the previous chapter?\n"
+            "Rules:\n"
+            "- Exactly 3 questions.\n"
+            "- Do NOT prefix the line with numbers (1.), bullets (*), or quotes.\n"
+            "- Put them at the very end of the message.\n"
+        )
 
     system_prompt = (
         f"{persona_prefix}"

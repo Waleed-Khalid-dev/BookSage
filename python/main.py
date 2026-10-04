@@ -57,6 +57,7 @@ def handle_command(cmd_data):
         current_chapter_pages = cmd_data.get("current_chapter_pages")
         book_title = cmd_data.get("book_title")
         chapters_meta = cmd_data.get("chapters_meta", [])
+        include_followups = cmd_data.get("include_followups", True)
         
         if not message or not api_key:
             return {"status": "error", "message": "Missing 'message' or 'api_key'."}
@@ -79,7 +80,8 @@ def handle_command(cmd_data):
             current_chapter_title=current_chapter_title,
             current_chapter_pages=current_chapter_pages,
             book_title=book_title,
-            chapters_meta=chapters_meta
+            chapters_meta=chapters_meta,
+            include_followups=include_followups
         )
         return {"status": "success", "response": response}
 

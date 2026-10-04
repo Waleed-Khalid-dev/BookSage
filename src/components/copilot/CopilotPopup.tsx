@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useChatStore, QuickActionType } from '../../stores/chatStore';
+import { useChatStore, QuickActionType, parseFollowUps } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector, getProviderForModel } from './ModelSelector';
@@ -42,6 +42,7 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
 
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState('');
+  const [followUps, setFollowUps] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -80,6 +81,7 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     setPos({ x, y });
     setQuestion('');
     setResponse('');
+    setFollowUps([]);
     setError('');
   }, [showPopup, selection]);
 
@@ -134,7 +136,12 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     document.addEventListener('mouseup', onUp);
   }, [popupSize, setPopupSize]);
 
-  const close = () => { setShowPopup(false); setSelection(null); setShowTranslateMenu(false); };
+  const close = () => { 
+    setShowPopup(false); 
+    setSelection(null); 
+    setShowTranslateMenu(false); 
+    setFollowUps([]);
+  };
 
   const handleSend = async (promptText?: string) => {
     const text = promptText ?? question;
@@ -146,12 +153,15 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     setIsLoading(true);
     setError('');
     setResponse('');
+    setFollowUps([]);
     try {
       const contextPrefix = selection?.text
         ? `The user is asking about this text: "${selection.text}"\n\n`
         : '';
       const result = await sendQuickAction('explain' as QuickActionType, contextPrefix + text, provider, apiKey, model);
-      setResponse(result);
+      const { content, followUps: newFollowUps } = parseFollowUps(result);
+      setResponse(content);
+      setFollowUps(newFollowUps);
     } catch (e: any) {
       setError(e.message ?? 'AI request failed');
     } finally {
@@ -168,9 +178,12 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     setIsLoading(true);
     setError('');
     setResponse('');
+    setFollowUps([]);
     try {
       const result = await sendQuickAction(action, selection.text, provider, apiKey, model);
-      setResponse(result);
+      const { content, followUps: newFollowUps } = parseFollowUps(result);
+      setResponse(content);
+      setFollowUps(newFollowUps);
     } catch (e: any) {
       setError(e.message ?? 'AI request failed');
     } finally {
@@ -188,9 +201,12 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     setIsLoading(true);
     setError('');
     setResponse('');
+    setFollowUps([]);
     try {
       const result = await sendTranslate(selection.text, lang, provider, apiKey, model);
-      setResponse(result);
+      const { content } = parseFollowUps(result);
+      setResponse(content);
+      setFollowUps([]);
     } catch (e: any) {
       setError(e.message ?? 'Translation failed');
     } finally {
@@ -337,6 +353,15 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
         <div className="cpp-response">
           <div className="cpp-response-content">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
+            {followUps.length > 0 && (
+              <div className="cpp-followups">
+                {followUps.map((q, i) => (
+                  <button key={i} className="cpp-followup-pill" onClick={() => handleSend(q)} title="Click to ask this question">
+                    💬 {q}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="cpp-response-actions">
             <button onClick={handleCopy} title="Copy response">

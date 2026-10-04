@@ -409,3 +409,12 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Verification:**
   - `npm run build` clean (`✓ built in 11.24s`) with 0 errors.
 
+### Session 2026-10-04 Notes (Follow-Up Token Leakage Fix & Popup Action Bar Layout)
+- **Backend Token Control:** Added `include_followups: bool` across `ai_chat.py` and `main.py`. System prompt only requests follow-ups when `include_followups` is true, avoiding token leakage and irrelevant suggestions for quick actions (Rephrase, Extract Data, etc.).
+- **Global Multi-Token Regex Sanitization:** Upgraded `parseFollowUps` in `chatStore.ts` with `matchAll(/@@FOLLOWUP:\s*([^@\n\r]+)/gi)` and global strip regex to reliably catch and clean all follow-up tokens, including edge cases where the LLM puts multiple tokens on one line.
+- **Interactive Popup Follow-Ups:** In `CopilotPopup.tsx`, parsed follow-up questions render as clickable pills (`💬 Question`) under conversational responses.
+- **Pinned Bottom Action Bar:** Restructured `CopilotPopup.css` with flexbox layout: response text scrolls inside `.cpp-response-content` while `.cpp-response-actions` (`📋 Copy`, `📌 Pin`, `⟳ Regenerate`) remains permanently docked at the bottom with a subtle border.
+- **Verification:**
+  - `npm run build` clean (`✓ built in 32.23s`) with 0 errors.
+
+

@@ -246,11 +246,15 @@
 .cpp-response {
   border-top: 1px solid #2a3a3a;
   flex: 1;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   min-height: 80px;
 }
 .cpp-response-content {
   padding: 10px 12px;
+  flex: 1;
+  overflow-y: auto;
   font-size: 0.97em;
   line-height: 1.6;
   color: #e0e0e0;
@@ -270,11 +274,42 @@
   padding-left: 1.4em;
 }
 
+.cpp-followups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.cpp-followup-pill {
+  text-align: left;
+  background: var(--bs-surface, #2e2e2e);
+  border: 1px solid var(--bs-border, #3a3a3a);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 0.85em;
+  color: var(--bs-text-secondary, #b0b0b0);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.35;
+}
+
+.cpp-followup-pill:hover {
+  background: rgba(0, 150, 136, 0.15);
+  border-color: var(--bs-accent, #009688);
+  color: var(--bs-text-bright, #ffffff);
+}
+
 .cpp-response-actions {
   display: flex;
   gap: 6px;
-  padding: 6px 12px 10px;
+  padding: 8px 12px;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(0, 150, 136, 0.15);
+  background: rgba(0, 0, 0, 0.2);
 }
 .cpp-response-actions button {
   background: #2e2e2e;
