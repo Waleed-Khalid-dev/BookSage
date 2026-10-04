@@ -58,11 +58,13 @@ When starting a new session:
    - SQLite conversation persistence (`chat_sessions` table) with auto-title and delete actions.
    - Chats / Pinned Insights tab view with pulse highlight and jump-to-page navigation.
 
-5. **Inline Word Definition (`WordDefinitionTooltip.tsx`)**
+5. **Inline Word Definition (`WordDefinitionTooltip.tsx`) & Copilot Modal Parity**
    - `Ctrl+Click` on any word in Reader or Notes.
    - Free Dictionary API base + SQLite cache (`word_definitions`) + AI book context fallback.
    - Audio pronunciation playback with Web Speech API fallback.
    - Discuss in Copilot bridge.
+   - **Modal Color Theme Picker (`ModalThemePicker.tsx`)**: 5 premium themes (`Sepia Parchment`, `Dark Emerald Teal`, `Dark Charcoal`, `Clean Paper Light`, `OLED Midnight`) selectable independently on both `WordDefinitionTooltip` and `CopilotPopup` with instant preview swatches and localStorage persistence.
+   - **Visual Toolbar & Look Parity**: Added font size scaling (`A-`, `A`, `A+`) and interactive bottom-right corner drag resizer to `WordDefinitionTooltip`, matching the Copilot modal.
 
 6. **Copilot Persona & Tone Selector (`CopilotPersonaSelector.tsx`)**
    - 4 distinct personas: `🎓 Scholar`, `👨‍🏫 Teacher`, `🔥 Coach`, `🤔 Devil's Advocate`.
