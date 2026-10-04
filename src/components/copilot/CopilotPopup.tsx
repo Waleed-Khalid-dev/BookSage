@@ -5,7 +5,7 @@ import { useChatStore, QuickActionType, parseFollowUps } from '../../stores/chat
 import { useBookStore } from '../../stores/bookStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector, getProviderForModel } from './ModelSelector';
-import { CopilotPersonaSelector } from './CopilotPersonaSelector';
+import { CopilotPersonaSelector, COPILOT_PERSONAS } from './CopilotPersonaSelector';
 import './CopilotPopup.css';
 
 const TRANSLATE_LANGS = [
@@ -27,6 +27,7 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     popupSize, setPopupSize,
     popupFontSize, setPopupFontSize,
     pendingQuickAction, setPendingQuickAction,
+    persona,
   } = useChatStore();
   const { aiModel, setAiModel } = useBookStore();
   const { getKey } = useApiKeys();
@@ -159,7 +160,7 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
       const contextPrefix = selection?.text
         ? `The user is asking about this text: "${selection.text}"\n\n`
         : '';
-      const result = await sendQuickAction('explain' as QuickActionType, contextPrefix + text, provider, apiKey, model);
+      const result = await sendQuickAction('explain' as QuickActionType, contextPrefix + text, provider, apiKey, model, true);
       const { content, followUps: newFollowUps } = parseFollowUps(result);
       setResponse(content);
       setFollowUps(newFollowUps);
@@ -354,6 +355,14 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
       {response && !isLoading && (
         <div className="cpp-response">
           <div className="cpp-response-content">
+            {(() => {
+              const p = COPILOT_PERSONAS.find(x => x.id === persona);
+              return p ? (
+                <span className="cpp-persona-badge" title={p.description}>
+                  {p.icon} {p.label}
+                </span>
+              ) : null;
+            })()}
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
             {followUps.length > 0 && (
               <div className="cpp-followups">

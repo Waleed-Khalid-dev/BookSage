@@ -602,6 +602,14 @@ export function AIChatView() {
                   {msg.role === 'user' ? '👤' : '✦'}
                 </div>
                 <div className="acv-msg-body">
+                  {msg.role === 'assistant' && msg.persona && (() => {
+                    const p = COPILOT_PERSONAS.find(x => x.id === msg.persona);
+                    return p ? (
+                      <span className="acv-persona-badge" title={p.description}>
+                        {p.icon} {p.label}
+                      </span>
+                    ) : null;
+                  })()}
                   <div className="acv-msg-content">
                     {msg.role === 'assistant'
                       ? (

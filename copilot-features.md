@@ -262,6 +262,8 @@
 - [x] Optional Quick Actions persona toggle ("Apply Persona Tone to Quick Actions") in Settings
 - [x] Persisted in `booksage-settings` (`localStorage`) across restarts and reloads
 - [x] Dedicated "AI Copilot" tab in SettingsDialog with visual persona cards and toggle switch
+- [x] Minimalist persona tag badges on every assistant response across AIChatView, CopilotSidebar, and CopilotPopup
+- [x] Persona preserved per-message in SQLite `chat_sessions` (`ChatMessageRecord.persona`)
 
 ---
 

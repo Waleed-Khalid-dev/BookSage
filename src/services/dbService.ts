@@ -586,6 +586,7 @@ export interface ChatMessageRecord {
   role: 'user' | 'assistant';
   content: string;
   ts: number;
+  persona?: string;   // Which CopilotPersona generated this response (assistant messages only)
 }
 
 export interface ChatSessionRecord {

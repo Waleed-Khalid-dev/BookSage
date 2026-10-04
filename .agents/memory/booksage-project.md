@@ -426,5 +426,28 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
 - **Verification:**
   - `npm run build` clean (`✓ built in 17.13s`) with 0 errors.
 
+### Session 2026-10-04 Final Follow-up (Copilot Persona / Tone Selector & Minimalist Badges)
+- **Persona Architecture:**
+  - Added 4 distinct copilot personas: 🎓 Scholar (academic, theoretical, cites principles), 👨‍🏫 Teacher (patient, simple analogies, step-by-step), 🔥 Coach (motivational, action-oriented, punchy bullet points), and 🤔 Devil's Advocate (Socratic, challenges assumptions, finds edge cases).
+  - Created `src/components/copilot/CopilotPersonaSelector.tsx` & `.css` with unified trigger pill and animated dropdown menu supporting `normal` and `compact` sizes with auto-placement.
+  - Injected personas via `persona_prefix` in `python/ai_chat.py` and `src/stores/chatStore.ts`.
+  - Added `applyPersonaToQuickActions` toggle in `bookStore.ts` and `SettingsDialog.tsx` under a new dedicated "AI Copilot" tab with visual card selection.
+- **Minimalist Persona Badges:**
+  - Added minimalist persona tags on every assistant response across all three copilot surfaces:
+    - `AIChatView.tsx`: `.acv-persona-badge` small teal tag above message text.
+    - `CopilotSidebar.tsx`: `.csb-persona-badge` pill above assistant chat bubble.
+    - `CopilotPopup.tsx`: `.cpp-persona-badge` pill at top of popup response content.
+- **Persistence & DB Schema:**
+  - Added `persona` column to `ChatMessageRecord` in `src/services/dbService.ts`.
+  - Persisted persona per-message in SQLite `chat_sessions` so historical messages retain which persona answered.
+  - Synced active persona selection to `localStorage` (`booksage-settings`) via Zustand.
+- **Popup Direct Question Support:**
+  - Updated `sendQuickAction` with `forcePersona?: boolean` in `chatStore.ts` and `CopilotPopup.tsx` so custom user questions sent from the popup automatically inherit the chosen persona.
+- **Phonetic Respelling Cleanup:** Reverted experimental respelling changes per user request to maintain standard dictionary phonetics.
+- **Verification:**
+  - `tsc && vite build` clean (`✓ built in 13.85s`) with 0 errors.
+  - `python .agents/skills/lint-and-validate/scripts/lint_runner.py .` passed.
+
+
 
 

@@ -7,7 +7,7 @@ import { useChatStore, ContextMode } from '../../stores/chatStore';
 import { useBookStore } from '../../stores/bookStore';
 import { useUiStore } from '../../stores/uiStore';
 import { ModelSelector } from './ModelSelector';
-import { CopilotPersonaSelector } from './CopilotPersonaSelector';
+import { CopilotPersonaSelector, COPILOT_PERSONAS } from './CopilotPersonaSelector';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { CitationChip, extractCitations, normalizeCitations } from '../shared/CitationChip';
 import {
@@ -449,6 +449,14 @@ export function CopilotSidebar({
           session.messages.map((msg, index) => (
             <div key={msg.id} className={`csb-msg csb-msg--${msg.role}`}>
               <div className="csb-msg-content">
+                {msg.role === 'assistant' && msg.persona && (() => {
+                  const p = COPILOT_PERSONAS.find(x => x.id === msg.persona);
+                  return p ? (
+                    <span className="csb-persona-badge" title={p.description}>
+                      {p.icon} {p.label}
+                    </span>
+                  ) : null;
+                })()}
                 {msg.role === 'assistant' ? (
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]}

@@ -278,6 +278,15 @@
   color: var(--bs-text);
   line-height: 1.6;
 }
+.csb-persona-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--bs-accent, #009688);
+  opacity: 0.75;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+}
 .csb-msg--assistant .csb-msg-content p { margin: 0 0 6px; }
 .csb-msg--assistant .csb-msg-content p:last-child { margin-bottom: 0; }
 .csb-msg--assistant .csb-msg-content strong { color: var(--bs-text-bright, #fff); font-weight: bold; }

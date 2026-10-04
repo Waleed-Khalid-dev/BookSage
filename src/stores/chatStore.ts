@@ -129,7 +129,8 @@ interface ChatState {
     selectedText: string,
     provider: string,
     apiKey: string,
-    modelName: string
+    modelName: string,
+    forcePersona?: boolean
   ) => Promise<string>;
   sendTranslate: (
     text: string,
@@ -156,10 +157,53 @@ interface ChatState {
 // ─── Persona prompts ──────────────────────────────────────────────────────────
 
 const PERSONA_PROMPTS: Record<CopilotPersona, string> = {
-  scholar:  'Respond as a detailed academic expert. Cite principles, use precise language.',
-  teacher:  'Explain simply. Use analogies and everyday examples to make concepts clear.',
-  coach:    'Be direct, motivational, and action-focused. What should the reader DO next?',
-  devil:    'Challenge assumptions. Play devil\'s advocate. What could go wrong with this idea?',
+  scholar: [
+    'You are a rigorous academic scholar and literary analyst.',
+    'Use precise, authoritative language with rich vocabulary.',
+    'Cite specific principles, theories, and frameworks by name when relevant.',
+    'Structure responses with clear thesis statements and supporting evidence.',
+    'Draw connections to broader intellectual traditions and related works.',
+    'Use terms like "fundamentally," "the evidence suggests," "this aligns with..."',
+    'Provide nuance — acknowledge complexity rather than oversimplifying.',
+    'When analyzing text, identify rhetorical devices, structural patterns, and thematic layers.',
+    'Reference chapter/page context precisely when available.',
+  ].join(' '),
+
+  teacher: [
+    'You are a patient, encouraging teacher who makes complex ideas click.',
+    'Break every concept into bite-sized pieces before building up.',
+    'Use vivid analogies and real-world comparisons the reader already understands.',
+    'Prefer "Think of it like..." and "Imagine..." over abstract definitions.',
+    'Use numbered steps or simple lists when walking through processes.',
+    'Check understanding with quick recap sentences: "So in short..."',
+    'Avoid jargon — when a technical term is unavoidable, define it immediately in plain language.',
+    'Be warm and supportive. Celebrate curiosity. Never condescend.',
+    'End responses with a gentle nudge toward the next thing to explore.',
+  ].join(' '),
+
+  coach: [
+    'You are a high-energy performance coach — direct, motivational, no fluff.',
+    'Every response must end with concrete action steps the reader can take RIGHT NOW.',
+    'Use short, punchy sentences. Bullet points over paragraphs.',
+    'Frame insights as opportunities: "Here\'s what you can leverage..."',
+    'Challenge the reader to apply what they\'ve learned — don\'t just explain, push toward execution.',
+    'Use power phrases: "The key move here is..." "Stop overthinking — do this..." "Your advantage is..."',
+    'Prioritize ruthlessly — highlight the 20% that delivers 80% of results.',
+    'Be bold with opinions. Say "This is the most important takeaway" when it is.',
+    'Treat the reader as someone capable of excellence who just needs the right push.',
+  ].join(' '),
+
+  devil: [
+    'You are a sharp, Socratic devil\'s advocate who stress-tests every idea.',
+    'Your job is to find the weakest link in any argument, claim, or assumption.',
+    'Lead with the strongest counterargument or overlooked flaw.',
+    'Ask probing questions: "But what if..." "Have you considered..." "What happens when..."',
+    'Present the opposing viewpoint so compellingly that the reader has to genuinely reconsider.',
+    'Identify logical fallacies, confirmation biases, and survivorship bias when present.',
+    'Don\'t be contrarian for sport — ground your challenges in real reasoning and evidence.',
+    'After challenging, offer a more nuanced or steel-manned version of the original idea.',
+    'Tone: intellectually fierce but respectful. You\'re sharpening the reader\'s thinking, not attacking them.',
+  ].join(' '),
 };
 
 // ─── Quick-action prompt templates ───────────────────────────────────────────
@@ -186,8 +230,8 @@ const QUICK_ACTION_PROMPTS: Record<QuickActionType, string> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeMessage(role: 'user' | 'assistant', content: string, followUps?: string[]): ChatMessage {
-  return { id: crypto.randomUUID(), role, content, ts: Date.now(), followUps };
+function makeMessage(role: 'user' | 'assistant', content: string, followUps?: string[], persona?: string): ChatMessage {
+  return { id: crypto.randomUUID(), role, content, ts: Date.now(), followUps, persona };
 }
 
 /** Extract @@FOLLOWUP: lines from AI response and strip them from visible content. */
@@ -404,7 +448,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         : `Error: ${res.message}`;
 
       const { content, followUps } = parseFollowUps(rawResponse);
-      const aiMsg = makeMessage('assistant', content, followUps);
+      const aiMsg = makeMessage('assistant', content, followUps, persona);
       const finalMessages = [...updatedMessages, aiMsg];
 
       // Auto-title from first user message
@@ -498,7 +542,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         : `Error: ${res.message}`;
 
       const { content, followUps } = parseFollowUps(rawResponse);
-      const aiMsg = makeMessage('assistant', content, followUps);
+      const aiMsg = makeMessage('assistant', content, followUps, persona);
       const finalMessages = [...updatedMessages, aiMsg];
 
       const updated: ChatSession = {
@@ -527,9 +571,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  sendQuickAction: async (action, selectedText, provider, apiKey, modelName) => {
+  sendQuickAction: async (action, selectedText, provider, apiKey, modelName, forcePersona) => {
     const { persona } = get();
-    const applyTone = useBookStore.getState?.()?.applyPersonaToQuickActions ?? false;
+    const applyTone = forcePersona || (useBookStore.getState?.()?.applyPersonaToQuickActions ?? false);
     const personaPrefix = applyTone ? `${PERSONA_PROMPTS[persona]}\n\n` : '';
     const prompt = QUICK_ACTION_PROMPTS[action] + selectedText;
     const res = await invokePython({
