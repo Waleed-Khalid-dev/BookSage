@@ -900,6 +900,7 @@ export function BookReader() {
             currentPage={pdfState.currentPage}
             totalPages={pdfState.totalPages}
             currentChapter={currentChapter ? { num: currentChapter.num, title: currentChapter.title } : null}
+            isSidebarOpen={isSidebarOpen}
             onJumpToPage={(p) => handlePageChangeRequest(p)}
           />
           
