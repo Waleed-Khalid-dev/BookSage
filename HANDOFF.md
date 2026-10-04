@@ -25,8 +25,8 @@ When starting a new session:
 | Feature Category | Features Spec'd | Completed | Remaining | Status |
 |------------------|-----------------|-----------|-----------|--------|
 | **🔴 CORE Features** | 6 major feature sets | 6 / 6 (100%) | 0 | ✅ ALL DONE |
-| **🟡 HIGH Features** | 7 major feature sets | 5 / 7 (85%) | 2 minor | 🟢 Core Complete |
-| **🟢 NICE Features** | 7 major feature sets | 5 / 7 (80%) | 2 minor | 🟢 Core Complete |
+| **🟡 HIGH Features** | 7 major feature sets | 6 / 7 (92%) | 1 minor | 🟢 Core Complete |
+| **🟢 NICE Features** | 7 major feature sets | 6 / 7 (88%) | 1 minor | 🟢 Core Complete |
 | **⏳ Deferred to Phase 7+** | 5 library/search items | 0 / 5 | 5 | ⏳ Roadmap Phase 7 & 8 |
 
 ### ✅ Completed Items in Detail
@@ -84,11 +84,19 @@ When starting a new session:
 10. **Global Floating Copilot Orb**
     - Bottom-right draggable circular `✦` orb opening Copilot from any view.
 
+11. **Visual Token Counter in Copilot Sidebar**
+    - Live context token estimation calculating system instructions, active draft input, and chapter/book context payload.
+    - Tiered color-coded pill badge (`⚡ ~1.4k tokens`) displayed in the context bar with a detailed tooltip.
+
+12. **Configurable Presets in SettingsDialog**
+    - Full presets editor in `SettingsDialog.tsx` under the AI Copilot tab.
+    - Editable icons (emojis), short labels, and prompt text.
+    - Enable/disable toggles, delete action, "＋ Add Custom Preset", and "↺ Reset to Defaults".
+    - Connected dynamically to `CopilotSidebar.tsx`.
+
 ### ⏳ Remaining Items Inside `copilot-features.md`
 
-These are non-blocking enhancements that remain uncompleted in Phase 6 or bridge into future phases:
-- [ ] **Visual token counter in sidebar:** Indicator showing estimated context token size (e.g., `"~4,200 tokens in context"`).
-- [ ] **Configurable presets:** Allow user to customize the 5 sidebar toolbar preset buttons inside `SettingsDialog`.
+These are non-blocking future extras:
 - [ ] **Export to Obsidian vault append:** Option in chat export dialog to append session Markdown directly to an active Obsidian vault folder.
 - [ ] **AI-Generated Study Quiz:** Button in `AIChatView` or sidebar to generate an interactive 5-question multiple-choice quiz card deck from chapter JSON content.
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useUiStore } from '../../stores/uiStore';
 import { useShortcutStore, ShortcutAction, actionLabels, Shortcut } from '../../stores/shortcutStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
-import { useBookStore } from '../../stores/bookStore';
+import { useBookStore, CopilotPreset } from '../../stores/bookStore';
 import { useChatStore } from '../../stores/chatStore';
 import { X, RotateCcw, Key, Keyboard, Eye, EyeOff, Palette, Bot } from 'lucide-react';
 import { COPILOT_PERSONAS } from '../copilot/CopilotPersonaSelector';
@@ -34,6 +34,9 @@ export function SettingsDialog() {
     setCopilotPersona,
     applyPersonaToQuickActions,
     setApplyPersonaToQuickActions,
+    copilotPresets,
+    setCopilotPresets,
+    resetCopilotPresets,
   } = useBookStore();
   const { setPersona } = useChatStore();
   const { shortcuts, updateShortcut, resetToDefaults } = useShortcutStore();
@@ -45,6 +48,29 @@ export function SettingsDialog() {
   // Local state for API keys being edited
   const [localKeys, setLocalKeys] = useState<Record<string, string>>({});
   const [showKey, setShowKey] = useState<Record<string, boolean>>({});
+
+  const handleTogglePreset = (id: string, enabled: boolean) => {
+    setCopilotPresets((copilotPresets || []).map(p => p.id === id ? { ...p, enabled } : p));
+  };
+
+  const handleUpdatePreset = (id: string, field: 'icon' | 'label' | 'text', value: string) => {
+    setCopilotPresets((copilotPresets || []).map(p => p.id === id ? { ...p, [field]: value } : p));
+  };
+
+  const handleDeletePreset = (id: string) => {
+    setCopilotPresets((copilotPresets || []).filter(p => p.id !== id));
+  };
+
+  const handleAddPreset = () => {
+    const newPreset: CopilotPreset = {
+      id: `custom_${Date.now()}`,
+      icon: '✨',
+      label: 'New Prompt',
+      text: 'Explain how the concepts in this chapter apply in practice.',
+      enabled: true,
+    };
+    setCopilotPresets([...(copilotPresets || []), newPreset]);
+  };
 
   useEffect(() => {
     if (isSettingsOpen) {
@@ -223,6 +249,80 @@ export function SettingsDialog() {
                   />
                   <span className="settings-slider" />
                 </label>
+              </div>
+
+              {/* ── Configurable Presets Section ── */}
+              <div className="settings-section">
+                <div className="settings-presets-header">
+                  <div>
+                    <label className="settings-subheading">Copilot Sidebar Presets</label>
+                    <p className="settings-subdesc">Customize the one-click prompt shortcuts shown at the top of the Copilot sidebar.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="settings-action-link-btn"
+                    onClick={resetCopilotPresets}
+                    title="Restore default presets"
+                  >
+                    ↺ Reset to Defaults
+                  </button>
+                </div>
+
+                <div className="settings-presets-list">
+                  {(copilotPresets || []).map((preset) => (
+                    <div key={preset.id} className={`preset-edit-card ${!preset.enabled ? 'disabled' : ''}`}>
+                      <div className="preset-edit-row">
+                        <label className="settings-switch-sm" title={preset.enabled ? 'Click to disable' : 'Click to enable'}>
+                          <input
+                            type="checkbox"
+                            checked={preset.enabled}
+                            onChange={(e) => handleTogglePreset(preset.id, e.target.checked)}
+                          />
+                          <span className="settings-slider-sm" />
+                        </label>
+                        <input
+                          type="text"
+                          className="preset-icon-input"
+                          value={preset.icon}
+                          onChange={(e) => handleUpdatePreset(preset.id, 'icon', e.target.value)}
+                          maxLength={4}
+                          title="Preset Emoji / Icon"
+                        />
+                        <input
+                          type="text"
+                          className="preset-label-input"
+                          value={preset.label}
+                          onChange={(e) => handleUpdatePreset(preset.id, 'label', e.target.value)}
+                          placeholder="Short Label"
+                          title="Button Label"
+                        />
+                        <button
+                          type="button"
+                          className="preset-del-btn"
+                          onClick={() => handleDeletePreset(preset.id)}
+                          title="Delete preset"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <textarea
+                        className="preset-prompt-textarea"
+                        value={preset.text}
+                        onChange={(e) => handleUpdatePreset(preset.id, 'text', e.target.value)}
+                        placeholder="Full prompt text sent to AI..."
+                        rows={2}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="preset-add-btn"
+                  onClick={handleAddPreset}
+                >
+                  ＋ Add Custom Preset
+                </button>
               </div>
             </>
           )}

@@ -4,6 +4,23 @@ import { invokePython } from '../services/pythonService';
 import { upsertBook, upsertChapter, getBook, getChaptersForBook, getBookByPdfPath } from '../services/dbService';
 import type { CopilotPersona } from './chatStore';
 
+export interface CopilotPreset {
+  id: string;
+  icon: string;
+  label: string;
+  text: string;
+  enabled: boolean;
+}
+
+export const DEFAULT_COPILOT_PRESETS: CopilotPreset[] = [
+  { id: 'story_so_far', icon: '📚', label: 'Story So Far', text: 'Give me a concise "Story So Far" recap of everything covered in the book up to my current chapter. Summarize the major themes, core lessons, and how they lead into what I am about to read next, without spoiling future chapters.', enabled: true },
+  { id: 'chapter_overview', icon: '📖', label: 'What is this chapter about?', text: 'Give me a comprehensive overview of what this chapter is about.', enabled: true },
+  { id: 'core_lesson', icon: '🎯', label: 'Core lesson?', text: 'What is the single most important lesson or insight from this chapter?', enabled: true },
+  { id: 'examples', icon: '🧪', label: '3 real-world examples', text: 'Give me 3 concrete, real-world examples that illustrate the key concepts in this chapter.', enabled: true },
+  { id: 'questions', icon: '❓', label: 'Questions to ask myself', text: 'What are the most important questions I should ask myself after reading this chapter?', enabled: true },
+  { id: 'connect', icon: '🔗', label: 'Connect to previous', text: 'How does this chapter connect to or build upon the previous chapters in this book?', enabled: true },
+];
+
 export interface Chapter {
   id?: string;
   num: number;
@@ -41,6 +58,7 @@ interface BookState {
   pdfMarginCrop: number;
   copilotPersona: CopilotPersona;
   applyPersonaToQuickActions: boolean;
+  copilotPresets: CopilotPreset[];
   highlightOpacity: number;
   textSelectionColor: string;
   penColor: string;
@@ -77,6 +95,8 @@ interface BookState {
   setContinuousGapless: (gapless: boolean) => void;
   setCopilotPersona: (persona: CopilotPersona) => void;
   setApplyPersonaToQuickActions: (apply: boolean) => void;
+  setCopilotPresets: (presets: CopilotPreset[]) => void;
+  resetCopilotPresets: () => void;
   
   setAiModel: (model: string) => void;
   setPdfPath: (path: string) => Promise<void>;
@@ -152,6 +172,7 @@ export const useBookStore = create<BookState>()(
       pdfMarginCrop: 0,
       copilotPersona: 'scholar',
       applyPersonaToQuickActions: false,
+      copilotPresets: DEFAULT_COPILOT_PRESETS,
       highlightOpacity: 0.4,
       textSelectionColor: '',
       penColor: '#e05252',
@@ -414,6 +435,8 @@ export const useBookStore = create<BookState>()(
       setContinuousGapless: (gapless) => set({ continuousGapless: gapless }),
       setCopilotPersona: (persona) => set({ copilotPersona: persona }),
       setApplyPersonaToQuickActions: (apply) => set({ applyPersonaToQuickActions: apply }),
+      setCopilotPresets: (presets) => set({ copilotPresets: presets }),
+      resetCopilotPresets: () => set({ copilotPresets: DEFAULT_COPILOT_PRESETS }),
       setAiModel: (model: string) => set({ aiModel: model }),
 
       setPdfPath: async (path: string) => {
@@ -904,6 +927,7 @@ export const useBookStore = create<BookState>()(
         pdfMarginCrop: state.pdfMarginCrop,
         copilotPersona: state.copilotPersona,
         applyPersonaToQuickActions: state.applyPersonaToQuickActions,
+        copilotPresets: state.copilotPresets,
       }),
     }
   )

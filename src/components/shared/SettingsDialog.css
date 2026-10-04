@@ -514,4 +514,196 @@
   transform: translateX(18px);
 }
 
+/* ── Copilot Sidebar Presets Editor ── */
+.settings-presets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.settings-action-link-btn {
+  background: none;
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.12));
+  color: var(--bs-text-muted, #94a3b8);
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.settings-action-link-btn:hover {
+  background: var(--bs-surface-hover, rgba(255, 255, 255, 0.06));
+  color: var(--bs-text-bright, #fff);
+  border-color: var(--bs-accent, #009688);
+}
+
+.settings-presets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 12px;
+}
+
+.preset-edit-card {
+  background: var(--bs-surface, #242424);
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.preset-edit-card:hover {
+  border-color: var(--bs-border-hover, rgba(255, 255, 255, 0.16));
+}
+
+.preset-edit-card.disabled {
+  opacity: 0.55;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.preset-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-switch-sm {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.settings-switch-sm input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.settings-slider-sm {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--bs-border-strong, #475569);
+  transition: 0.2s ease;
+  border-radius: 18px;
+}
+
+.settings-slider-sm:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s ease;
+  border-radius: 50%;
+}
+
+.settings-switch-sm input:checked + .settings-slider-sm {
+  background-color: var(--bs-accent, #009688);
+}
+
+.settings-switch-sm input:checked + .settings-slider-sm:before {
+  transform: translateX(14px);
+}
+
+.preset-icon-input {
+  width: 44px;
+  text-align: center;
+  background: var(--bs-bg, #1a1a1a);
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.12));
+  border-radius: 6px;
+  color: var(--bs-text-bright, #fff);
+  padding: 4px 6px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.preset-icon-input:focus {
+  border-color: var(--bs-accent, #009688);
+}
+
+.preset-label-input {
+  flex: 1;
+  background: var(--bs-bg, #1a1a1a);
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.12));
+  border-radius: 6px;
+  color: var(--bs-text-bright, #fff);
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  outline: none;
+}
+
+.preset-label-input:focus {
+  border-color: var(--bs-accent, #009688);
+}
+
+.preset-del-btn {
+  background: none;
+  border: none;
+  color: var(--bs-text-muted, #94a3b8);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.preset-del-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.preset-prompt-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bs-bg, #1a1a1a);
+  border: 1px solid var(--bs-border, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  color: var(--bs-text, #cbd5e1);
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 48px;
+  font-family: inherit;
+  outline: none;
+}
+
+.preset-prompt-textarea:focus {
+  border-color: var(--bs-accent, #009688);
+}
+
+.preset-add-btn {
+  width: 100%;
+  background: var(--bs-surface, #242424);
+  border: 1px dashed var(--bs-border-strong, rgba(255, 255, 255, 0.2));
+  color: var(--bs-accent, #009688);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-add-btn:hover {
+  background: var(--bs-surface-hover, rgba(0, 150, 136, 0.08));
+  border-color: var(--bs-accent, #009688);
+}
+
+
 

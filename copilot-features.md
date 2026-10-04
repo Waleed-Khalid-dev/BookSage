@@ -140,7 +140,7 @@
 
 - [x] "Book Summary" context mode: injects all chapter `core_lesson` + `summary` fields (compact, token-efficient)
 - [x] Auto-truncation / context limits handling when context exceeds limit (with dynamic warning badge)
-- [ ] Visual token counter in sidebar: `"~4,200 tokens in context"`
+- [x] Visual token counter in sidebar: `"~4,200 tokens in context"` dynamically estimating tokens for active context, draft text, and history with tier color-coding
 
 ### Suggested Follow-Up Questions
 *Inspired by: Perplexity Copilot, Google AI Overview*
@@ -167,7 +167,7 @@
   - [x] 🧪 "Give me 3 real-world examples"
   - [x] ❓ "What questions should I ask myself?"
   - [x] 🔗 "How does this connect to the previous chapter?"
-- [ ] Presets are configurable in SettingsDialog
+- [x] Presets are configurable in SettingsDialog (edit label, icon, prompt, add custom presets, toggle on/off, reset to defaults)
 
 ### "Story So Far" Book Recap
 *Inspired by: Kindle Recaps, Kindle "Story So Far"*

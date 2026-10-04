@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { save } from '@tauri-apps/plugin-dialog';
@@ -55,7 +55,7 @@ export function CopilotSidebar({
     regenerateLastMessage,
     activeSession, createSession, setActiveSession, deleteSession
   } = useChatStore();
-  const { aiModel, setAiModel, chapters, lastPage, insightsRefreshCounter } = useBookStore();
+  const { aiModel, setAiModel, chapters, lastPage, insightsRefreshCounter, copilotPresets } = useBookStore();
   const { copilotSidebarWidth, setCopilotSidebarWidth } = useUiStore();
   const { getKey } = useApiKeys();
 
@@ -70,6 +70,44 @@ export function CopilotSidebar({
   // Track local context mode
   const session = activeSession();
   const [contextMode, setContextMode] = useState<ContextMode>(session?.contextMode ?? 'chapter');
+
+  // Token Estimation for Visual Token Counter
+  const estimatedTokens = useMemo(() => {
+    let base = 550; // System prompt, citation rules, reading position
+
+    // Message history tokens
+    if (session?.messages) {
+      for (const m of session.messages) {
+        if (!m.content.startsWith('*System Note')) {
+          base += Math.ceil(m.content.length / 4);
+        }
+      }
+    }
+
+    // Current draft input tokens
+    if (input.trim()) {
+      base += Math.ceil(input.length / 4);
+    }
+
+    // Context payload tokens based on active scope
+    if (contextMode === 'chapter') {
+      base += 450;
+    } else if (contextMode === 'book') {
+      const extractedCount = allJsonPaths?.length ?? chapters.filter(c => c.status === 'done' || c.json_path).length;
+      base += Math.max(1, extractedCount) * 380;
+    } else if (contextMode === 'custom') {
+      const customCount = session?.customChapterIds?.length || 1;
+      base += customCount * (session?.includeRawText ? 1500 : 380);
+    }
+
+    return base;
+  }, [session?.messages, session?.customChapterIds, session?.includeRawText, contextMode, input, allJsonPaths, chapters]);
+
+  const tokenTierClass = useMemo(() => {
+    if (estimatedTokens <= 8000) return 'csb-token-low';
+    if (estimatedTokens <= 32000) return 'csb-token-med';
+    return 'csb-token-high';
+  }, [estimatedTokens]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -394,9 +432,17 @@ export function CopilotSidebar({
 
       {/* ── Context badge ── */}
       <div className="csb-context-badge" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div>
-          <span className="csb-book-name">📚 {bookTitle}</span>
-          {chapterTitle && <span className="csb-chapter-name">› {chapterTitle}</span>}
+        <div className="csb-context-header-row">
+          <div className="csb-context-title-group">
+            <span className="csb-book-name">📚 {bookTitle}</span>
+            {chapterTitle && <span className="csb-chapter-name">› {chapterTitle}</span>}
+          </div>
+          <span
+            className={`csb-token-badge ${tokenTierClass}`}
+            title={`Estimated context payload: ~${estimatedTokens.toLocaleString()} tokens (system instructions + book context + conversation history)`}
+          >
+            ⚡ ~{estimatedTokens >= 1000 ? `${(estimatedTokens / 1000).toFixed(1)}k` : estimatedTokens} tokens
+          </span>
         </div>
         
         {/* Context Scope Picker */}
@@ -430,8 +476,8 @@ export function CopilotSidebar({
 
       {/* ── Preset prompts ── */}
       <div className="csb-presets">
-        {PRESET_PROMPTS.map(p => (
-          <button key={p.text} className="csb-preset" onClick={() => handleSend(p.text)} title={p.text}>
+        {(copilotPresets || PRESET_PROMPTS).filter(p => p.enabled !== false).map(p => (
+          <button key={p.id || p.text} className="csb-preset" onClick={() => handleSend(p.text)} title={p.text}>
             {p.icon} {p.label}
           </button>
         ))}

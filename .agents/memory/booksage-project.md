@@ -448,6 +448,19 @@ BookSage Studio is a self-contained Windows desktop reading and learning app. Us
   - `tsc && vite build` clean (`✓ built in 13.85s`) with 0 errors.
   - `python .agents/skills/lint-and-validate/scripts/lint_runner.py .` passed.
 
+### Session 2026-10-04 Token Counter & Presets Polish (Phase 6 Final Milestone)
+- **Visual Token Counter in Copilot Sidebar:**
+  - Implemented dynamic context token estimation in `CopilotSidebar.tsx` measuring system instructions, persona directives, active draft text, and history.
+  - Dynamically recalculates whenever switching scope between Chapter, Full Book, or Custom multi-chapter selections.
+  - Added minimalist tier-coded pill badge (`.csb-token-badge` with low/med/high tiers) in `.csb-context-header-row` showing live token count with a detailed explanation tooltip.
+- **Configurable Presets in SettingsDialog:**
+  - Created `CopilotPreset` data structure and default 6 presets with persistence in `bookStore.ts` (`copilotPresets`, `setCopilotPresets`, `resetCopilotPresets`) via `localStorage`.
+  - Built interactive editor under the "AI Copilot" tab in `SettingsDialog.tsx` with toggle switches, editable emoji icons, custom labels, full prompt editing, delete actions, "＋ Add Custom Preset", and "↺ Reset to Defaults".
+  - Connected `CopilotSidebar.tsx` to dynamically render enabled presets from the store.
+- **Verification:**
+  - `tsc && vite build` passing cleanly with 0 errors.
+
+
 
 
 
