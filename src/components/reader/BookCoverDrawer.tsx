@@ -17,7 +17,9 @@ interface BookCoverDrawerProps {
 
 const STORAGE_KEY_X = 'booksage-cover-drawer-x';
 const AUTO_HIDE_DELAY = 4500; // 4.5 seconds
-const MODAL_WIDTH = 375; // EXACT equal width for both compact popup and expanded dropdown!
+const MODAL_WIDTH = 375; // EXACT equal width
+const COMPACT_HEIGHT = 56;
+const EXPANDED_HEIGHT = 245;
 
 /**
  * Robust title & author parser:
@@ -110,8 +112,7 @@ export function BookCoverDrawer({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; initialX: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
-  const drawerRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const autoHideTimerRef = useRef<any>(null);
   const isHoveredRef = useRef(false);
 
@@ -224,7 +225,7 @@ export function BookCoverDrawer({
     return () => clearHideTimer();
   }, [currentBookTitle, currentChapter?.num, startHideTimer, clearHideTimer]);
 
-  // When expanded drawer closes, restart compact auto-hide timer
+  // When expanded modal closes, restart auto-hide timer
   useEffect(() => {
     if (!isExpanded) {
       startHideTimer();
@@ -233,17 +234,16 @@ export function BookCoverDrawer({
     }
   }, [isExpanded, startHideTimer, clearHideTimer]);
 
-  // 3. Click-Outside to Dismiss Immediately (without blocking cursor/background)
+  // 3. Click-Outside to Dismiss (smoothly morphs back to compact)
   useEffect(() => {
     if (!isExpanded) return;
 
     const handleOutsideClick = (e: PointerEvent) => {
       const target = e.target as Node;
-      // If clicking inside the drawer or compact popup, do not dismiss
-      if (drawerRef.current && drawerRef.current.contains(target)) return;
-      if (popupRef.current && popupRef.current.contains(target)) return;
+      // If clicking inside the single card, do not dismiss
+      if (cardRef.current && cardRef.current.contains(target)) return;
 
-      // Clicked anywhere in the background/reader: slide right back!
+      // Clicked anywhere outside in the background: morph back to compact!
       setIsExpanded(false);
     };
 
@@ -261,7 +261,7 @@ export function BookCoverDrawer({
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
     
-    // Don't drag if clicking buttons or cover thumbnail
+    // Don't drag if clicking buttons, canvas, or interactive controls
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('[data-no-drag]')) return;
 
@@ -311,15 +311,22 @@ export function BookCoverDrawer({
     startHideTimer();
   };
 
-  // 5. Toggle expanded showcase right beneath the trigger element
+  // 5. Morph between compact and expanded
   const handleCoverClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     clearHideTimer();
-    setIsExpanded(prev => !prev);
+    setIsExpanded(true);
   };
 
-  const handleDismissExpanded = () => {
+  const handleCollapse = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setIsExpanded(false);
+  };
+
+  const handleDismissCompletely = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExpanded(false);
+    setIsCompactVisible(false);
   };
 
   const progressPercent = totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0;
@@ -339,10 +346,13 @@ export function BookCoverDrawer({
       }}
     >
       {/* ────────────────────────────────────────────────────────────────
-          COMPACT RETRACTABLE POPUP (Width exactly equal to dropdown)
+          SINGLE MORPHING CARD (Converts smoothly from compact to expanded)
+          - Exactly equal width: 375px
+          - Smooth height expansion from 56px to 245px
+          - No duplicate/stacked cards!
       ────────────────────────────────────────────────────────────────── */}
       <div
-        ref={popupRef}
+        ref={cardRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -361,156 +371,429 @@ export function BookCoverDrawer({
           width: `${MODAL_WIDTH}px`,
           minWidth: `${MODAL_WIDTH}px`,
           maxWidth: `${MODAL_WIDTH}px`,
+          height: isExpanded ? `${EXPANDED_HEIGHT}px` : `${COMPACT_HEIGHT}px`,
           boxSizing: 'border-box',
           pointerEvents: isCompactVisible ? 'auto' : 'none',
           opacity: isCompactVisible ? 1 : 0,
           transform: isCompactVisible ? 'translate3d(0, 0, 0)' : 'translate3d(0, -65px, 0)',
           transition: isDragging 
-            ? 'opacity 0.2s ease' 
-            : 'transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '6px 12px',
-          background: 'rgba(22, 23, 28, 0.95)',
+            ? 'none' 
+            : 'height 0.36s cubic-bezier(0.16, 1, 0.3, 1), transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease',
+          background: 'rgba(22, 23, 28, 0.96)',
           border: '1px solid rgba(255, 255, 255, 0.14)',
-          borderRadius: isExpanded ? '10px 10px 4px 4px' : '10px',
-          boxShadow: '0 10px 28px -4px rgba(0, 0, 0, 0.5), 0 2px 8px -1px rgba(0, 0, 0, 0.3)',
+          borderRadius: '12px',
+          boxShadow: isExpanded
+            ? '0 18px 42px -6px rgba(0, 0, 0, 0.7), 0 4px 14px rgba(0, 0, 0, 0.4)'
+            : '0 10px 28px -4px rgba(0, 0, 0, 0.5), 0 2px 8px -1px rgba(0, 0, 0, 0.3)',
           userSelect: 'none',
           cursor: isDragging ? 'grabbing' : 'default',
-          backdropFilter: 'blur(14px)',
-          zIndex: 47,
-          willChange: 'transform, opacity'
+          backdropFilter: 'blur(16px)',
+          zIndex: 48,
+          overflow: 'hidden',
+          willChange: 'height, transform, opacity'
         }}
       >
-        {/* Clickable Book Cover Thumbnail */}
+        {/* ─── A. COMPACT VIEW (Morphs out when expanded) ─── */}
         <div
-          data-no-drag
-          onClick={handleCoverClick}
-          title={isExpanded ? "Click to close showcase" : "Click to expand book cover showcase"}
           style={{
-            width: '40px',
-            minHeight: '52px',
-            borderRadius: '4px',
-            overflow: 'hidden',
-            flexShrink: 0,
-            cursor: 'pointer',
-            background: '#18191e',
-            border: isExpanded ? '1px solid #009688' : '1px solid rgba(255, 255, 255, 0.18)',
-            boxShadow: isExpanded 
-              ? '0 0 12px rgba(0, 150, 136, 0.5), 0 3px 8px rgba(0, 0, 0, 0.5)'
-              : '0 3px 8px rgba(0, 0, 0, 0.5)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 150, 136, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = isExpanded 
-              ? '0 0 12px rgba(0, 150, 136, 0.5), 0 3px 8px rgba(0, 0, 0, 0.5)'
-              : '0 3px 8px rgba(0, 0, 0, 0.5)';
+            gap: '10px',
+            padding: '6px 12px',
+            height: `${COMPACT_HEIGHT}px`,
+            boxSizing: 'border-box',
+            opacity: isExpanded ? 0 : 1,
+            pointerEvents: isExpanded ? 'none' : 'auto',
+            transform: isExpanded ? 'translate3d(0, -8px, 0)' : 'translate3d(0, 0, 0)',
+            transition: 'opacity 0.2s ease, transform 0.25s ease',
+            position: isExpanded ? 'absolute' : 'relative',
+            top: 0,
+            left: 0,
+            right: 0
           }}
         >
-          <canvas
-            ref={thumbnailCanvasRef}
+          {/* Clickable Book Cover Thumbnail */}
+          <div
+            data-no-drag
+            onClick={handleCoverClick}
+            title="Click to expand book cover showcase"
             style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              display: isCoverLoaded ? 'block' : 'none'
-            }}
-          />
-          {!isCoverLoaded && (
-            <BookOpen size={16} color="#009688" />
-          )}
-        </div>
-
-        {/* Title and Author Info (Clean Title & Author) */}
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-          <span
-            style={{
-              fontSize: '0.84rem',
-              fontWeight: 600,
-              color: '#ffffff',
-              whiteSpace: 'nowrap',
+              width: '40px',
+              minHeight: '44px',
+              borderRadius: '4px',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              lineHeight: 1.25
+              flexShrink: 0,
+              cursor: 'pointer',
+              background: '#18191e',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'transform 0.15s ease, box-shadow 0.15s ease'
             }}
-            title={title}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 150, 136, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.5)';
+            }}
           >
-            {title}
-          </span>
-          {author && (
+            <canvas
+              ref={thumbnailCanvasRef}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: isCoverLoaded ? 'block' : 'none'
+              }}
+            />
+            {!isCoverLoaded && (
+              <BookOpen size={16} color="#009688" />
+            )}
+          </div>
+
+          {/* Title and Author Info */}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
             <span
               style={{
-                fontSize: '0.72rem',
-                color: '#94a3b8',
+                fontSize: '0.84rem',
+                fontWeight: 600,
+                color: '#ffffff',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                marginTop: '2px',
-                lineHeight: 1.2
+                lineHeight: 1.25
               }}
-              title={author}
+              title={title}
             >
-              {author}
+              {title}
             </span>
-          )}
+            {author && (
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  color: '#94a3b8',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  marginTop: '2px',
+                  lineHeight: 1.2
+                }}
+                title={author}
+              >
+                {author}
+              </span>
+            )}
+          </div>
+
+          {/* Center Drag Handle */}
+          <div
+            title="Drag horizontally to reposition"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2px 4px',
+              color: isDragging ? '#009688' : '#64748b',
+              cursor: isDragging ? 'grabbing' : 'grab',
+              transition: 'color 0.15s ease'
+            }}
+          >
+            <GripHorizontal size={18} />
+          </div>
+
+          {/* Dismiss Button */}
+          <button
+            data-no-drag
+            onClick={handleDismissCompletely}
+            title="Hide book cover popup"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#64748b',
+              cursor: 'pointer',
+              padding: '4px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'color 0.15s ease, background 0.15s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#ffffff';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#64748b';
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <X size={15} />
+          </button>
         </div>
 
-        {/* Center Drag Handle */}
+        {/* ─── B. EXPANDED SHOWCASE VIEW (Morphs in when expanded) ─── */}
         <div
-          title="Drag horizontally to reposition"
           style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '2px 4px',
-            color: isDragging ? '#009688' : '#64748b',
-            cursor: isDragging ? 'grabbing' : 'grab',
-            transition: 'color 0.15s ease'
+            flexDirection: 'column',
+            gap: '12px',
+            padding: '14px 16px',
+            boxSizing: 'border-box',
+            opacity: isExpanded ? 1 : 0,
+            pointerEvents: isExpanded ? 'auto' : 'none',
+            transform: isExpanded ? 'translate3d(0, 0, 0)' : 'translate3d(0, 10px, 0)',
+            transition: 'opacity 0.28s ease 0.08s, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1)',
+            position: isExpanded ? 'relative' : 'absolute',
+            top: 0,
+            left: 0,
+            right: 0
           }}
         >
-          <GripHorizontal size={18} />
-        </div>
+          {/* Header: Chip + Chapter + Close */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  fontWeight: 700,
+                  color: '#2dd4bf',
+                  background: 'rgba(0, 150, 136, 0.16)',
+                  border: '1px solid rgba(0, 150, 136, 0.3)',
+                  padding: '2px 7px',
+                  borderRadius: '4px',
+                  flexShrink: 0
+                }}
+              >
+                Book Showcase
+              </span>
+              {currentChapter && (
+                <span
+                  style={{
+                    fontSize: '0.74rem',
+                    color: '#94a3b8',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                  title={`Ch. ${currentChapter.num}: ${currentChapter.title}`}
+                >
+                  Ch. {currentChapter.num}: {currentChapter.title}
+                </span>
+              )}
+            </div>
 
-        {/* Dismiss Button */}
-        <button
-          data-no-drag
-          onClick={() => {
-            setIsCompactVisible(false);
-            setIsExpanded(false);
-          }}
-          title="Hide book cover popup"
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#64748b',
-            cursor: 'pointer',
-            padding: '4px',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'color 0.15s ease, background 0.15s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#ffffff';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#64748b';
-            e.currentTarget.style.background = 'transparent';
-          }}
-        >
-          <X size={15} />
-        </button>
+            <button
+              data-no-drag
+              onClick={handleCollapse}
+              title="Collapse Showcase"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#94a3b8',
+                cursor: 'pointer',
+                padding: '4px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s ease',
+                flexShrink: 0
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#94a3b8';
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Body: Cover Canvas + Book Info */}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+            {/* Cover Art */}
+            <div
+              style={{
+                width: '105px',
+                minHeight: '150px',
+                borderRadius: '6px',
+                overflow: 'hidden',
+                flexShrink: 0,
+                background: '#18191e',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                boxShadow: '-3px 0 10px -2px rgba(0,0,0,0.5), 0 10px 20px -4px rgba(0, 0, 0, 0.7)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative'
+              }}
+            >
+              <canvas
+                ref={expandedCanvasRef}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: isCoverLoaded ? 'block' : 'none'
+                }}
+              />
+              {!isCoverLoaded && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                  <BookOpen size={24} color="#009688" />
+                  <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Loading...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Details & Actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+              <h3
+                style={{
+                  fontSize: '0.98rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  margin: '0 0 2px 0',
+                  lineHeight: 1.25,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+                title={title}
+              >
+                {title}
+              </h3>
+
+              {author && (
+                <p
+                  style={{
+                    fontSize: '0.78rem',
+                    color: '#94a3b8',
+                    margin: '0 0 8px 0',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                  title={author}
+                >
+                  by <strong style={{ color: '#e2e8f0' }}>{author}</strong>
+                </p>
+              )}
+
+              {/* Reading Progress */}
+              <div
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '6px',
+                  padding: '8px 10px',
+                  marginBottom: '10px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '5px' }}>
+                  <span style={{ color: '#cbd5e1' }}>Reading Progress</span>
+                  <span style={{ color: '#2dd4bf', fontWeight: 600 }}>{progressPercent}%</span>
+                </div>
+                
+                {/* Progress bar */}
+                <div
+                  style={{
+                    height: '5px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '3px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${progressPercent}%`,
+                      background: 'linear-gradient(90deg, #009688, #14b8a6)',
+                      borderRadius: '3px',
+                      transition: 'width 0.3s ease'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#94a3b8', marginTop: '5px' }}>
+                  <span>Page {currentPage} of {totalPages}</span>
+                  <span>{totalPages - currentPage} left</span>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div style={{ display: 'flex', gap: '6px', marginTop: 'auto', flexWrap: 'wrap' }}>
+                {onJumpToPage && (
+                  <button
+                    data-no-drag
+                    onClick={() => {
+                      onJumpToPage(1);
+                      handleCollapse();
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '5px 10px',
+                      borderRadius: '6px',
+                      background: '#009688',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      boxShadow: '0 3px 10px rgba(0, 150, 136, 0.4)',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#00796b';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#009688';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <ExternalLink size={12} />
+                    Jump to Cover
+                  </button>
+                )}
+
+                <button
+                  data-no-drag
+                  onClick={handleCollapse}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '6px',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: '#e2e8f0',
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ────────────────────────────────────────────────────────────────
@@ -558,283 +841,6 @@ export function BookCoverDrawer({
           <ChevronDown size={11} />
         </button>
       )}
-
-      {/* ────────────────────────────────────────────────────────────────
-          EXPANDED SHOWCASE PANEL (EXACT EQUAL WIDTH & ULTRA-SMOOTH GLIDE)
-          - Equal width: 375px (aligns 100% with the top popup)
-          - Buttery-smooth transform & opacity slide down
-          - No background blur
-          - No blocking overlay
-          - Clicks anywhere outside slide it right back up!
-      ────────────────────────────────────────────────────────────────── */}
-      <div
-        ref={drawerRef}
-        style={{
-          position: 'absolute',
-          top: '66px', // Positioned directly beneath compact popup with neat alignment
-          left: `${posX}px`,
-          width: `${MODAL_WIDTH}px`,
-          minWidth: `${MODAL_WIDTH}px`,
-          maxWidth: `${MODAL_WIDTH}px`,
-          boxSizing: 'border-box',
-          pointerEvents: isExpanded ? 'auto' : 'none',
-          opacity: isExpanded ? 1 : 0,
-          transform: isExpanded ? 'translate3d(0, 0, 0)' : 'translate3d(0, -20px, 0)',
-          transition: 'transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
-          willChange: 'transform, opacity',
-          backfaceVisibility: 'hidden',
-          zIndex: 48,
-          background: 'rgba(22, 23, 28, 0.96)',
-          border: '1px solid rgba(255, 255, 255, 0.14)',
-          borderRadius: '10px',
-          boxShadow: isExpanded 
-            ? '0 18px 40px -6px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06)' 
-            : 'none',
-          backdropFilter: 'blur(16px)',
-          padding: '14px 16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px'
-        }}
-      >
-        {/* Header: Chip + Chapter + Close */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-            <span
-              style={{
-                fontSize: '0.68rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                fontWeight: 700,
-                color: '#2dd4bf',
-                background: 'rgba(0, 150, 136, 0.16)',
-                border: '1px solid rgba(0, 150, 136, 0.3)',
-                padding: '2px 7px',
-                borderRadius: '4px',
-                flexShrink: 0
-              }}
-            >
-              Book Showcase
-            </span>
-            {currentChapter && (
-              <span
-                style={{
-                  fontSize: '0.74rem',
-                  color: '#94a3b8',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}
-                title={`Ch. ${currentChapter.num}: ${currentChapter.title}`}
-              >
-                Ch. {currentChapter.num}: {currentChapter.title}
-              </span>
-            )}
-          </div>
-
-          <button
-            onClick={handleDismissExpanded}
-            title="Close Showcase"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#94a3b8',
-              cursor: 'pointer',
-              padding: '4px',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s ease',
-              flexShrink: 0
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#94a3b8';
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Body: Cover Canvas + Book Info */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-          {/* Cover Art */}
-          <div
-            style={{
-              width: '105px',
-              minHeight: '150px',
-              borderRadius: '6px',
-              overflow: 'hidden',
-              flexShrink: 0,
-              background: '#18191e',
-              border: '1px solid rgba(255, 255, 255, 0.18)',
-              boxShadow: '-3px 0 10px -2px rgba(0,0,0,0.5), 0 10px 20px -4px rgba(0, 0, 0, 0.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative'
-            }}
-          >
-            <canvas
-              ref={expandedCanvasRef}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: isCoverLoaded ? 'block' : 'none'
-              }}
-            />
-            {!isCoverLoaded && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                <BookOpen size={24} color="#009688" />
-                <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Loading...</span>
-              </div>
-            )}
-          </div>
-
-          {/* Details & Actions */}
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-            <h3
-              style={{
-                fontSize: '0.98rem',
-                fontWeight: 700,
-                color: '#ffffff',
-                margin: '0 0 2px 0',
-                lineHeight: 1.25,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}
-              title={title}
-            >
-              {title}
-            </h3>
-
-            {author && (
-              <p
-                style={{
-                  fontSize: '0.78rem',
-                  color: '#94a3b8',
-                  margin: '0 0 8px 0',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}
-                title={author}
-              >
-                by <strong style={{ color: '#e2e8f0' }}>{author}</strong>
-              </p>
-            )}
-
-            {/* Reading Progress */}
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '6px',
-                padding: '8px 10px',
-                marginBottom: '10px'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '5px' }}>
-                <span style={{ color: '#cbd5e1' }}>Reading Progress</span>
-                <span style={{ color: '#2dd4bf', fontWeight: 600 }}>{progressPercent}%</span>
-              </div>
-              
-              {/* Progress bar */}
-              <div
-                style={{
-                  height: '5px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: '3px',
-                  overflow: 'hidden'
-                }}
-              >
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${progressPercent}%`,
-                    background: 'linear-gradient(90deg, #009688, #14b8a6)',
-                    borderRadius: '3px',
-                    transition: 'width 0.3s ease'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#94a3b8', marginTop: '5px' }}>
-                <span>Page {currentPage} of {totalPages}</span>
-                <span>{totalPages - currentPage} left</span>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div style={{ display: 'flex', gap: '6px', marginTop: 'auto', flexWrap: 'wrap' }}>
-              {onJumpToPage && (
-                <button
-                  onClick={() => {
-                    onJumpToPage(1);
-                    handleDismissExpanded();
-                  }}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '5px 10px',
-                    borderRadius: '6px',
-                    background: '#009688',
-                    border: 'none',
-                    color: '#ffffff',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    boxShadow: '0 3px 10px rgba(0, 150, 136, 0.4)',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#00796b';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#009688';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <ExternalLink size={12} />
-                  Jump to Cover
-                </button>
-              )}
-
-              <button
-                onClick={handleDismissExpanded}
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: '6px',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  color: '#e2e8f0',
-                  fontSize: '0.75rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
