@@ -1,6 +1,6 @@
 // src/components/shared/WordDefinitionTooltip.tsx
 import React, { useEffect, useState, useRef, useLayoutEffect, useCallback } from 'react';
-import { Volume2, Sparkles, X, MessageSquare, Copy, Check, GripVertical } from 'lucide-react';
+import { Volume2, Sparkles, X, MessageSquare, Copy, Check, GripVertical, RotateCcw } from 'lucide-react';
 import { lookupWordDefinition, WordDefinitionData, cleanWordToken } from '../../services/dictionaryService';
 import { invokePython } from '../../services/pythonService';
 import { useApiKeys } from '../../stores/apiKeysStore';
@@ -37,10 +37,12 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
   const [loadingAi, setLoadingAi] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+  const [retryCount, setRetryCount] = useState<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const reqIdRef = useRef(0);
 
   const [pos, setPos] = useState<{ top: number; left: number; placement: 'below' | 'above' }>({
     top: 0,
@@ -113,17 +115,18 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
     document.addEventListener('mouseup', onUp);
   }, [pos.left, pos.top]);
 
-  // 3. Fetch dictionary definition and AI context
+  // 3. Consolidated definition + book context lookup with in-flight cancellation
   useEffect(() => {
     if (!target || !cleanWord) return;
 
-    let isMounted = true;
+    const currentReqId = ++reqIdRef.current;
     setLoadingDict(true);
+    setLoadingAi(false);
     setDictError(null);
     setData(null);
     setBookContext(null);
 
-    // Step A: Base Dictionary Lookup with local cache & robust AI fallback
+    // Step A: Unified Dictionary Lookup (Cache -> Free Dictionary API -> AI Fallback)
     lookupWordDefinition(cleanWord, {
       bookTitle: target.bookTitle,
       chapterNum: target.chapterNum,
@@ -134,64 +137,77 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
       apiKey,
       modelName: selectedModel,
     })
-      .then(res => {
-        if (!isMounted) return;
+      .then(async res => {
+        // Discard if user already clicked another word while this was loading
+        if (currentReqId !== reqIdRef.current) return;
         setLoadingDict(false);
-        if (res) {
-          setData(res);
-          if (res.bookContext) {
-            setBookContext(res.bookContext);
-          }
-        } else {
+
+        if (!res) {
           setDictError('No dictionary definition found for this term.');
+          return;
+        }
+
+        if (res.error) {
+          setDictError(res.error);
+          return;
+        }
+
+        setData(res);
+
+        // If bookContext was already returned (from SQLite cache or unified AI fallback), we are done!
+        if (res.bookContext) {
+          setBookContext(res.bookContext);
+          return;
+        }
+
+        // Only if Free Dictionary API succeeded without bookContext, fetch context in a SINGLE call:
+        if (apiKey) {
+          setLoadingAi(true);
+          try {
+            const aiRes = await invokePython({
+              command: 'word_book_context',
+              word: cleanWord,
+              book_title: target.bookTitle,
+              chapter_num: target.chapterNum,
+              chapter_title: target.chapterTitle,
+              chapter_path: target.chapterPath,
+              surrounding_text: target.surroundingText,
+              provider,
+              api_key: apiKey,
+              model_name: selectedModel,
+            });
+
+            if (currentReqId !== reqIdRef.current) return;
+            setLoadingAi(false);
+
+            if (aiRes.status === 'success' && aiRes.explanation) {
+              setBookContext(aiRes.explanation);
+              // Save definition + AI context to SQLite
+              saveCachedWordDefinition({
+                word: cleanWord,
+                meanings_json: JSON.stringify(res.meanings || []),
+                phonetic: res.phonetic,
+                audio_url: res.audioUrl,
+                ai_context_json: aiRes.explanation,
+              }).catch(() => {});
+            }
+          } catch (err) {
+            if (currentReqId !== reqIdRef.current) return;
+            setLoadingAi(false);
+            console.warn('Word book context fetch failed:', err);
+          }
         }
       })
       .catch(() => {
-        if (!isMounted) return;
+        if (currentReqId !== reqIdRef.current) return;
         setLoadingDict(false);
         setDictError('Unable to load dictionary definition.');
       });
 
-    // Step B: AI Book Contextual Explanation (if not already returned by fallback)
-    if (apiKey) {
-      setLoadingAi(true);
-      invokePython({
-        command: 'word_book_context',
-        word: cleanWord,
-        book_title: target.bookTitle,
-        chapter_num: target.chapterNum,
-        chapter_title: target.chapterTitle,
-        chapter_path: target.chapterPath,
-        surrounding_text: target.surroundingText,
-        provider,
-        api_key: apiKey,
-        model_name: selectedModel,
-      })
-        .then(res => {
-          if (!isMounted) return;
-          setLoadingAi(false);
-          if (res.status === 'success' && res.explanation) {
-            setBookContext(res.explanation);
-            saveCachedWordDefinition({
-              word: cleanWord,
-              meanings_json: JSON.stringify(data?.meanings || []),
-              phonetic: data?.phonetic,
-              audio_url: data?.audioUrl,
-              ai_context_json: res.explanation,
-            }).catch(() => {});
-          }
-        })
-        .catch(err => {
-          if (!isMounted) return;
-          setLoadingAi(false);
-          console.warn('Word book context fetch failed:', err);
-        });
-    }
-
     return () => {
-      isMounted = false;
+      // Invalidation handled by reqIdRef
     };
-  }, [cleanWord, target?.chapterNum]);
+  }, [cleanWord, target?.chapterNum, retryCount]);
 
   // 4. Dismissal listeners (Escape & outside click when not dragging)
   useEffect(() => {
@@ -329,6 +345,14 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
         {dictError && !data && (
           <div className="wtt-empty-text">
             <span>{dictError}</span>
+            <button
+              className="wtt-retry-btn"
+              onClick={() => setRetryCount(c => c + 1)}
+              title="Retry lookup"
+            >
+              <RotateCcw size={11} />
+              <span>Retry</span>
+            </button>
           </div>
         )}
 
@@ -369,6 +393,18 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
               <div className="wtt-loading-ai">
                 <span className="wtt-pulse-dot" />
                 <span>Extracting book context...</span>
+              </div>
+            ) : bookContext && bookContext.includes('rate limit') ? (
+              <div className="wtt-context-retry-row">
+                <span className="wtt-rate-limit-text">{bookContext}</span>
+                <button
+                  className="wtt-retry-mini-btn"
+                  onClick={() => setRetryCount(c => c + 1)}
+                  title="Retry context"
+                >
+                  <RotateCcw size={11} />
+                  <span>Retry</span>
+                </button>
               </div>
             ) : (
               <p className="wtt-context-text">{bookContext}</p>

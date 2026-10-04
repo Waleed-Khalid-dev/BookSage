@@ -360,7 +360,10 @@ def explain_word_in_context(
     )
 
     system_prompt = "You are an insightful literary companion and contextual dictionary assistant."
-    return client.chat(prompt, [], system_prompt).strip()
+    raw = client.chat(prompt, [], system_prompt).strip()
+    if raw.startswith("Error:") or "429" in raw or "RESOURCE_EXHAUSTED" in raw or "quota" in raw.lower():
+        return "AI rate limit reached. Click Retry in a few seconds."
+    return raw
 
 
 def define_and_context_word(
@@ -420,6 +423,16 @@ def define_and_context_word(
     system_prompt = "You are a precise dictionary engine and literary reading assistant. Output valid JSON only."
     raw = client.chat(prompt, [], system_prompt).strip()
     
+    # Clean handling if AI provider returns rate-limit or connection error
+    if raw.startswith("Error:") or "429" in raw or "RESOURCE_EXHAUSTED" in raw or "quota" in raw.lower():
+        return {
+            "error_type": "rate_limit",
+            "error_message": "AI rate limit reached (cooling down). Wait a moment and click Retry.",
+            "phonetic": "",
+            "meanings": [],
+            "book_context": ""
+        }
+
     # Strip markdown code blocks if any
     clean_json = raw
     if clean_json.startswith("```"):

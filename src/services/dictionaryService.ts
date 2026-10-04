@@ -18,6 +18,7 @@ export interface WordDefinitionData {
   audioUrl?: string;
   meanings: MeaningItem[];
   bookContext?: string;
+  error?: string;
   source: 'cache' | 'api' | 'fallback';
 }
 
@@ -154,6 +155,16 @@ export async function lookupWordDefinition(
 
       if (aiRes.status === 'success' && aiRes.result) {
         const r = aiRes.result;
+
+        if (r.error_type === 'rate_limit') {
+          return {
+            word,
+            meanings: [],
+            error: r.error_message || 'AI rate limit reached. Wait a moment and retry.',
+            source: 'fallback'
+          };
+        }
+
         const meanings: MeaningItem[] = (r.meanings || []).map((m: any) => ({
           partOfSpeech: m.partOfSpeech || 'definition',
           definitions: (m.definitions || []).map((d: any) => ({
@@ -170,12 +181,14 @@ export async function lookupWordDefinition(
           source: 'fallback'
         };
 
-        saveCachedWordDefinition({
-          word,
-          phonetic: result.phonetic,
-          meanings_json: JSON.stringify(result.meanings),
-          ai_context_json: result.bookContext
-        }).catch(() => {});
+        if (result.meanings.length > 0) {
+          saveCachedWordDefinition({
+            word,
+            phonetic: result.phonetic,
+            meanings_json: JSON.stringify(result.meanings),
+            ai_context_json: result.bookContext
+          }).catch(() => {});
+        }
 
         return result;
       }
