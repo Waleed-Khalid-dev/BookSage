@@ -7,6 +7,7 @@ import { useApiKeys } from '../../stores/apiKeysStore';
 import { useBookStore } from '../../stores/bookStore';
 import { useChatStore } from '../../stores/chatStore';
 import { saveCachedWordDefinition } from '../../services/dbService';
+import { ModalThemePicker } from './ModalThemePicker';
 import './WordDefinitionTooltip.css';
 
 export interface WordDefinitionTarget {
@@ -39,6 +40,30 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState<number>(0);
 
+  // Modal Theme from bookStore
+  const definitionModalTheme = useBookStore(s => s.definitionModalTheme);
+  const setDefinitionModalTheme = useBookStore(s => s.setDefinitionModalTheme);
+
+  // Font size scaling (persisted in localStorage)
+  const [fontSize, setFontSize] = useState<number>(() => {
+    return Number(localStorage.getItem('booksage-def-fontsize')) || 13;
+  });
+
+  const handleFontSize = (delta: number | 'reset') => {
+    const next = delta === 'reset' ? 13 : Math.min(20, Math.max(10, fontSize + delta));
+    setFontSize(next);
+    localStorage.setItem('booksage-def-fontsize', String(next));
+  };
+
+  // Custom resizing state (persisted in localStorage)
+  const [tooltipSize, setTooltipSize] = useState<{ w: number; h: number }>(() => {
+    const savedW = Number(localStorage.getItem('booksage-def-w'));
+    const savedH = Number(localStorage.getItem('booksage-def-h'));
+    return { w: savedW || 350, h: savedH || 0 };
+  });
+  const resizing = useRef(false);
+  const resizeStart = useRef({ w: 0, h: 0, x: 0, y: 0 });
+
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -64,12 +89,45 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
 
   const cleanWord = target ? cleanWordToken(target.word) : '';
 
+  // Resize handler
+  const onResizeStart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    resizing.current = true;
+    const currentW = containerRef.current?.offsetWidth || tooltipSize.w || 350;
+    const currentH = containerRef.current?.offsetHeight || 280;
+    resizeStart.current = { w: currentW, h: currentH, x: e.clientX, y: e.clientY };
+
+    const onMove = (ev: MouseEvent) => {
+      if (!resizing.current) return;
+      const dw = ev.clientX - resizeStart.current.x;
+      const dh = ev.clientY - resizeStart.current.y;
+      const nextW = Math.max(300, Math.min(window.innerWidth - 32, resizeStart.current.w + dw));
+      const nextH = Math.max(200, Math.min(window.innerHeight - 32, resizeStart.current.h + dh));
+      setTooltipSize({ w: nextW, h: nextH });
+    };
+
+    const onUp = () => {
+      resizing.current = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      setTooltipSize(curr => {
+        if (curr.w) localStorage.setItem('booksage-def-w', String(curr.w));
+        if (curr.h) localStorage.setItem('booksage-def-h', String(curr.h));
+        return curr;
+      });
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [tooltipSize]);
+
   // 1. Initial smart floating positioning relative to clicked word
   useLayoutEffect(() => {
     if (!target) return;
     const { top, left, width, height } = target.rect;
-    const tooltipWidth = 350;
-    const estimatedHeight = 280;
+    const tooltipWidth = tooltipSize.w || 350;
+    const estimatedHeight = tooltipSize.h || 280;
     const margin = 12;
 
     let computedLeft = left + width / 2 - tooltipWidth / 2;
@@ -307,13 +365,19 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
   return (
     <div
       ref={containerRef}
-      className={`bs-word-tooltip bs-word-tooltip--${pos.placement}`}
+      className={`bs-word-tooltip bs-word-tooltip--${pos.placement} modal-theme--${definitionModalTheme}`}
       style={{
         top: `${pos.top}px`,
         left: `${pos.left}px`,
+        width: tooltipSize.w ? `${tooltipSize.w}px` : undefined,
+        height: tooltipSize.h ? `${tooltipSize.h}px` : undefined,
+        fontSize: `${fontSize}px`,
       }}
       onClick={e => e.stopPropagation()}
     >
+      {/* Tooltip Corner Resizer */}
+      <div className="wtt-resizer" onMouseDown={onResizeStart} title="Drag corner to resize" />
+
       {/* Tooltip Draggable Header */}
       <div
         className="wtt-header"
@@ -333,9 +397,38 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
             <Volume2 size={13} />
           </button>
         </div>
-        <button className="wtt-close-btn" onClick={onClose} title="Close (Esc)">
-          <X size={13} />
-        </button>
+
+        <div className="wtt-header-actions" onMouseDown={e => e.stopPropagation()}>
+          <ModalThemePicker
+            currentTheme={definitionModalTheme}
+            onSelectTheme={setDefinitionModalTheme}
+            placement="bottom-right"
+          />
+          <button
+            className="wtt-font-btn"
+            title="Decrease Font Size"
+            onClick={() => handleFontSize(-1)}
+          >
+            A-
+          </button>
+          <button
+            className="wtt-font-btn"
+            title="Reset Font Size"
+            onClick={() => handleFontSize('reset')}
+          >
+            A
+          </button>
+          <button
+            className="wtt-font-btn"
+            title="Increase Font Size"
+            onClick={() => handleFontSize(1)}
+          >
+            A+
+          </button>
+          <button className="wtt-close-btn" onClick={onClose} title="Close (Esc)">
+            <X size={13} />
+          </button>
+        </div>
       </div>
 
       {/* Tooltip Body */}

@@ -333,6 +333,318 @@
 .cpp-response-actions button:hover { background: #242424; color: #fff; border-color: var(--bs-accent); }
 
 /* =========================================================
+   Modal Themes for Copilot Popup
+   ========================================================= */
+
+/* Sepia Theme */
+.cpp-root.modal-theme--sepia {
+  background: #f4ecd8;
+  border: 1px solid #d4c5a9;
+  color: #3e3223;
+  box-shadow: 0 16px 48px rgba(62, 50, 35, 0.45), 0 0 0 1px rgba(139, 90, 43, 0.2);
+}
+.cpp-root.modal-theme--sepia .cpp-header {
+  background: rgba(139, 90, 43, 0.1);
+  border-bottom: 1px solid rgba(139, 90, 43, 0.18);
+}
+.cpp-root.modal-theme--sepia .cpp-title {
+  color: #8b5a2b;
+}
+.cpp-root.modal-theme--sepia .cpp-font-btn,
+.cpp-root.modal-theme--sepia .cpp-close {
+  color: #7c6853;
+}
+.cpp-root.modal-theme--sepia .cpp-font-btn:hover,
+.cpp-root.modal-theme--sepia .cpp-close:hover {
+  background: rgba(139, 90, 43, 0.15);
+  color: #2b2014;
+}
+.cpp-root.modal-theme--sepia .cpp-context {
+  background: rgba(139, 90, 43, 0.08);
+  border-bottom: 1px solid rgba(139, 90, 43, 0.16);
+}
+.cpp-root.modal-theme--sepia .cpp-context-label {
+  color: #8b5a2b;
+}
+.cpp-root.modal-theme--sepia .cpp-context-text {
+  color: #5c4733;
+}
+.cpp-root.modal-theme--sepia .cpp-quick-actions {
+  background: rgba(139, 90, 43, 0.05);
+  border-bottom: 1px solid rgba(139, 90, 43, 0.14);
+}
+.cpp-root.modal-theme--sepia .cpp-quick-actions button {
+  background: rgba(139, 90, 43, 0.1);
+  border: 1px solid rgba(139, 90, 43, 0.24);
+  color: #4a3828;
+}
+.cpp-root.modal-theme--sepia .cpp-quick-actions button:hover {
+  background: #8b5a2b;
+  color: #ffffff;
+}
+.cpp-root.modal-theme--sepia .cpp-input-area {
+  background: rgba(139, 90, 43, 0.06);
+  border-top: 1px solid rgba(139, 90, 43, 0.15);
+}
+.cpp-root.modal-theme--sepia .cpp-input {
+  background: #eadecb;
+  border-color: rgba(139, 90, 43, 0.3);
+  color: #2c2216;
+}
+.cpp-root.modal-theme--sepia .cpp-input::placeholder {
+  color: #8f7962;
+}
+.cpp-root.modal-theme--sepia .cpp-send {
+  background: #8b5a2b;
+  color: #ffffff;
+}
+.cpp-root.modal-theme--sepia .cpp-send:hover:not(:disabled) {
+  background: #73481f;
+}
+.cpp-root.modal-theme--sepia .cpp-response-area {
+  color: #3e3223;
+}
+.cpp-root.modal-theme--sepia .cpp-response-area h1,
+.cpp-root.modal-theme--sepia .cpp-response-area h2,
+.cpp-root.modal-theme--sepia .cpp-response-area h3 {
+  color: #2b2014;
+}
+.cpp-root.modal-theme--sepia .cpp-response-area code {
+  background: rgba(139, 90, 43, 0.12);
+  color: #73481f;
+}
+.cpp-root.modal-theme--sepia .cpp-response-actions {
+  background: rgba(139, 90, 43, 0.08);
+  border-top: 1px solid rgba(139, 90, 43, 0.16);
+}
+.cpp-root.modal-theme--sepia .cpp-response-actions button {
+  background: rgba(139, 90, 43, 0.1);
+  border-color: rgba(139, 90, 43, 0.22);
+  color: #5c4733;
+}
+.cpp-root.modal-theme--sepia .cpp-response-actions button:hover {
+  background: rgba(139, 90, 43, 0.2);
+  color: #2b2014;
+}
+.cpp-root.modal-theme--sepia .cpp-followup-pill {
+  background: rgba(139, 90, 43, 0.09);
+  border-color: rgba(139, 90, 43, 0.22);
+  color: #4a3828;
+}
+.cpp-root.modal-theme--sepia .cpp-followup-pill:hover {
+  background: #8b5a2b;
+  border-color: #8b5a2b;
+  color: #ffffff;
+}
+.cpp-root.modal-theme--sepia .cpp-resizer::after {
+  border-color: rgba(139, 90, 43, 0.35);
+}
+.cpp-root.modal-theme--sepia .cpp-resizer:hover::after {
+  border-color: #8b5a2b;
+}
+
+/* Emerald Theme */
+.cpp-root.modal-theme--emerald {
+  background: #172323;
+  border: 1px solid #009688;
+  color: #e0f2f1;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 150, 136, 0.2);
+}
+.cpp-root.modal-theme--emerald .cpp-header {
+  background: rgba(0, 150, 136, 0.08);
+  border-bottom: 1px solid rgba(0, 150, 136, 0.2);
+}
+.cpp-root.modal-theme--emerald .cpp-title {
+  color: #009688;
+}
+
+/* Dark Charcoal Theme */
+.cpp-root.modal-theme--dark {
+  background: #1e1e24;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75);
+}
+.cpp-root.modal-theme--dark .cpp-header {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.cpp-root.modal-theme--dark .cpp-title {
+  color: #38bdf8;
+}
+.cpp-root.modal-theme--dark .cpp-context {
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.cpp-root.modal-theme--dark .cpp-context-label {
+  color: #38bdf8;
+}
+.cpp-root.modal-theme--dark .cpp-quick-actions button:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+.cpp-root.modal-theme--dark .cpp-input {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+.cpp-root.modal-theme--dark .cpp-send {
+  background: #38bdf8;
+  color: #0f172a;
+}
+.cpp-root.modal-theme--dark .cpp-send:hover:not(:disabled) {
+  background: #0ea5e9;
+}
+.cpp-root.modal-theme--dark .cpp-followup-pill:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+.cpp-root.modal-theme--dark .cpp-resizer:hover::after {
+  border-color: #38bdf8;
+}
+
+/* Crisp Light Theme */
+.cpp-root.modal-theme--light {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.cpp-root.modal-theme--light .cpp-header {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+.cpp-root.modal-theme--light .cpp-title {
+  color: #00796b;
+}
+.cpp-root.modal-theme--light .cpp-font-btn,
+.cpp-root.modal-theme--light .cpp-close {
+  color: #64748b;
+}
+.cpp-root.modal-theme--light .cpp-font-btn:hover,
+.cpp-root.modal-theme--light .cpp-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.cpp-root.modal-theme--light .cpp-context {
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+.cpp-root.modal-theme--light .cpp-context-label {
+  color: #00796b;
+}
+.cpp-root.modal-theme--light .cpp-context-text {
+  color: #475569;
+}
+.cpp-root.modal-theme--light .cpp-quick-actions {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+.cpp-root.modal-theme--light .cpp-quick-actions button {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+.cpp-root.modal-theme--light .cpp-quick-actions button:hover {
+  background: #00796b;
+  color: #ffffff;
+  border-color: #00796b;
+}
+.cpp-root.modal-theme--light .cpp-input-area {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+.cpp-root.modal-theme--light .cpp-input {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+.cpp-root.modal-theme--light .cpp-input::placeholder {
+  color: #94a3b8;
+}
+.cpp-root.modal-theme--light .cpp-send {
+  background: #00796b;
+  color: #ffffff;
+}
+.cpp-root.modal-theme--light .cpp-send:hover:not(:disabled) {
+  background: #004d40;
+}
+.cpp-root.modal-theme--light .cpp-response-area {
+  color: #1e293b;
+}
+.cpp-root.modal-theme--light .cpp-response-area h1,
+.cpp-root.modal-theme--light .cpp-response-area h2,
+.cpp-root.modal-theme--light .cpp-response-area h3 {
+  color: #0f172a;
+}
+.cpp-root.modal-theme--light .cpp-response-area code {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.cpp-root.modal-theme--light .cpp-response-actions {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+.cpp-root.modal-theme--light .cpp-response-actions button {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+.cpp-root.modal-theme--light .cpp-response-actions button:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.cpp-root.modal-theme--light .cpp-followup-pill {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+.cpp-root.modal-theme--light .cpp-followup-pill:hover {
+  background: #00796b;
+  border-color: #00796b;
+  color: #ffffff;
+}
+.cpp-root.modal-theme--light .cpp-resizer::after {
+  border-color: #94a3b8;
+}
+.cpp-root.modal-theme--light .cpp-resizer:hover::after {
+  border-color: #00796b;
+}
+
+/* OLED Midnight Theme */
+.cpp-root.modal-theme--oled {
+  background: #000000;
+  border: 1px solid rgba(20, 184, 166, 0.45);
+  color: #f4f4f5;
+  box-shadow: 0 16px 54px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(20, 184, 166, 0.2);
+}
+.cpp-root.modal-theme--oled .cpp-header {
+  background: rgba(20, 184, 166, 0.08);
+  border-bottom: 1px solid rgba(20, 184, 166, 0.25);
+}
+.cpp-root.modal-theme--oled .cpp-title {
+  color: #14b8a6;
+}
+.cpp-root.modal-theme--oled .cpp-input {
+  background: #09090b;
+  border-color: rgba(20, 184, 166, 0.3);
+  color: #ffffff;
+}
+.cpp-root.modal-theme--oled .cpp-send {
+  background: #14b8a6;
+  color: #000000;
+}
+.cpp-root.modal-theme--oled .cpp-followup-pill:hover {
+  background: rgba(20, 184, 166, 0.15);
+  border-color: #14b8a6;
+  color: #ffffff;
+}
+.cpp-root.modal-theme--oled .cpp-resizer:hover::after {
+  border-color: #14b8a6;
+}
+
+/* =========================================================
    macOS-Style Minimalist Definition Cursor (When Ctrl is held)
    ========================================================= */
 

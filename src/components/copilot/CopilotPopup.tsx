@@ -6,6 +6,7 @@ import { useBookStore } from '../../stores/bookStore';
 import { useApiKeys } from '../../stores/apiKeysStore';
 import { ModelSelector, getProviderForModel } from './ModelSelector';
 import { CopilotPersonaSelector, COPILOT_PERSONAS } from './CopilotPersonaSelector';
+import { ModalThemePicker } from '../shared/ModalThemePicker';
 import './CopilotPopup.css';
 
 const TRANSLATE_LANGS = [
@@ -29,7 +30,7 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
     pendingQuickAction, setPendingQuickAction,
     persona,
   } = useChatStore();
-  const { aiModel, setAiModel } = useBookStore();
+  const { aiModel, setAiModel, copilotModalTheme, setCopilotModalTheme } = useBookStore();
   const { getKey } = useApiKeys();
 
   // Local model state (synced from bookStore)
@@ -251,7 +252,7 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
   return (
     <div
       ref={popupRef}
-      className="cpp-root"
+      className={`cpp-root modal-theme--${copilotModalTheme}`}
       style={{ 
         left: pos.x, 
         top: pos.y, 
@@ -266,6 +267,11 @@ export function CopilotPopup({ onSaveHighlight, chapterId }: CopilotPopupProps) 
         <span className="cpp-drag-icon">⠿</span>
         <span className="cpp-title">✦ BookSage Copilot</span>
         <div className="cpp-header-actions" onMouseDown={(e) => e.stopPropagation()}>
+          <ModalThemePicker
+            currentTheme={copilotModalTheme}
+            onSelectTheme={setCopilotModalTheme}
+            placement="bottom-right"
+          />
           <CopilotPersonaSelector size="compact" menuPlacement="bottom-right" />
           <button 
             className="cpp-font-btn" 

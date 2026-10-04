@@ -21,6 +21,24 @@ export const DEFAULT_COPILOT_PRESETS: CopilotPreset[] = [
   { id: 'connect', icon: '🔗', label: 'Connect to previous', text: 'How does this chapter connect to or build upon the previous chapters in this book?', enabled: true },
 ];
 
+export type ModalTheme = 'sepia' | 'emerald' | 'dark' | 'light' | 'oled';
+
+export interface ModalThemeOption {
+  id: ModalTheme;
+  label: string;
+  icon: string;
+  bgPreview: string;
+  accentPreview: string;
+}
+
+export const MODAL_THEMES: ModalThemeOption[] = [
+  { id: 'sepia', label: 'Sepia Parchment', icon: '🍵', bgPreview: '#f4ecd8', accentPreview: '#8b5a2b' },
+  { id: 'emerald', label: 'Dark Emerald', icon: '🌲', bgPreview: '#172323', accentPreview: '#009688' },
+  { id: 'dark', label: 'Dark Charcoal', icon: '🌑', bgPreview: '#202024', accentPreview: '#009688' },
+  { id: 'light', label: 'Clean Light', icon: '⚪', bgPreview: '#ffffff', accentPreview: '#00796b' },
+  { id: 'oled', label: 'OLED Midnight', icon: '🌌', bgPreview: '#000000', accentPreview: '#14b8a6' },
+];
+
 export interface Chapter {
   id?: string;
   num: number;
@@ -59,6 +77,8 @@ interface BookState {
   copilotPersona: CopilotPersona;
   applyPersonaToQuickActions: boolean;
   copilotPresets: CopilotPreset[];
+  copilotModalTheme: ModalTheme;
+  definitionModalTheme: ModalTheme;
   highlightOpacity: number;
   textSelectionColor: string;
   penColor: string;
@@ -97,6 +117,8 @@ interface BookState {
   setApplyPersonaToQuickActions: (apply: boolean) => void;
   setCopilotPresets: (presets: CopilotPreset[]) => void;
   resetCopilotPresets: () => void;
+  setCopilotModalTheme: (theme: ModalTheme) => void;
+  setDefinitionModalTheme: (theme: ModalTheme) => void;
   
   setAiModel: (model: string) => void;
   setPdfPath: (path: string) => Promise<void>;
@@ -173,6 +195,8 @@ export const useBookStore = create<BookState>()(
       copilotPersona: 'scholar',
       applyPersonaToQuickActions: false,
       copilotPresets: DEFAULT_COPILOT_PRESETS,
+      copilotModalTheme: 'emerald',
+      definitionModalTheme: 'sepia',
       highlightOpacity: 0.4,
       textSelectionColor: '',
       penColor: '#e05252',
@@ -437,6 +461,8 @@ export const useBookStore = create<BookState>()(
       setApplyPersonaToQuickActions: (apply) => set({ applyPersonaToQuickActions: apply }),
       setCopilotPresets: (presets) => set({ copilotPresets: presets }),
       resetCopilotPresets: () => set({ copilotPresets: DEFAULT_COPILOT_PRESETS }),
+      setCopilotModalTheme: (theme) => set({ copilotModalTheme: theme }),
+      setDefinitionModalTheme: (theme) => set({ definitionModalTheme: theme }),
       setAiModel: (model: string) => set({ aiModel: model }),
 
       setPdfPath: async (path: string) => {
@@ -928,6 +954,8 @@ export const useBookStore = create<BookState>()(
         copilotPersona: state.copilotPersona,
         applyPersonaToQuickActions: state.applyPersonaToQuickActions,
         copilotPresets: state.copilotPresets,
+        copilotModalTheme: state.copilotModalTheme,
+        definitionModalTheme: state.definitionModalTheme,
       }),
     }
   )
