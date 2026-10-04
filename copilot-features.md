@@ -18,6 +18,7 @@
 | 🟡 HIGH | Strong differentiator | Perplexity Copilot | Suggested follow-up questions |
 | 🟢 NICE | Power-user extra | Claude, Elicit | Export conversation to Markdown |
 | 🟢 NICE | Power-user extra | Notewise Magic Select | AI image/diagram explanation (future) |
+| 🟢 NICE | Visual Delight | Retractable Book Drawer | Draggable floating book cover popup & downward sliding cover showcase |
 
 ---
 
@@ -264,6 +265,55 @@
 - [x] Dedicated "AI Copilot" tab in SettingsDialog with visual persona cards and toggle switch
 - [x] Minimalist persona tag badges on every assistant response across AIChatView, CopilotSidebar, and CopilotPopup
 - [x] Persona preserved per-message in SQLite `chat_sessions` (`ChatMessageRecord.persona`)
+
+### Draggable Book Cover Popup & Downward Slide Panel (Visual Feature)
+*Inspired by: Interactive Reading Companion & Top Drawer Showcase*
+
+A polished, non-intrusive visual reading companion specifically designed to sit gracefully in the reader interface without obstructing reading content or disrupting reading flow.
+
+- **Status:** 📋 Documented (Scheduled for implementation)
+- **Scope:** Purely visual/interaction feature — zero architectural or prompt overhead.
+
+#### 1. Visual Placement & Context
+- **Reading Zone:** Positioned floating directly beneath the reader top toolbar, overlaying the top of the reading page or margin.
+- **Natural Fit:** Inherits the active theme (Dark, Light, Warm/Sepia) styling, colors, borders, and typography of BookSage.
+
+#### 2. Compact Floating Popup (Retractable Handle)
+- **Content:**
+  - Active book cover art thumbnail (dynamic based on the currently open book, e.g. *The 48 Laws of Power*).
+  - Book title and author label.
+  - Centered horizontal drag indicator handle (`═`).
+  - Subtle dismiss button (`✕`).
+- **Draggability:**
+  - Draggable horizontally across the top reading header zone (left or right side).
+  - Constrained within the reader bounds to prevent off-screen loss.
+  - Dragging does not interfere with text selection, reader controls, or page clicks.
+- **Retraction / Auto-Hide:**
+  - Appears smoothly when the user opens the book or interacts with the top area.
+  - Automatically slides upward into the top edge to retract and hide after an idle delay (a few seconds of reading).
+  - Hovering or interacting resets/pauses the auto-hide timer.
+  - Smooth easing curves (e.g. cubic-bezier) for entering and exiting.
+
+#### 3. Expanded Downward-Sliding Panel (Showcase Drawer)
+- **Trigger:**
+  - Clicking the book-cover thumbnail inside the compact floating popup triggers the expanded showcase state.
+  - Clicking the cover immediately cancels/overrides the auto-hide retraction timer.
+- **Downward Slide Animation:**
+  - Slides **physically downward from the top edge of the window** (like an upside-down pull-down blind or top drawer panel).
+  - **Strict Requirement:** Must NOT be a centered modal, fade-in box, or instant pop-up. The physical animation originates from the top ceiling and glides smoothly downwards into view.
+- **Expanded Content:**
+  - Prominent high-resolution book cover artwork.
+  - Book metadata (Title, Author, current reading progress / chapter info).
+  - Seamless integration with existing reader aesthetics.
+- **Dismissal & Retraction:**
+  - Clicking a close button or clicking outside smoothly slides the panel back **upward** into the top edge of the window.
+  - No abrupt layout jumps, shifts, or scroll position disruption.
+
+#### 4. Interaction State Machine
+- **State A (Compact Initial):** Slides down gently, visible for a few seconds. Can be dragged horizontally.
+- **State B (Auto-Hidden):** Retracted into the top edge; can be summoned on hover or subtle reveal tab.
+- **State C (Expanded Showcase):** Thumbnail clicked → Downward slide open. Auto-hide disabled while open.
+- **State D (Dismissed):** Slides back upward into the top window boundary.
 
 ---
 
