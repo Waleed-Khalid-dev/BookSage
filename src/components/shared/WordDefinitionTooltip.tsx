@@ -50,10 +50,17 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
     placement: 'below',
   });
 
-  const { getKey } = useApiKeys();
+  const { getKey, isInitialized, loadKeys } = useApiKeys();
+
+  useEffect(() => {
+    if (!isInitialized) {
+      loadKeys();
+    }
+  }, [isInitialized, loadKeys]);
+
   const selectedModel = useBookStore(s => s.aiModel) || 'gemini-3.6-flash';
   const provider = selectedModel.includes('gpt') ? 'openai' : selectedModel.includes('claude') ? 'claude' : 'gemini';
-  const apiKey = getKey(provider);
+  const apiKey = getKey(provider) || getKey('gemini') || getKey('openai') || getKey('claude') || getKey('groq');
 
   const cleanWord = target ? cleanWordToken(target.word) : '';
 
@@ -144,23 +151,19 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
 
         if (!res) {
           setDictError('No dictionary definition found for this term.');
-          return;
-        }
-
-        if (res.error) {
+        } else if (res.error) {
           setDictError(res.error);
-          return;
+        } else {
+          setData(res);
         }
-
-        setData(res);
 
         // If bookContext was already returned (from SQLite cache or unified AI fallback), we are done!
-        if (res.bookContext) {
+        if (res?.bookContext) {
           setBookContext(res.bookContext);
           return;
         }
 
-        // Only if Free Dictionary API succeeded without bookContext, fetch context in a SINGLE call:
+        // Fetch book context in a single call (even if standard dictionary was not found, e.g. "nonplayers"!):
         if (apiKey) {
           setLoadingAi(true);
           try {
@@ -183,13 +186,15 @@ export const WordDefinitionTooltip: React.FC<WordDefinitionTooltipProps> = ({ ta
             if (aiRes.status === 'success' && aiRes.explanation) {
               setBookContext(aiRes.explanation);
               // Save definition + AI context to SQLite
-              saveCachedWordDefinition({
-                word: cleanWord,
-                meanings_json: JSON.stringify(res.meanings || []),
-                phonetic: res.phonetic,
-                audio_url: res.audioUrl,
-                ai_context_json: aiRes.explanation,
-              }).catch(() => {});
+              if (res && res.meanings && res.meanings.length > 0) {
+                saveCachedWordDefinition({
+                  word: cleanWord,
+                  meanings_json: JSON.stringify(res.meanings || []),
+                  phonetic: res.phonetic,
+                  audio_url: res.audioUrl,
+                  ai_context_json: aiRes.explanation,
+                }).catch(() => {});
+              }
             }
           } catch (err) {
             if (currentReqId !== reqIdRef.current) return;

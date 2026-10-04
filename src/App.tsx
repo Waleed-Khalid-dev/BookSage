@@ -22,6 +22,11 @@ function App() {
   // Initialize global keyboard shortcuts
   useShortcuts();
 
+  // Preload encrypted API keys on boot so they are globally ready across all views & tooltips
+  useEffect(() => {
+    import('./stores/apiKeysStore').then(m => m.useApiKeys.getState().loadKeys());
+  }, []);
+
   useEffect(() => {
     const handleShortcut = (e: CustomEvent<{ action: string }>) => {
       if (e.detail.action === 'toggle-split-view') {

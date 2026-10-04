@@ -1,8 +1,8 @@
 # 🤖 Phase 6 — AI Copilot Layer Feature Tracker
 
 > **Approach:** Inline Selection Copilot + Persistent Chat Sidebar + Full AIChatView  
-> **Status:** 🔴 Not Started  
-> **Planned:** 2026-08-10
+> **Status:** 🟢 Complete & Verified  
+> **Updated:** 2026-10-04
 
 ---
 
@@ -227,9 +227,12 @@
 *Inspired by: Kindle X-Ray, Apple Dictionary, Readwise*
 
 - [x] `Ctrl+Click` on any single word in BookReader or NotesViewer
-- [x] Small tooltip pops up with: dictionary definition + AI-powered contextual explanation in the book's context
-- [x] Uses free dictionary API for base definition; AI adds book-specific meaning
+- [x] Dedicated draggable floating modal with dictionary definition + AI-powered contextual explanation in the book's context
+- [x] Dual-engine lookup: Free Dictionary API base + SQLite local cache + Gemini/OpenAI/Claude AI fallback
 - [x] High-precision macOS-style cursor on Ctrl-hover, Context Menu shortcut badge, and Settings shortcuts list
+- [x] Audio pronunciation playback with automatic Web Speech API fallback
+- [x] Rate-limit (429) protection, consolidated requests, in-flight cancellation, and one-click retry UI
+- [x] "Discuss in Copilot" integration sending target term and chapter context to Copilot sidebar
 
 ### AI-Generated Study Quiz
 *Inspired by: Notewise AI Study Tools, Anki*
